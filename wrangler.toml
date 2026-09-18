@@ -1,0 +1,15 @@
+name = "sp1nxi"
+pages_build_output_dir = "public"
+compatibility_date = "2026-01-01"
+
+# These mirror what you set in the dashboard. Keep both in sync.
+[[kv_namespaces]]
+binding = "SQUADS"
+id = "REPLACE_WITH_SQUADS_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "ROOMS"
+id = "REPLACE_WITH_ROOMS_NAMESPACE_ID"
+
+# Secrets are NOT set here. Add API_FOOTBALL_KEY and REFRESH_TOKEN in
+# Cloudflare → your Pages project → Settings → Variables and secrets.
