@@ -874,7 +874,7 @@ function screenBuild() {
       cands.forEach(pl => {
         const row = el(`<div class="plyr" style="margin-bottom:6px;cursor:pointer">
           <span class="num" style="background:${club.home};color:${readable(club.home)}">${pl.number}</span>
-          <span class="meta"><b>${esc(pl.name)}</b><small>${esc(pl.position)}</small></span>
+          <span class="meta"><b>${esc(pl.name)}</b><small>${esc(pl.position)}${pl.clubName ? ' · ' + esc(pl.clubName) : ''}</small></span>
           <span class="rating">${pl.rating}</span>
         </div>`);
         row.onclick = () => choose(g, pl);
