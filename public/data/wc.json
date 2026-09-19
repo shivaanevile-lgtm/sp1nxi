@@ -1,0 +1,4197 @@
+{
+"Argentina": [
+{
+"id": "WC-Argentina-1-Musso",
+"name": "Musso",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 78,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Argentina-12-Rulli",
+"name": "Rulli",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 74,
+"clubName": "Marseille"
+},
+{
+"id": "WC-Argentina-23-E.Martínez",
+"name": "E. Martínez",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 88,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-Argentina-2-Balerdi",
+"name": "Balerdi",
+"number": 2,
+"position": "Defender",
+"rating": 76,
+"clubName": "Marseille"
+},
+{
+"id": "WC-Argentina-3-Tagliafico",
+"name": "Tagliafico",
+"number": 3,
+"position": "Defender",
+"rating": 76,
+"clubName": "Lyon"
+},
+{
+"id": "WC-Argentina-4-Montiel",
+"name": "Montiel",
+"number": 4,
+"position": "Defender",
+"rating": 71
+},
+{
+"id": "WC-Argentina-6-Martínez",
+"name": "Martínez",
+"number": 6,
+"position": "Defender",
+"rating": 80,
+"clubName": "Man United"
+},
+{
+"id": "WC-Argentina-13-Romero",
+"name": "Romero",
+"number": 13,
+"position": "Defender",
+"rating": 86,
+"clubName": "Tottenham"
+},
+{
+"id": "WC-Argentina-19-Otamendi",
+"name": "Otamendi",
+"number": 19,
+"position": "Defender",
+"rating": 76
+},
+{
+"id": "WC-Argentina-25-Medina",
+"name": "Medina",
+"number": 25,
+"position": "Defender",
+"rating": 73,
+"clubName": "Marseille"
+},
+{
+"id": "WC-Argentina-26-Molina",
+"name": "Molina",
+"number": 26,
+"position": "Defender",
+"rating": 78,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Argentina-5-Paredes",
+"name": "Paredes",
+"number": 5,
+"position": "Midfielder",
+"rating": 73
+},
+{
+"id": "WC-Argentina-7-DePaul",
+"name": "De Paul",
+"number": 7,
+"position": "Midfielder",
+"rating": 81,
+"clubName": "Inter Miami"
+},
+{
+"id": "WC-Argentina-8-Barco",
+"name": "Barco",
+"number": 8,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Strasbourg"
+},
+{
+"id": "WC-Argentina-11-LoCelso",
+"name": "Lo Celso",
+"number": 11,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Real Betis"
+},
+{
+"id": "WC-Argentina-14-Palacios",
+"name": "Palacios",
+"number": 14,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Bayer Leverkusen"
+},
+{
+"id": "WC-Argentina-15-N.González",
+"name": "N. González",
+"number": 15,
+"position": "Midfielder",
+"rating": 77,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Argentina-20-MacAllister",
+"name": "Mac Allister",
+"number": 20,
+"position": "Midfielder",
+"rating": 86,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Argentina-24-E.Fernández",
+"name": "E. Fernández",
+"number": 24,
+"position": "Midfielder",
+"rating": 85,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-Argentina-9-J.Álvarez",
+"name": "J. Álvarez",
+"number": 9,
+"position": "Attacker",
+"rating": 88,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Argentina-10-Messi",
+"name": "Messi",
+"number": 10,
+"position": "Attacker",
+"rating": 93,
+"clubName": "Inter Miami"
+},
+{
+"id": "WC-Argentina-16-Almada",
+"name": "Almada",
+"number": 16,
+"position": "Attacker",
+"rating": 75
+},
+{
+"id": "WC-Argentina-17-Simeone",
+"name": "Simeone",
+"number": 17,
+"position": "Attacker",
+"rating": 73
+},
+{
+"id": "WC-Argentina-18-NicoPaz",
+"name": "Nico Paz",
+"number": 18,
+"position": "Attacker",
+"rating": 80,
+"clubName": "Como"
+},
+{
+"id": "WC-Argentina-21-López",
+"name": "López",
+"number": 21,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Palmeiras"
+},
+{
+"id": "WC-Argentina-22-L.Martínez",
+"name": "L. Martínez",
+"number": 22,
+"position": "Attacker",
+"rating": 87,
+"clubName": "Inter"
+}
+],
+"France": [
+{
+"id": "WC-France-1-Samba",
+"name": "Samba",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 76,
+"clubName": "Rennes"
+},
+{
+"id": "WC-France-16-Maignan",
+"name": "Maignan",
+"number": 16,
+"position": "Goalkeeper",
+"rating": 84,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-France-23-Risser",
+"name": "Risser",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "Lens"
+},
+{
+"id": "WC-France-2-Gusto",
+"name": "Gusto",
+"number": 2,
+"position": "Defender",
+"rating": 78,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-France-3-Digne",
+"name": "Digne",
+"number": 3,
+"position": "Defender",
+"rating": 79,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-France-4-Upamecano",
+"name": "Upamecano",
+"number": 4,
+"position": "Defender",
+"rating": 85,
+"clubName": "Bayern"
+},
+{
+"id": "WC-France-5-Kounde",
+"name": "Kounde",
+"number": 5,
+"position": "Defender",
+"rating": 84,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-France-15-Konate",
+"name": "Konate",
+"number": 15,
+"position": "Defender",
+"rating": 84,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-France-17-Saliba",
+"name": "Saliba",
+"number": 17,
+"position": "Defender",
+"rating": 89,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-France-19-T.Hernandez",
+"name": "T. Hernandez",
+"number": 19,
+"position": "Defender",
+"rating": 79,
+"clubName": "Al Hilal"
+},
+{
+"id": "WC-France-21-L.Hernandez",
+"name": "L. Hernandez",
+"number": 21,
+"position": "Defender",
+"rating": 78,
+"clubName": "PSG"
+},
+{
+"id": "WC-France-26-Lacroix",
+"name": "Lacroix",
+"number": 26,
+"position": "Defender",
+"rating": 74,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-France-6-Kone",
+"name": "Kone",
+"number": 6,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Roma"
+},
+{
+"id": "WC-France-8-Tchouameni",
+"name": "Tchouameni",
+"number": 8,
+"position": "Midfielder",
+"rating": 84,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-France-13-Kante",
+"name": "Kante",
+"number": 13,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Fenerbahçe"
+},
+{
+"id": "WC-France-14-Rabiot",
+"name": "Rabiot",
+"number": 14,
+"position": "Midfielder",
+"rating": 79,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-France-18-Zaire-Emery",
+"name": "Zaire-Emery",
+"number": 18,
+"position": "Midfielder",
+"rating": 81,
+"clubName": "PSG"
+},
+{
+"id": "WC-France-24-Cherki",
+"name": "Cherki",
+"number": 24,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Man City"
+},
+{
+"id": "WC-France-25-Aklioueche",
+"name": "Aklioueche",
+"number": 25,
+"position": "Midfielder",
+"rating": 72,
+"clubName": "Monaco"
+},
+{
+"id": "WC-France-7-Dembele",
+"name": "Dembele",
+"number": 7,
+"position": "Attacker",
+"rating": 88,
+"clubName": "PSG"
+},
+{
+"id": "WC-France-9-Thuram",
+"name": "Thuram",
+"number": 9,
+"position": "Attacker",
+"rating": 85,
+"clubName": "Inter"
+},
+{
+"id": "WC-France-10-Mbappe",
+"name": "Mbappe",
+"number": 10,
+"position": "Attacker",
+"rating": 93,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-France-11-Olise",
+"name": "Olise",
+"number": 11,
+"position": "Attacker",
+"rating": 86,
+"clubName": "Bayern"
+},
+{
+"id": "WC-France-12-Barcola",
+"name": "Barcola",
+"number": 12,
+"position": "Attacker",
+"rating": 82,
+"clubName": "PSG"
+},
+{
+"id": "WC-France-20-Doue",
+"name": "Doue",
+"number": 20,
+"position": "Attacker",
+"rating": 81,
+"clubName": "PSG"
+},
+{
+"id": "WC-France-22-Mateta",
+"name": "Mateta",
+"number": 22,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Crystal Palace"
+}
+],
+"Brazil": [
+{
+"id": "WC-Brazil-1-Alisson",
+"name": "Alisson",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 89,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Brazil-12-Weverton",
+"name": "Weverton",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Grêmio"
+},
+{
+"id": "WC-Brazil-23-Ederson",
+"name": "Ederson",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 83,
+"clubName": "Fenerbahçe"
+},
+{
+"id": "WC-Brazil-2-Wesley",
+"name": "Wesley",
+"number": 2,
+"position": "Defender",
+"rating": 73,
+"clubName": "Roma"
+},
+{
+"id": "WC-Brazil-3-Gabriel",
+"name": "Gabriel",
+"number": 3,
+"position": "Defender",
+"rating": 92,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Brazil-4-Marquinhos",
+"name": "Marquinhos",
+"number": 4,
+"position": "Defender",
+"rating": 84,
+"clubName": "PSG"
+},
+{
+"id": "WC-Brazil-6-AlexSandro",
+"name": "Alex Sandro",
+"number": 6,
+"position": "Defender",
+"rating": 73,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Brazil-13-Danilo",
+"name": "Danilo",
+"number": 13,
+"position": "Defender",
+"rating": 74,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Brazil-14-Bremer",
+"name": "Bremer",
+"number": 14,
+"position": "Defender",
+"rating": 79,
+"clubName": "Juventus"
+},
+{
+"id": "WC-Brazil-15-LeoPereira",
+"name": "Leo Pereira",
+"number": 15,
+"position": "Defender",
+"rating": 73,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Brazil-16-DouglasSantos",
+"name": "Douglas Santos",
+"number": 16,
+"position": "Defender",
+"rating": 71,
+"clubName": "Zenit"
+},
+{
+"id": "WC-Brazil-24-Ibañez",
+"name": "Ibañez",
+"number": 24,
+"position": "Defender",
+"rating": 73,
+"clubName": "Al Ahli"
+},
+{
+"id": "WC-Brazil-5-Casemiro",
+"name": "Casemiro",
+"number": 5,
+"position": "Midfielder",
+"rating": 81,
+"clubName": "Man United"
+},
+{
+"id": "WC-Brazil-8-BrunoG.",
+"name": "Bruno G.",
+"number": 8,
+"position": "Midfielder",
+"rating": 85,
+"clubName": "Newcastle"
+},
+{
+"id": "WC-Brazil-17-Fabinho",
+"name": "Fabinho",
+"number": 17,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Al Ittihad"
+},
+{
+"id": "WC-Brazil-18-DaniloS.",
+"name": "Danilo S.",
+"number": 18,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Botafogo"
+},
+{
+"id": "WC-Brazil-20-L.Paqueta",
+"name": "L. Paqueta",
+"number": 20,
+"position": "Midfielder",
+"rating": 81,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Brazil-7-ViniJr.",
+"name": "Vini Jr.",
+"number": 7,
+"position": "Attacker",
+"rating": 90,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-Brazil-9-Cunha",
+"name": "Cunha",
+"number": 9,
+"position": "Attacker",
+"rating": 81,
+"clubName": "Man United"
+},
+{
+"id": "WC-Brazil-10-NeymarJr",
+"name": "Neymar Jr",
+"number": 10,
+"position": "Attacker",
+"rating": 81,
+"clubName": "Santos"
+},
+{
+"id": "WC-Brazil-11-Raphinha",
+"name": "Raphinha",
+"number": 11,
+"position": "Attacker",
+"rating": 87,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Brazil-19-Endrick",
+"name": "Endrick",
+"number": 19,
+"position": "Attacker",
+"rating": 77,
+"clubName": "Lyon"
+},
+{
+"id": "WC-Brazil-21-L.Henrique",
+"name": "L. Henrique",
+"number": 21,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Zenit"
+},
+{
+"id": "WC-Brazil-22-Martinelli",
+"name": "Martinelli",
+"number": 22,
+"position": "Attacker",
+"rating": 84,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Brazil-25-Thiago",
+"name": "Thiago",
+"number": 25,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Brentford"
+},
+{
+"id": "WC-Brazil-26-Rayan",
+"name": "Rayan",
+"number": 26,
+"position": "Attacker",
+"rating": 72,
+"clubName": "Bournemouth"
+}
+],
+"England": [
+{
+"id": "WC-England-1-Pickford",
+"name": "Pickford",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 83,
+"clubName": "Everton"
+},
+{
+"id": "WC-England-13-D.Henderson",
+"name": "D. Henderson",
+"number": 13,
+"position": "Goalkeeper",
+"rating": 76,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-England-23-Trafford",
+"name": "Trafford",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 76,
+"clubName": "Man City"
+},
+{
+"id": "WC-England-2-Konsa",
+"name": "Konsa",
+"number": 2,
+"position": "Defender",
+"rating": 76,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-England-3-O'Reilly",
+"name": "O'Reilly",
+"number": 3,
+"position": "Defender",
+"rating": 77,
+"clubName": "Man City"
+},
+{
+"id": "WC-England-5-Stones",
+"name": "Stones",
+"number": 5,
+"position": "Defender",
+"rating": 83,
+"clubName": "Man City"
+},
+{
+"id": "WC-England-6-Guehi",
+"name": "Guehi",
+"number": 6,
+"position": "Defender",
+"rating": 81,
+"clubName": "Man City"
+},
+{
+"id": "WC-England-12-Livramento",
+"name": "Livramento",
+"number": 12,
+"position": "Defender",
+"rating": 78,
+"clubName": "Newcastle"
+},
+{
+"id": "WC-England-15-Burn",
+"name": "Burn",
+"number": 15,
+"position": "Defender",
+"rating": 76,
+"clubName": "Newcastle"
+},
+{
+"id": "WC-England-24-James",
+"name": "James",
+"number": 24,
+"position": "Defender",
+"rating": 82,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-England-25-Spence",
+"name": "Spence",
+"number": 25,
+"position": "Defender",
+"rating": 73,
+"clubName": "Tottenham"
+},
+{
+"id": "WC-England-26-Quansah",
+"name": "Quansah",
+"number": 26,
+"position": "Defender",
+"rating": 78,
+"clubName": "Bayer Leverkusen"
+},
+{
+"id": "WC-England-4-Rice",
+"name": "Rice",
+"number": 4,
+"position": "Midfielder",
+"rating": 90,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-England-8-Anderson",
+"name": "Anderson",
+"number": 8,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Nottingham Forest"
+},
+{
+"id": "WC-England-10-Bellingham",
+"name": "Bellingham",
+"number": 10,
+"position": "Midfielder",
+"rating": 90,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-England-14-J.Henderson",
+"name": "J. Henderson",
+"number": 14,
+"position": "Midfielder",
+"rating": 72,
+"clubName": "Brentford"
+},
+{
+"id": "WC-England-16-Mainoo",
+"name": "Mainoo",
+"number": 16,
+"position": "Midfielder",
+"rating": 80,
+"clubName": "Man United"
+},
+{
+"id": "WC-England-21-Eze",
+"name": "Eze",
+"number": 21,
+"position": "Midfielder",
+"rating": 84,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-England-7-Saka",
+"name": "Saka",
+"number": 7,
+"position": "Attacker",
+"rating": 90,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-England-9-Kane",
+"name": "Kane",
+"number": 9,
+"position": "Attacker",
+"rating": 92,
+"clubName": "Bayern"
+},
+{
+"id": "WC-England-11-Rashford",
+"name": "Rashford",
+"number": 11,
+"position": "Attacker",
+"rating": 83,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-England-17-Rogers",
+"name": "Rogers",
+"number": 17,
+"position": "Attacker",
+"rating": 81,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-England-18-Gordon",
+"name": "Gordon",
+"number": 18,
+"position": "Attacker",
+"rating": 82,
+"clubName": "Newcastle"
+},
+{
+"id": "WC-England-19-Watkins",
+"name": "Watkins",
+"number": 19,
+"position": "Attacker",
+"rating": 85,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-England-20-Madueke",
+"name": "Madueke",
+"number": 20,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-England-22-Toney",
+"name": "Toney",
+"number": 22,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Al Ahli"
+}
+],
+"Spain": [
+{
+"id": "WC-Spain-1-Raya",
+"name": "Raya",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 88,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Spain-13-JoanGarcía",
+"name": "Joan García",
+"number": 13,
+"position": "Goalkeeper",
+"rating": 80,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-23-UnaiSimón",
+"name": "Unai Simón",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 81,
+"clubName": "Athletic Club"
+},
+{
+"id": "WC-Spain-2-MarcPubill",
+"name": "Marc Pubill",
+"number": 2,
+"position": "Defender",
+"rating": 73,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Spain-3-Grimaldo",
+"name": "Grimaldo",
+"number": 3,
+"position": "Defender",
+"rating": 78,
+"clubName": "Bayer Leverkusen"
+},
+{
+"id": "WC-Spain-4-Eric",
+"name": "Eric",
+"number": 4,
+"position": "Defender",
+"rating": 79,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-5-M.Llorente",
+"name": "M. Llorente",
+"number": 5,
+"position": "Defender",
+"rating": 76,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Spain-12-PedroPorro",
+"name": "Pedro Porro",
+"number": 12,
+"position": "Defender",
+"rating": 80,
+"clubName": "Tottenham"
+},
+{
+"id": "WC-Spain-14-Laporte",
+"name": "Laporte",
+"number": 14,
+"position": "Defender",
+"rating": 76,
+"clubName": "Athletic Club"
+},
+{
+"id": "WC-Spain-22-Cubarsi",
+"name": "Cubarsi",
+"number": 22,
+"position": "Defender",
+"rating": 83,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-24-Cucurella",
+"name": "Cucurella",
+"number": 24,
+"position": "Defender",
+"rating": 81,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-Spain-6-Merino",
+"name": "Merino",
+"number": 6,
+"position": "Midfielder",
+"rating": 82,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Spain-8-Fabián",
+"name": "Fabián",
+"number": 8,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "PSG"
+},
+{
+"id": "WC-Spain-9-Gavi",
+"name": "Gavi",
+"number": 9,
+"position": "Midfielder",
+"rating": 81,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-15-AlexB.",
+"name": "Alex B.",
+"number": 15,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Spain-16-Rodrigo",
+"name": "Rodrigo",
+"number": 16,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Man City"
+},
+{
+"id": "WC-Spain-18-Zubimendi",
+"name": "Zubimendi",
+"number": 18,
+"position": "Midfielder",
+"rating": 80,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Spain-20-Pedri",
+"name": "Pedri",
+"number": 20,
+"position": "Midfielder",
+"rating": 89,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-7-Ferran",
+"name": "Ferran",
+"number": 7,
+"position": "Attacker",
+"rating": 80,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-10-Olmo",
+"name": "Olmo",
+"number": 10,
+"position": "Attacker",
+"rating": 81,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-11-Jeremy",
+"name": "Jeremy",
+"number": 11,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-Spain-17-WilliamsJr",
+"name": "Williams Jr",
+"number": 17,
+"position": "Attacker",
+"rating": 83,
+"clubName": "Athletic Club"
+},
+{
+"id": "WC-Spain-19-LamineYamal",
+"name": "Lamine Yamal",
+"number": 19,
+"position": "Attacker",
+"rating": 91,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Spain-21-Oyarzabal",
+"name": "Oyarzabal",
+"number": 21,
+"position": "Attacker",
+"rating": 80,
+"clubName": "Real Sociedad"
+},
+{
+"id": "WC-Spain-25-VictorM.V.",
+"name": "Victor M.V.",
+"number": 25,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Osasuna"
+},
+{
+"id": "WC-Spain-26-B.Iglesias",
+"name": "B. Iglesias",
+"number": 26,
+"position": "Attacker",
+"rating": 72,
+"clubName": "Celta Vigo"
+}
+],
+"Portugal": [
+{
+"id": "WC-Portugal-1-DiogoCosta",
+"name": "Diogo Costa",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 83,
+"clubName": "Porto"
+},
+{
+"id": "WC-Portugal-12-JoséSá",
+"name": "José Sá",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 78,
+"clubName": "Wolves"
+},
+{
+"id": "WC-Portugal-22-RuiSilva",
+"name": "Rui Silva",
+"number": 22,
+"position": "Goalkeeper",
+"rating": 73,
+"clubName": "Sporting CP"
+},
+{
+"id": "WC-Portugal-2-N.Semedo",
+"name": "N. Semedo",
+"number": 2,
+"position": "Defender",
+"rating": 75,
+"clubName": "Fenerbahçe"
+},
+{
+"id": "WC-Portugal-3-RubenDias",
+"name": "Ruben Dias",
+"number": 3,
+"position": "Defender",
+"rating": 88,
+"clubName": "Man City"
+},
+{
+"id": "WC-Portugal-4-TomasA.",
+"name": "Tomas A.",
+"number": 4,
+"position": "Defender",
+"rating": 73,
+"clubName": "Benfica"
+},
+{
+"id": "WC-Portugal-5-Dalot",
+"name": "Dalot",
+"number": 5,
+"position": "Defender",
+"rating": 78,
+"clubName": "Man United"
+},
+{
+"id": "WC-Portugal-13-RenatoVeiga",
+"name": "Renato Veiga",
+"number": 13,
+"position": "Defender",
+"rating": 78,
+"clubName": "Villarreal"
+},
+{
+"id": "WC-Portugal-14-G.Inácio",
+"name": "G. Inácio",
+"number": 14,
+"position": "Defender",
+"rating": 80,
+"clubName": "Sporting CP"
+},
+{
+"id": "WC-Portugal-20-JoãoCancelo",
+"name": "João Cancelo",
+"number": 20,
+"position": "Defender",
+"rating": 81,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Portugal-24-Samu",
+"name": "Samu",
+"number": 24,
+"position": "Defender",
+"rating": 71,
+"clubName": "Mallorca"
+},
+{
+"id": "WC-Portugal-25-N.Mendes",
+"name": "N. Mendes",
+"number": 25,
+"position": "Defender",
+"rating": 84,
+"clubName": "PSG"
+},
+{
+"id": "WC-Portugal-6-MatheusN.",
+"name": "Matheus N.",
+"number": 6,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Man City"
+},
+{
+"id": "WC-Portugal-8-B.Fernandes",
+"name": "B. Fernandes",
+"number": 8,
+"position": "Midfielder",
+"rating": 91,
+"clubName": "Man United"
+},
+{
+"id": "WC-Portugal-10-Bernardo",
+"name": "Bernardo",
+"number": 10,
+"position": "Midfielder",
+"rating": 87,
+"clubName": "Man City"
+},
+{
+"id": "WC-Portugal-15-JoãoNeves",
+"name": "João Neves",
+"number": 15,
+"position": "Midfielder",
+"rating": 84,
+"clubName": "PSG"
+},
+{
+"id": "WC-Portugal-21-R.Neves",
+"name": "R. Neves",
+"number": 21,
+"position": "Midfielder",
+"rating": 79,
+"clubName": "Al Hilal"
+},
+{
+"id": "WC-Portugal-23-Vitinha",
+"name": "Vitinha",
+"number": 23,
+"position": "Midfielder",
+"rating": 86,
+"clubName": "PSG"
+},
+{
+"id": "WC-Portugal-7-Ronaldo",
+"name": "Ronaldo",
+"number": 7,
+"position": "Attacker",
+"rating": 85,
+"clubName": "Al Nassr"
+},
+{
+"id": "WC-Portugal-9-G.Ramos",
+"name": "G. Ramos",
+"number": 9,
+"position": "Attacker",
+"rating": 78,
+"clubName": "PSG"
+},
+{
+"id": "WC-Portugal-11-JoãoFélix",
+"name": "João Félix",
+"number": 11,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Al Nassr"
+},
+{
+"id": "WC-Portugal-16-Trincão",
+"name": "Trincão",
+"number": 16,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Sporting CP"
+},
+{
+"id": "WC-Portugal-17-RafaLeão",
+"name": "Rafa Leão",
+"number": 17,
+"position": "Attacker",
+"rating": 84,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-Portugal-18-Neto",
+"name": "Neto",
+"number": 18,
+"position": "Attacker",
+"rating": 74,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-Portugal-19-G.Guedes",
+"name": "G. Guedes",
+"number": 19,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Real Sociedad"
+},
+{
+"id": "WC-Portugal-26-F.Conceição",
+"name": "F. Conceição",
+"number": 26,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Juventus"
+}
+],
+"Germany": [
+{
+"id": "WC-Germany-1-Neuer",
+"name": "Neuer",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 83,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-12-Baumann",
+"name": "Baumann",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 73,
+"clubName": "Hoffenheim"
+},
+{
+"id": "WC-Germany-21-Nübel",
+"name": "Nübel",
+"number": 21,
+"position": "Goalkeeper",
+"rating": 71,
+"clubName": "Stuttgart"
+},
+{
+"id": "WC-Germany-2-Rudiger",
+"name": "Rudiger",
+"number": 2,
+"position": "Defender",
+"rating": 85,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-Germany-3-Anton",
+"name": "Anton",
+"number": 3,
+"position": "Defender",
+"rating": 73,
+"clubName": "Dortmund"
+},
+{
+"id": "WC-Germany-4-Tah",
+"name": "Tah",
+"number": 4,
+"position": "Defender",
+"rating": 83,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-6-Kimmich",
+"name": "Kimmich",
+"number": 6,
+"position": "Defender",
+"rating": 88,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-15-Schlotterbeck",
+"name": "Schlotterbeck",
+"number": 15,
+"position": "Defender",
+"rating": 82,
+"clubName": "Dortmund"
+},
+{
+"id": "WC-Germany-18-Brown",
+"name": "Brown",
+"number": 18,
+"position": "Defender",
+"rating": 71,
+"clubName": "Eintracht Frankfurt"
+},
+{
+"id": "WC-Germany-22-Raum",
+"name": "Raum",
+"number": 22,
+"position": "Defender",
+"rating": 78,
+"clubName": "RB Leipzig"
+},
+{
+"id": "WC-Germany-24-Thiaw",
+"name": "Thiaw",
+"number": 24,
+"position": "Defender",
+"rating": 76,
+"clubName": "Newcastle"
+},
+{
+"id": "WC-Germany-5-Pavlovic",
+"name": "Pavlovic",
+"number": 5,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-8-Goretzka",
+"name": "Goretzka",
+"number": 8,
+"position": "Midfielder",
+"rating": 77,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-13-Gross",
+"name": "Gross",
+"number": 13,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Brighton"
+},
+{
+"id": "WC-Germany-16-Stiller",
+"name": "Stiller",
+"number": 16,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "Stuttgart"
+},
+{
+"id": "WC-Germany-17-Wirtz",
+"name": "Wirtz",
+"number": 17,
+"position": "Midfielder",
+"rating": 87,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Germany-19-Sané",
+"name": "Sané",
+"number": 19,
+"position": "Midfielder",
+"rating": 80,
+"clubName": "Galatasaray"
+},
+{
+"id": "WC-Germany-20-Amiri",
+"name": "Amiri",
+"number": 20,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Mainz"
+},
+{
+"id": "WC-Germany-23-Nmecha",
+"name": "Nmecha",
+"number": 23,
+"position": "Midfielder",
+"rating": 79,
+"clubName": "Dortmund"
+},
+{
+"id": "WC-Germany-25-Karl",
+"name": "Karl",
+"number": 25,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-7-Havertz",
+"name": "Havertz",
+"number": 7,
+"position": "Attacker",
+"rating": 84,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Germany-9-Leweling",
+"name": "Leweling",
+"number": 9,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Stuttgart"
+},
+{
+"id": "WC-Germany-10-Musiala",
+"name": "Musiala",
+"number": 10,
+"position": "Attacker",
+"rating": 89,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Germany-11-Woltemade",
+"name": "Woltemade",
+"number": 11,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Newcastle"
+},
+{
+"id": "WC-Germany-14-Beier",
+"name": "Beier",
+"number": 14,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Dortmund"
+},
+{
+"id": "WC-Germany-26-Undav",
+"name": "Undav",
+"number": 26,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Stuttgart"
+}
+],
+"Netherlands": [
+{
+"id": "WC-Netherlands-1-Verbruggen",
+"name": "Verbruggen",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 78,
+"clubName": "Brighton"
+},
+{
+"id": "WC-Netherlands-13-Roefs",
+"name": "Roefs",
+"number": 13,
+"position": "Goalkeeper",
+"rating": 73,
+"clubName": "Sunderland"
+},
+{
+"id": "WC-Netherlands-23-Flekken",
+"name": "Flekken",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 77,
+"clubName": "Bayer Leverkusen"
+},
+{
+"id": "WC-Netherlands-2-J.Timber",
+"name": "J. Timber",
+"number": 2,
+"position": "Defender",
+"rating": 85,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Netherlands-4-Virgil",
+"name": "Virgil",
+"number": 4,
+"position": "Defender",
+"rating": 89,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Netherlands-5-Aké",
+"name": "Aké",
+"number": 5,
+"position": "Defender",
+"rating": 81,
+"clubName": "Man City"
+},
+{
+"id": "WC-Netherlands-6-VanHecke",
+"name": "Van Hecke",
+"number": 6,
+"position": "Defender",
+"rating": 78,
+"clubName": "Brighton"
+},
+{
+"id": "WC-Netherlands-12-Wieffer",
+"name": "Wieffer",
+"number": 12,
+"position": "Defender",
+"rating": 77,
+"clubName": "Brighton"
+},
+{
+"id": "WC-Netherlands-15-VandeVen",
+"name": "Van de Ven",
+"number": 15,
+"position": "Defender",
+"rating": 83,
+"clubName": "Tottenham"
+},
+{
+"id": "WC-Netherlands-22-Dumfries",
+"name": "Dumfries",
+"number": 22,
+"position": "Defender",
+"rating": 81,
+"clubName": "Inter"
+},
+{
+"id": "WC-Netherlands-25-Hato",
+"name": "Hato",
+"number": 25,
+"position": "Defender",
+"rating": 76,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-Netherlands-3-DeRoon",
+"name": "De Roon",
+"number": 3,
+"position": "Midfielder",
+"rating": 74,
+"clubName": "Atalanta"
+},
+{
+"id": "WC-Netherlands-8-Gravenberch",
+"name": "Gravenberch",
+"number": 8,
+"position": "Midfielder",
+"rating": 83,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Netherlands-14-Reijnders",
+"name": "Reijnders",
+"number": 14,
+"position": "Midfielder",
+"rating": 83,
+"clubName": "Man City"
+},
+{
+"id": "WC-Netherlands-20-Koopmeiners",
+"name": "Koopmeiners",
+"number": 20,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Juventus"
+},
+{
+"id": "WC-Netherlands-21-F.deJong",
+"name": "F. de Jong",
+"number": 21,
+"position": "Midfielder",
+"rating": 85,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Netherlands-26-Q.Timber",
+"name": "Q. Timber",
+"number": 26,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Marseille"
+},
+{
+"id": "WC-Netherlands-7-Kluivert",
+"name": "Kluivert",
+"number": 7,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Bournemouth"
+},
+{
+"id": "WC-Netherlands-9-Weghorst",
+"name": "Weghorst",
+"number": 9,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Ajax"
+},
+{
+"id": "WC-Netherlands-10-Memphis",
+"name": "Memphis",
+"number": 10,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Corinthians"
+},
+{
+"id": "WC-Netherlands-11-Gakpo",
+"name": "Gakpo",
+"number": 11,
+"position": "Attacker",
+"rating": 82,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Netherlands-16-Til",
+"name": "Til",
+"number": 16,
+"position": "Attacker",
+"rating": 73,
+"clubName": "PSV"
+},
+{
+"id": "WC-Netherlands-17-Lang",
+"name": "Lang",
+"number": 17,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Galatasaray"
+},
+{
+"id": "WC-Netherlands-18-Malen",
+"name": "Malen",
+"number": 18,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Roma"
+},
+{
+"id": "WC-Netherlands-19-Brobbey",
+"name": "Brobbey",
+"number": 19,
+"position": "Attacker",
+"rating": 74,
+"clubName": "Sunderland"
+},
+{
+"id": "WC-Netherlands-24-Summerville",
+"name": "Summerville",
+"number": 24,
+"position": "Attacker",
+"rating": 77,
+"clubName": "West Ham"
+}
+],
+"Belgium": [
+{
+"id": "WC-Belgium-1-Courtois",
+"name": "Courtois",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 87,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-Belgium-12-Lammens",
+"name": "Lammens",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 73,
+"clubName": "Man United"
+},
+{
+"id": "WC-Belgium-13-Penders",
+"name": "Penders",
+"number": 13,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "Strasbourg"
+},
+{
+"id": "WC-Belgium-2-Debast",
+"name": "Debast",
+"number": 2,
+"position": "Defender",
+"rating": 76,
+"clubName": "Sporting CP"
+},
+{
+"id": "WC-Belgium-3-Thiate",
+"name": "Thiate",
+"number": 3,
+"position": "Defender",
+"rating": 72,
+"clubName": "Eintracht Frankfurt"
+},
+{
+"id": "WC-Belgium-4-Mechele",
+"name": "Mechele",
+"number": 4,
+"position": "Defender",
+"rating": 73,
+"clubName": "Club Brugge"
+},
+{
+"id": "WC-Belgium-5-DeCuyper",
+"name": "De Cuyper",
+"number": 5,
+"position": "Defender",
+"rating": 74,
+"clubName": "Brighton"
+},
+{
+"id": "WC-Belgium-15-Meunier",
+"name": "Meunier",
+"number": 15,
+"position": "Defender",
+"rating": 73,
+"clubName": "Lille"
+},
+{
+"id": "WC-Belgium-16-DeWinter",
+"name": "De Winter",
+"number": 16,
+"position": "Defender",
+"rating": 76,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-Belgium-18-Seys",
+"name": "Seys",
+"number": 18,
+"position": "Defender",
+"rating": 71,
+"clubName": "Club Brugge"
+},
+{
+"id": "WC-Belgium-21-Castagne",
+"name": "Castagne",
+"number": 21,
+"position": "Defender",
+"rating": 75,
+"clubName": "Fulham"
+},
+{
+"id": "WC-Belgium-25-Ngoy",
+"name": "Ngoy",
+"number": 25,
+"position": "Defender",
+"rating": 70,
+"clubName": "Lille"
+},
+{
+"id": "WC-Belgium-6-Witsel",
+"name": "Witsel",
+"number": 6,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Girona"
+},
+{
+"id": "WC-Belgium-7-DeBruyne",
+"name": "De Bruyne",
+"number": 7,
+"position": "Midfielder",
+"rating": 88,
+"clubName": "Napoli"
+},
+{
+"id": "WC-Belgium-8-Tielemans",
+"name": "Tielemans",
+"number": 8,
+"position": "Midfielder",
+"rating": 80,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-Belgium-19-Moreira",
+"name": "Moreira",
+"number": 19,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Strasbourg"
+},
+{
+"id": "WC-Belgium-20-Vanaken",
+"name": "Vanaken",
+"number": 20,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Club Brugge"
+},
+{
+"id": "WC-Belgium-22-Saelemaekers",
+"name": "Saelemaekers",
+"number": 22,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-Belgium-23-Raskin",
+"name": "Raskin",
+"number": 23,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Rangers"
+},
+{
+"id": "WC-Belgium-24-Onana",
+"name": "Onana",
+"number": 24,
+"position": "Midfielder",
+"rating": 79,
+"clubName": "Aston Villa"
+},
+{
+"id": "WC-Belgium-9-Lukaku",
+"name": "Lukaku",
+"number": 9,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Napoli"
+},
+{
+"id": "WC-Belgium-10-Trossard",
+"name": "Trossard",
+"number": 10,
+"position": "Attacker",
+"rating": 80,
+"clubName": "Arsenal"
+},
+{
+"id": "WC-Belgium-11-Doku",
+"name": "Doku",
+"number": 11,
+"position": "Attacker",
+"rating": 83,
+"clubName": "Man City"
+},
+{
+"id": "WC-Belgium-14-Lukebakio",
+"name": "Lukebakio",
+"number": 14,
+"position": "Attacker",
+"rating": 74,
+"clubName": "Benfica"
+},
+{
+"id": "WC-Belgium-17-DeKetelaere",
+"name": "De Ketelaere",
+"number": 17,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Atalanta"
+},
+{
+"id": "WC-Belgium-26-Fernandez-Pardo",
+"name": "Fernandez-Pardo",
+"number": 26,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Lille"
+}
+],
+"Croatia": [
+{
+"id": "WC-Croatia-1-Livakovic",
+"name": "Livakovic",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 78,
+"clubName": "Dinamo Zagreb"
+},
+{
+"id": "WC-Croatia-12-Pandur",
+"name": "Pandur",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "Hull City"
+},
+{
+"id": "WC-Croatia-23-Kotarski",
+"name": "Kotarski",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "København"
+},
+{
+"id": "WC-Croatia-2-Stanisic",
+"name": "Stanisic",
+"number": 2,
+"position": "Defender",
+"rating": 75,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Croatia-3-Pongracic",
+"name": "Pongracic",
+"number": 3,
+"position": "Defender",
+"rating": 73,
+"clubName": "Fiorentina"
+},
+{
+"id": "WC-Croatia-4-Gvardiol",
+"name": "Gvardiol",
+"number": 4,
+"position": "Defender",
+"rating": 86,
+"clubName": "Man City"
+},
+{
+"id": "WC-Croatia-5-Caleta-Car",
+"name": "Caleta-Car",
+"number": 5,
+"position": "Defender",
+"rating": 73,
+"clubName": "Real Sociedad"
+},
+{
+"id": "WC-Croatia-6-Sutalo",
+"name": "Sutalo",
+"number": 6,
+"position": "Defender",
+"rating": 75,
+"clubName": "Ajax"
+},
+{
+"id": "WC-Croatia-18-Jakic",
+"name": "Jakic",
+"number": 18,
+"position": "Defender",
+"rating": 71,
+"clubName": "Augsburg"
+},
+{
+"id": "WC-Croatia-22-Vuskovic",
+"name": "Vuskovic",
+"number": 22,
+"position": "Defender",
+"rating": 71,
+"clubName": "Hamburger SV"
+},
+{
+"id": "WC-Croatia-25-Erlic",
+"name": "Erlic",
+"number": 25,
+"position": "Defender",
+"rating": 71,
+"clubName": "Midtjylland"
+},
+{
+"id": "WC-Croatia-7-Moro",
+"name": "Moro",
+"number": 7,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Bologna"
+},
+{
+"id": "WC-Croatia-8-Kovacic",
+"name": "Kovacic",
+"number": 8,
+"position": "Midfielder",
+"rating": 80,
+"clubName": "Man City"
+},
+{
+"id": "WC-Croatia-10-Modric",
+"name": "Modric",
+"number": 10,
+"position": "Midfielder",
+"rating": 83,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-Croatia-13-Vlasic",
+"name": "Vlasic",
+"number": 13,
+"position": "Midfielder",
+"rating": 74,
+"clubName": "Torino"
+},
+{
+"id": "WC-Croatia-15-Pasalic",
+"name": "Pasalic",
+"number": 15,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Atalanta"
+},
+{
+"id": "WC-Croatia-16-Baturina",
+"name": "Baturina",
+"number": 16,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Como"
+},
+{
+"id": "WC-Croatia-17-P.Sucic",
+"name": "P. Sucic",
+"number": 17,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Inter"
+},
+{
+"id": "WC-Croatia-19-Fruk",
+"name": "Fruk",
+"number": 19,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Rijeka"
+},
+{
+"id": "WC-Croatia-21-Sucic",
+"name": "Sucic",
+"number": 21,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Real Sociedad"
+},
+{
+"id": "WC-Croatia-9-Kramaric",
+"name": "Kramaric",
+"number": 9,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Hoffenheim"
+},
+{
+"id": "WC-Croatia-11-Budimir",
+"name": "Budimir",
+"number": 11,
+"position": "Attacker",
+"rating": 75,
+"clubName": "Osasuna"
+},
+{
+"id": "WC-Croatia-14-Perisic",
+"name": "Perisic",
+"number": 14,
+"position": "Attacker",
+"rating": 76,
+"clubName": "PSV"
+},
+{
+"id": "WC-Croatia-20-Matanovic",
+"name": "Matanovic",
+"number": 20,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Freiburg"
+},
+{
+"id": "WC-Croatia-24-M.Pasalic",
+"name": "M. Pasalic",
+"number": 24,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Orlando City"
+},
+{
+"id": "WC-Croatia-26-Musa",
+"name": "Musa",
+"number": 26,
+"position": "Attacker",
+"rating": 68,
+"clubName": "FC Dallas"
+}
+],
+"Uruguay": [
+{
+"id": "WC-Uruguay-1-S.Rochet",
+"name": "S. Rochet",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 76,
+"clubName": "Internacional"
+},
+{
+"id": "WC-Uruguay-12-S.Mele",
+"name": "S. Mele",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "Monterrey"
+},
+{
+"id": "WC-Uruguay-23-F.Muslera",
+"name": "F. Muslera",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 71,
+"clubName": "Estudiantes LP"
+},
+{
+"id": "WC-Uruguay-2-J.M.Giménez",
+"name": "J.M. Giménez",
+"number": 2,
+"position": "Defender",
+"rating": 79,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Uruguay-3-S.Cáceres",
+"name": "S. Cáceres",
+"number": 3,
+"position": "Defender",
+"rating": 73,
+"clubName": "Club América"
+},
+{
+"id": "WC-Uruguay-4-R.Araujo",
+"name": "R. Araujo",
+"number": 4,
+"position": "Defender",
+"rating": 83,
+"clubName": "Barcelona"
+},
+{
+"id": "WC-Uruguay-13-G.Varela",
+"name": "G. Varela",
+"number": 13,
+"position": "Defender",
+"rating": 71,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Uruguay-16-M.Olivera",
+"name": "M. Olivera",
+"number": 16,
+"position": "Defender",
+"rating": 77,
+"clubName": "Napoli"
+},
+{
+"id": "WC-Uruguay-17-M.Viña",
+"name": "M. Viña",
+"number": 17,
+"position": "Defender",
+"rating": 73,
+"clubName": "River Plate"
+},
+{
+"id": "WC-Uruguay-24-S.Bueno",
+"name": "S. Bueno",
+"number": 24,
+"position": "Defender",
+"rating": 73,
+"clubName": "Wolves"
+},
+{
+"id": "WC-Uruguay-5-M.Ugarte",
+"name": "M. Ugarte",
+"number": 5,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Man United"
+},
+{
+"id": "WC-Uruguay-6-R.Bentancur",
+"name": "R. Bentancur",
+"number": 6,
+"position": "Midfielder",
+"rating": 79,
+"clubName": "Tottenham"
+},
+{
+"id": "WC-Uruguay-7-N.delaCruz",
+"name": "N. de la Cruz",
+"number": 7,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Uruguay-8-F.Valverde",
+"name": "F. Valverde",
+"number": 8,
+"position": "Midfielder",
+"rating": 88,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-Uruguay-10-G.deArrascaeta",
+"name": "G. de Arrascaeta",
+"number": 10,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Uruguay-14-A.Canobbio",
+"name": "A. Canobbio",
+"number": 14,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Fluminense"
+},
+{
+"id": "WC-Uruguay-15-E.Martínez",
+"name": "E. Martínez",
+"number": 15,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Palmeiras"
+},
+{
+"id": "WC-Uruguay-20-M.Araujo",
+"name": "M. Araujo",
+"number": 20,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Sporting CP"
+},
+{
+"id": "WC-Uruguay-22-J.Piquerez",
+"name": "J. Piquerez",
+"number": 22,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Palmeiras"
+},
+{
+"id": "WC-Uruguay-25-J.M.Sanabria",
+"name": "J.M. Sanabria",
+"number": 25,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Real Salt Lake"
+},
+{
+"id": "WC-Uruguay-26-R.Zalazar",
+"name": "R. Zalazar",
+"number": 26,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Braga"
+},
+{
+"id": "WC-Uruguay-9-D.Núñez",
+"name": "D. Núñez",
+"number": 9,
+"position": "Attacker",
+"rating": 81,
+"clubName": "Al Hilal"
+},
+{
+"id": "WC-Uruguay-11-F.Pellistri",
+"name": "F. Pellistri",
+"number": 11,
+"position": "Attacker",
+"rating": 75,
+"clubName": "Panathinaikos"
+},
+{
+"id": "WC-Uruguay-18-B.Rodríguez",
+"name": "B. Rodríguez",
+"number": 18,
+"position": "Attacker",
+"rating": 74,
+"clubName": "Club América"
+},
+{
+"id": "WC-Uruguay-19-R.Aguirre",
+"name": "R. Aguirre",
+"number": 19,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Tigres UANL"
+},
+{
+"id": "WC-Uruguay-21-F.Viñas",
+"name": "F. Viñas",
+"number": 21,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Real Oviedo"
+}
+],
+"Morocco": [
+{
+"id": "WC-Morocco-1-Bono",
+"name": "Bono",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 81,
+"clubName": "Al Hilal"
+},
+{
+"id": "WC-Morocco-12-ElKajoui",
+"name": "El Kajoui",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "RS Berkane"
+},
+{
+"id": "WC-Morocco-22-Tagnaouti",
+"name": "Tagnaouti",
+"number": 22,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "ASFAR"
+},
+{
+"id": "WC-Morocco-2-Hakimi",
+"name": "Hakimi",
+"number": 2,
+"position": "Defender",
+"rating": 86,
+"clubName": "PSG"
+},
+{
+"id": "WC-Morocco-3-Mazraoui",
+"name": "Mazraoui",
+"number": 3,
+"position": "Defender",
+"rating": 78,
+"clubName": "Man United"
+},
+{
+"id": "WC-Morocco-5-Aguerd",
+"name": "Aguerd",
+"number": 5,
+"position": "Defender",
+"rating": 78,
+"clubName": "Marseille"
+},
+{
+"id": "WC-Morocco-13-ElOuahdi",
+"name": "El Ouahdi",
+"number": 13,
+"position": "Defender",
+"rating": 71,
+"clubName": "KRC Genk"
+},
+{
+"id": "WC-Morocco-14-Issa",
+"name": "Issa",
+"number": 14,
+"position": "Defender",
+"rating": 71,
+"clubName": "Fulham"
+},
+{
+"id": "WC-Morocco-18-Riad",
+"name": "Riad",
+"number": 18,
+"position": "Defender",
+"rating": 71,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-Morocco-19-Belammari",
+"name": "Belammari",
+"number": 19,
+"position": "Defender",
+"rating": 68,
+"clubName": "Al Ahly"
+},
+{
+"id": "WC-Morocco-25-Halhal",
+"name": "Halhal",
+"number": 25,
+"position": "Defender",
+"rating": 68,
+"clubName": "KV Mechelen"
+},
+{
+"id": "WC-Morocco-26-Salah-Eddine",
+"name": "Salah-Eddine",
+"number": 26,
+"position": "Defender",
+"rating": 73,
+"clubName": "PSV"
+},
+{
+"id": "WC-Morocco-4-Amrabat",
+"name": "Amrabat",
+"number": 4,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "Real Betis"
+},
+{
+"id": "WC-Morocco-6-Bouaddi",
+"name": "Bouaddi",
+"number": 6,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "Lille"
+},
+{
+"id": "WC-Morocco-7-Talbi",
+"name": "Talbi",
+"number": 7,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Sunderland"
+},
+{
+"id": "WC-Morocco-8-Ouahi",
+"name": "Ouahi",
+"number": 8,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Girona"
+},
+{
+"id": "WC-Morocco-11-Saibari",
+"name": "Saibari",
+"number": 11,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "PSV"
+},
+{
+"id": "WC-Morocco-15-ElMourabet",
+"name": "El Mourabet",
+"number": 15,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Strasbourg"
+},
+{
+"id": "WC-Morocco-16-Yassine",
+"name": "Yassine",
+"number": 16,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Strasbourg"
+},
+{
+"id": "WC-Morocco-23-ElKhannouss",
+"name": "El Khannouss",
+"number": 23,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Stuttgart"
+},
+{
+"id": "WC-Morocco-24-ElAynaoui",
+"name": "El Aynaoui",
+"number": 24,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Roma"
+},
+{
+"id": "WC-Morocco-9-Rahimi",
+"name": "Rahimi",
+"number": 9,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Al Ain"
+},
+{
+"id": "WC-Morocco-10-Brahim",
+"name": "Brahim",
+"number": 10,
+"position": "Attacker",
+"rating": 79,
+"clubName": "Real Madrid"
+},
+{
+"id": "WC-Morocco-17-Ezzalzouli",
+"name": "Ezzalzouli",
+"number": 17,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Real Betis"
+},
+{
+"id": "WC-Morocco-20-ElKaabi",
+"name": "El Kaabi",
+"number": 20,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Olympiacos"
+},
+{
+"id": "WC-Morocco-21-Amaimouni",
+"name": "Amaimouni",
+"number": 21,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Eintracht Frankfurt"
+}
+],
+"Colombia": [
+{
+"id": "WC-Colombia-1-Ospina",
+"name": "Ospina",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 76,
+"clubName": "Atlético Nacional"
+},
+{
+"id": "WC-Colombia-12-C.Vargas",
+"name": "C. Vargas",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 71,
+"clubName": "Atlas"
+},
+{
+"id": "WC-Colombia-24-Montero",
+"name": "Montero",
+"number": 24,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Vélez Sarsfield"
+},
+{
+"id": "WC-Colombia-2-D.Muñoz",
+"name": "D. Muñoz",
+"number": 2,
+"position": "Defender",
+"rating": 77,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-Colombia-3-J.Lucumi",
+"name": "J. Lucumi",
+"number": 3,
+"position": "Defender",
+"rating": 75,
+"clubName": "Bologna"
+},
+{
+"id": "WC-Colombia-4-Arias",
+"name": "Arias",
+"number": 4,
+"position": "Defender",
+"rating": 70,
+"clubName": "Independiente"
+},
+{
+"id": "WC-Colombia-13-Y.Mina",
+"name": "Y. Mina",
+"number": 13,
+"position": "Defender",
+"rating": 73,
+"clubName": "Cagliari"
+},
+{
+"id": "WC-Colombia-14-Puerta",
+"name": "Puerta",
+"number": 14,
+"position": "Defender",
+"rating": 70,
+"clubName": "Racing Santander"
+},
+{
+"id": "WC-Colombia-17-J.Mojica",
+"name": "J. Mojica",
+"number": 17,
+"position": "Defender",
+"rating": 73,
+"clubName": "Mallorca"
+},
+{
+"id": "WC-Colombia-18-W.Ditta",
+"name": "W. Ditta",
+"number": 18,
+"position": "Defender",
+"rating": 70,
+"clubName": "Cruz Azul"
+},
+{
+"id": "WC-Colombia-22-Machado",
+"name": "Machado",
+"number": 22,
+"position": "Defender",
+"rating": 70,
+"clubName": "Nantes"
+},
+{
+"id": "WC-Colombia-23-Sanchez",
+"name": "Sanchez",
+"number": 23,
+"position": "Defender",
+"rating": 78,
+"clubName": "Galatasaray"
+},
+{
+"id": "WC-Colombia-5-K.Castaño",
+"name": "K. Castaño",
+"number": 5,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "River Plate"
+},
+{
+"id": "WC-Colombia-6-RichardRios",
+"name": "Richard Rios",
+"number": 6,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Benfica"
+},
+{
+"id": "WC-Colombia-8-Carrascal",
+"name": "Carrascal",
+"number": 8,
+"position": "Midfielder",
+"rating": 74,
+"clubName": "Flamengo"
+},
+{
+"id": "WC-Colombia-15-Portilla",
+"name": "Portilla",
+"number": 15,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Athletico Paranaense"
+},
+{
+"id": "WC-Colombia-16-J.Lerma",
+"name": "J. Lerma",
+"number": 16,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-Colombia-20-Quintero",
+"name": "Quintero",
+"number": 20,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "River Plate"
+},
+{
+"id": "WC-Colombia-26-B.Gutiérrez",
+"name": "B. Gutiérrez",
+"number": 26,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Guadalajara"
+},
+{
+"id": "WC-Colombia-7-LuisDiaz",
+"name": "Luis Diaz",
+"number": 7,
+"position": "Attacker",
+"rating": 85,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Colombia-9-Cordoba",
+"name": "Cordoba",
+"number": 9,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Krasnodar"
+},
+{
+"id": "WC-Colombia-10-James",
+"name": "James",
+"number": 10,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Minnesota United"
+},
+{
+"id": "WC-Colombia-11-J.Arias",
+"name": "J. Arias",
+"number": 11,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Palmeiras"
+},
+{
+"id": "WC-Colombia-19-C.Hernandez",
+"name": "C. Hernandez",
+"number": 19,
+"position": "Attacker",
+"rating": 74,
+"clubName": "Real Betis"
+},
+{
+"id": "WC-Colombia-21-Campaz",
+"name": "Campaz",
+"number": 21,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Rosario Central"
+},
+{
+"id": "WC-Colombia-25-Suarez",
+"name": "Suarez",
+"number": 25,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Sporting CP"
+}
+],
+"Japan": [
+{
+"id": "WC-Japan-1-Suzuki",
+"name": "Suzuki",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 75,
+"clubName": "Parma"
+},
+{
+"id": "WC-Japan-12-Osako",
+"name": "Osako",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Sanfrecce Hiroshima"
+},
+{
+"id": "WC-Japan-23-Hayakawa",
+"name": "Hayakawa",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Kashima Antlers"
+},
+{
+"id": "WC-Japan-2-Sugawara",
+"name": "Sugawara",
+"number": 2,
+"position": "Defender",
+"rating": 73,
+"clubName": "Werder Bremen"
+},
+{
+"id": "WC-Japan-3-Taniguchi",
+"name": "Taniguchi",
+"number": 3,
+"position": "Defender",
+"rating": 70,
+"clubName": "Sint-Truiden"
+},
+{
+"id": "WC-Japan-4-Itakura",
+"name": "Itakura",
+"number": 4,
+"position": "Defender",
+"rating": 78,
+"clubName": "Ajax"
+},
+{
+"id": "WC-Japan-5-Nagatomo",
+"name": "Nagatomo",
+"number": 5,
+"position": "Defender",
+"rating": 68,
+"clubName": "FC Tokyo"
+},
+{
+"id": "WC-Japan-16-Watanabe",
+"name": "Watanabe",
+"number": 16,
+"position": "Defender",
+"rating": 73,
+"clubName": "Feyenoord"
+},
+{
+"id": "WC-Japan-20-Seko",
+"name": "Seko",
+"number": 20,
+"position": "Defender",
+"rating": 70,
+"clubName": "Le Havre"
+},
+{
+"id": "WC-Japan-21-H.Ito",
+"name": "H. Ito",
+"number": 21,
+"position": "Defender",
+"rating": 76,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Japan-22-Tomiyasu",
+"name": "Tomiyasu",
+"number": 22,
+"position": "Defender",
+"rating": 78,
+"clubName": "Ajax"
+},
+{
+"id": "WC-Japan-25-J.Suzuki",
+"name": "J. Suzuki",
+"number": 25,
+"position": "Defender",
+"rating": 68,
+"clubName": "København"
+},
+{
+"id": "WC-Japan-6-Endo",
+"name": "Endo",
+"number": 6,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Liverpool"
+},
+{
+"id": "WC-Japan-7-Tanaka",
+"name": "Tanaka",
+"number": 7,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Leeds United"
+},
+{
+"id": "WC-Japan-8-Kubo",
+"name": "Kubo",
+"number": 8,
+"position": "Midfielder",
+"rating": 81,
+"clubName": "Real Sociedad"
+},
+{
+"id": "WC-Japan-11-Daizen",
+"name": "Daizen",
+"number": 11,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Celtic"
+},
+{
+"id": "WC-Japan-13-Nakamura",
+"name": "Nakamura",
+"number": 13,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Reims"
+},
+{
+"id": "WC-Japan-14-Ito",
+"name": "Ito",
+"number": 14,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Genk"
+},
+{
+"id": "WC-Japan-15-Kamada",
+"name": "Kamada",
+"number": 15,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-Japan-17-Y.Suzuki",
+"name": "Y. Suzuki",
+"number": 17,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Freiburg"
+},
+{
+"id": "WC-Japan-24-Sano",
+"name": "Sano",
+"number": 24,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Mainz"
+},
+{
+"id": "WC-Japan-9-Goto",
+"name": "Goto",
+"number": 9,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Sint-Truiden"
+},
+{
+"id": "WC-Japan-10-Doan",
+"name": "Doan",
+"number": 10,
+"position": "Attacker",
+"rating": 77,
+"clubName": "Eintracht Frankfurt"
+},
+{
+"id": "WC-Japan-18-Ayase",
+"name": "Ayase",
+"number": 18,
+"position": "Attacker",
+"rating": 74,
+"clubName": "Feyenoord"
+},
+{
+"id": "WC-Japan-19-Ogawa",
+"name": "Ogawa",
+"number": 19,
+"position": "Attacker",
+"rating": 68,
+"clubName": "NEC Nijmegen"
+},
+{
+"id": "WC-Japan-26-Shiogai",
+"name": "Shiogai",
+"number": 26,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Wolfsburg"
+}
+],
+"USA": [
+{
+"id": "WC-USA-1-Turner",
+"name": "Turner",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 74,
+"clubName": "New England Revolution"
+},
+{
+"id": "WC-USA-24-Freese",
+"name": "Freese",
+"number": 24,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "New York City FC"
+},
+{
+"id": "WC-USA-25-Brady",
+"name": "Brady",
+"number": 25,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Chicago Fire"
+},
+{
+"id": "WC-USA-2-Dest",
+"name": "Dest",
+"number": 2,
+"position": "Defender",
+"rating": 76,
+"clubName": "PSV"
+},
+{
+"id": "WC-USA-3-Richards",
+"name": "Richards",
+"number": 3,
+"position": "Defender",
+"rating": 76,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-USA-5-A.Robinson",
+"name": "A. Robinson",
+"number": 5,
+"position": "Defender",
+"rating": 79,
+"clubName": "Fulham"
+},
+{
+"id": "WC-USA-6-Trusty",
+"name": "Trusty",
+"number": 6,
+"position": "Defender",
+"rating": 71,
+"clubName": "Celtic"
+},
+{
+"id": "WC-USA-12-M.Robinson",
+"name": "M. Robinson",
+"number": 12,
+"position": "Defender",
+"rating": 68,
+"clubName": "Cincinnati"
+},
+{
+"id": "WC-USA-13-Ream",
+"name": "Ream",
+"number": 13,
+"position": "Defender",
+"rating": 70,
+"clubName": "Charlotte FC"
+},
+{
+"id": "WC-USA-16-Freeman",
+"name": "Freeman",
+"number": 16,
+"position": "Defender",
+"rating": 73,
+"clubName": "Villarreal"
+},
+{
+"id": "WC-USA-18-Arfsten",
+"name": "Arfsten",
+"number": 18,
+"position": "Defender",
+"rating": 70,
+"clubName": "Columbus Crew"
+},
+{
+"id": "WC-USA-22-McKenzie",
+"name": "McKenzie",
+"number": 22,
+"position": "Defender",
+"rating": 71,
+"clubName": "Toulouse"
+},
+{
+"id": "WC-USA-23-Scally",
+"name": "Scally",
+"number": 23,
+"position": "Defender",
+"rating": 73,
+"clubName": "Mönchengladbach"
+},
+{
+"id": "WC-USA-4-Adams",
+"name": "Adams",
+"number": 4,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Bournemouth"
+},
+{
+"id": "WC-USA-7-Reyna",
+"name": "Reyna",
+"number": 7,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "Mönchengladbach"
+},
+{
+"id": "WC-USA-8-McKennie",
+"name": "McKennie",
+"number": 8,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Juventus"
+},
+{
+"id": "WC-USA-14-Berhalter",
+"name": "Berhalter",
+"number": 14,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Vancouver Whitecaps"
+},
+{
+"id": "WC-USA-15-Roldan",
+"name": "Roldan",
+"number": 15,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Seattle Sounders"
+},
+{
+"id": "WC-USA-17-Tillman",
+"name": "Tillman",
+"number": 17,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "Bayer Leverkusen"
+},
+{
+"id": "WC-USA-9-Pepi",
+"name": "Pepi",
+"number": 9,
+"position": "Attacker",
+"rating": 76,
+"clubName": "PSV"
+},
+{
+"id": "WC-USA-10-Pulisic",
+"name": "Pulisic",
+"number": 10,
+"position": "Attacker",
+"rating": 84,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-USA-11-Aaronson",
+"name": "Aaronson",
+"number": 11,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Leeds United"
+},
+{
+"id": "WC-USA-19-Wright",
+"name": "Wright",
+"number": 19,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Coventry City"
+},
+{
+"id": "WC-USA-20-Balogun",
+"name": "Balogun",
+"number": 20,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Monaco"
+},
+{
+"id": "WC-USA-26-Zendejas",
+"name": "Zendejas",
+"number": 26,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Club América"
+},
+{
+"id": "WC-USA-21-Weah",
+"name": "Weah",
+"number": 21,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Marseille"
+}
+],
+"Mexico": [
+{
+"id": "WC-Mexico-1-R.Rangel",
+"name": "R. Rangel",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 71,
+"clubName": "Guadalajara"
+},
+{
+"id": "WC-Mexico-12-C.Acevedo",
+"name": "C. Acevedo",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Santos Laguna"
+},
+{
+"id": "WC-Mexico-13-G.Ochoa",
+"name": "G. Ochoa",
+"number": 13,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "AEL Limassol"
+},
+{
+"id": "WC-Mexico-2-J.Sánchez",
+"name": "J. Sánchez",
+"number": 2,
+"position": "Defender",
+"rating": 70,
+"clubName": "PAOK"
+},
+{
+"id": "WC-Mexico-3-C.Montes",
+"name": "C. Montes",
+"number": 3,
+"position": "Defender",
+"rating": 73,
+"clubName": "Lokomotiv Moscow"
+},
+{
+"id": "WC-Mexico-4-E.Álvarez",
+"name": "E. Álvarez",
+"number": 4,
+"position": "Defender",
+"rating": 73,
+"clubName": "Fenerbahçe"
+},
+{
+"id": "WC-Mexico-5-J.Vásquez",
+"name": "J. Vásquez",
+"number": 5,
+"position": "Defender",
+"rating": 70,
+"clubName": "Genoa"
+},
+{
+"id": "WC-Mexico-15-I.Reyes",
+"name": "I. Reyes",
+"number": 15,
+"position": "Defender",
+"rating": 74,
+"clubName": "Club América"
+},
+{
+"id": "WC-Mexico-20-M.Chávez",
+"name": "M. Chávez",
+"number": 20,
+"position": "Defender",
+"rating": 70,
+"clubName": "AZ Alkmaar"
+},
+{
+"id": "WC-Mexico-23-J.Gallardo",
+"name": "J. Gallardo",
+"number": 23,
+"position": "Defender",
+"rating": 68,
+"clubName": "Toluca"
+},
+{
+"id": "WC-Mexico-6-E.Lira",
+"name": "E. Lira",
+"number": 6,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Cruz Azul"
+},
+{
+"id": "WC-Mexico-7-L.Romo",
+"name": "L. Romo",
+"number": 7,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Guadalajara"
+},
+{
+"id": "WC-Mexico-8-Fidalgo",
+"name": "Fidalgo",
+"number": 8,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Real Betis"
+},
+{
+"id": "WC-Mexico-17-Orbelín",
+"name": "Orbelín",
+"number": 17,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "AEK Athens"
+},
+{
+"id": "WC-Mexico-18-O.Vargas",
+"name": "O. Vargas",
+"number": 18,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Atlético de Madrid"
+},
+{
+"id": "WC-Mexico-19-G.Mora",
+"name": "G. Mora",
+"number": 19,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Tijuana"
+},
+{
+"id": "WC-Mexico-24-L.Chávez",
+"name": "L. Chávez",
+"number": 24,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Dynamo Moscow"
+},
+{
+"id": "WC-Mexico-26-B.Gutiérrez",
+"name": "B. Gutiérrez",
+"number": 26,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Guadalajara"
+},
+{
+"id": "WC-Mexico-9-Raúl",
+"name": "Raúl",
+"number": 9,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Fulham"
+},
+{
+"id": "WC-Mexico-10-A.Vega",
+"name": "A. Vega",
+"number": 10,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Toluca"
+},
+{
+"id": "WC-Mexico-11-S.Giménez",
+"name": "S. Giménez",
+"number": 11,
+"position": "Attacker",
+"rating": 78,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-Mexico-14-A.González",
+"name": "A. González",
+"number": 14,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Guadalajara"
+},
+{
+"id": "WC-Mexico-16-J.Quiñones",
+"name": "J. Quiñones",
+"number": 16,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Al Qadsiah"
+},
+{
+"id": "WC-Mexico-21-C.Huerta",
+"name": "C. Huerta",
+"number": 21,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Anderlecht"
+},
+{
+"id": "WC-Mexico-22-G.Martínez",
+"name": "G. Martínez",
+"number": 22,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Pumas UNAM"
+},
+{
+"id": "WC-Mexico-25-R.Alvarado",
+"name": "R. Alvarado",
+"number": 25,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Guadalajara"
+}
+],
+"Switzerland": [
+{
+"id": "WC-Switzerland-1-Kobel",
+"name": "Kobel",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 83,
+"clubName": "Dortmund"
+},
+{
+"id": "WC-Switzerland-12-Mvogo",
+"name": "Mvogo",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 71,
+"clubName": "Lorient"
+},
+{
+"id": "WC-Switzerland-21-Keller",
+"name": "Keller",
+"number": 21,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "Young Boys"
+},
+{
+"id": "WC-Switzerland-2-Muheim",
+"name": "Muheim",
+"number": 2,
+"position": "Defender",
+"rating": 71,
+"clubName": "Hamburger SV"
+},
+{
+"id": "WC-Switzerland-3-Widmer",
+"name": "Widmer",
+"number": 3,
+"position": "Defender",
+"rating": 71,
+"clubName": "Mainz"
+},
+{
+"id": "WC-Switzerland-4-Elvedi",
+"name": "Elvedi",
+"number": 4,
+"position": "Defender",
+"rating": 75,
+"clubName": "Mönchengladbach"
+},
+{
+"id": "WC-Switzerland-5-Akanji",
+"name": "Akanji",
+"number": 5,
+"position": "Defender",
+"rating": 81,
+"clubName": "Inter"
+},
+{
+"id": "WC-Switzerland-13-Rodríguez",
+"name": "Rodríguez",
+"number": 13,
+"position": "Defender",
+"rating": 73,
+"clubName": "Real Betis"
+},
+{
+"id": "WC-Switzerland-18-Comert",
+"name": "Comert",
+"number": 18,
+"position": "Defender",
+"rating": 70,
+"clubName": "Valencia"
+},
+{
+"id": "WC-Switzerland-24-Amenda",
+"name": "Amenda",
+"number": 24,
+"position": "Defender",
+"rating": 73,
+"clubName": "Eintracht Frankfurt"
+},
+{
+"id": "WC-Switzerland-25-Jaquez",
+"name": "Jaquez",
+"number": 25,
+"position": "Defender",
+"rating": 70,
+"clubName": "Stuttgart"
+},
+{
+"id": "WC-Switzerland-6-Zakaria",
+"name": "Zakaria",
+"number": 6,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Monaco"
+},
+{
+"id": "WC-Switzerland-8-Freuler",
+"name": "Freuler",
+"number": 8,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Bologna"
+},
+{
+"id": "WC-Switzerland-9-Manzambi",
+"name": "Manzambi",
+"number": 9,
+"position": "Midfielder",
+"rating": 70,
+"clubName": "Freiburg"
+},
+{
+"id": "WC-Switzerland-10-Xhaka",
+"name": "Xhaka",
+"number": 10,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "Sunderland"
+},
+{
+"id": "WC-Switzerland-14-Jashari",
+"name": "Jashari",
+"number": 14,
+"position": "Midfielder",
+"rating": 77,
+"clubName": "AC Milan"
+},
+{
+"id": "WC-Switzerland-15-Sow",
+"name": "Sow",
+"number": 15,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Sevilla"
+},
+{
+"id": "WC-Switzerland-20-Aebischer",
+"name": "Aebischer",
+"number": 20,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Pisa"
+},
+{
+"id": "WC-Switzerland-22-Rieder",
+"name": "Rieder",
+"number": 22,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Augsburg"
+},
+{
+"id": "WC-Switzerland-7-Embolo",
+"name": "Embolo",
+"number": 7,
+"position": "Attacker",
+"rating": 75,
+"clubName": "Rennes"
+},
+{
+"id": "WC-Switzerland-11-Ndoye",
+"name": "Ndoye",
+"number": 11,
+"position": "Attacker",
+"rating": 76,
+"clubName": "Nottingham Forest"
+},
+{
+"id": "WC-Switzerland-16-Fassnacht",
+"name": "Fassnacht",
+"number": 16,
+"position": "Attacker",
+"rating": 70,
+"clubName": "Young Boys"
+},
+{
+"id": "WC-Switzerland-17-Vargas",
+"name": "Vargas",
+"number": 17,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Sevilla"
+},
+{
+"id": "WC-Switzerland-19-Okafor",
+"name": "Okafor",
+"number": 19,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Leeds United"
+},
+{
+"id": "WC-Switzerland-23-Amdouni",
+"name": "Amdouni",
+"number": 23,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Burnley"
+},
+{
+"id": "WC-Switzerland-26-Itten",
+"name": "Itten",
+"number": 26,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Fortuna Düsseldorf"
+}
+],
+"Senegal": [
+{
+"id": "WC-Senegal-1-Y.Diouf",
+"name": "Y. Diouf",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 73,
+"clubName": "Nice"
+},
+{
+"id": "WC-Senegal-16-Mendy",
+"name": "Mendy",
+"number": 16,
+"position": "Goalkeeper",
+"rating": 79,
+"clubName": "Al Ahli"
+},
+{
+"id": "WC-Senegal-23-Diaw",
+"name": "Diaw",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Le Havre"
+},
+{
+"id": "WC-Senegal-2-Sarr",
+"name": "Sarr",
+"number": 2,
+"position": "Defender",
+"rating": 81,
+"clubName": "Chelsea"
+},
+{
+"id": "WC-Senegal-3-Koulibaly",
+"name": "Koulibaly",
+"number": 3,
+"position": "Defender",
+"rating": 81,
+"clubName": "Al Hilal"
+},
+{
+"id": "WC-Senegal-4-Seck",
+"name": "Seck",
+"number": 4,
+"position": "Defender",
+"rating": 68,
+"clubName": "Maccabi Haifa"
+},
+{
+"id": "WC-Senegal-14-Jakobs",
+"name": "Jakobs",
+"number": 14,
+"position": "Defender",
+"rating": 73,
+"clubName": "Galatasaray"
+},
+{
+"id": "WC-Senegal-15-Krépin",
+"name": "Krépin",
+"number": 15,
+"position": "Defender",
+"rating": 73,
+"clubName": "Monaco"
+},
+{
+"id": "WC-Senegal-19-Niakhate",
+"name": "Niakhate",
+"number": 19,
+"position": "Defender",
+"rating": 76,
+"clubName": "Lyon"
+},
+{
+"id": "WC-Senegal-24-A.Mendy",
+"name": "A. Mendy",
+"number": 24,
+"position": "Defender",
+"rating": 70,
+"clubName": "Nice"
+},
+{
+"id": "WC-Senegal-25-Diouf",
+"name": "Diouf",
+"number": 25,
+"position": "Defender",
+"rating": 73,
+"clubName": "West Ham"
+},
+{
+"id": "WC-Senegal-5-Gana",
+"name": "Gana",
+"number": 5,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Everton"
+},
+{
+"id": "WC-Senegal-6-P.I.Ciss",
+"name": "P.I. Ciss",
+"number": 6,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Rayo Vallecano"
+},
+{
+"id": "WC-Senegal-8-Lamine",
+"name": "Lamine",
+"number": 8,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Monaco"
+},
+{
+"id": "WC-Senegal-17-P.M.Sarr",
+"name": "P.M. Sarr",
+"number": 17,
+"position": "Midfielder",
+"rating": 79,
+"clubName": "Tottenham"
+},
+{
+"id": "WC-Senegal-21-H.Diarra",
+"name": "H. Diarra",
+"number": 21,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Sunderland"
+},
+{
+"id": "WC-Senegal-22-Bara",
+"name": "Bara",
+"number": 22,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Senegal-26-Gueye",
+"name": "Gueye",
+"number": 26,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Villarreal"
+},
+{
+"id": "WC-Senegal-7-Diao",
+"name": "Diao",
+"number": 7,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Como"
+},
+{
+"id": "WC-Senegal-9-B.Dieng",
+"name": "B. Dieng",
+"number": 9,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Lorient"
+},
+{
+"id": "WC-Senegal-10-Mané",
+"name": "Mané",
+"number": 10,
+"position": "Attacker",
+"rating": 80,
+"clubName": "Al Nassr"
+},
+{
+"id": "WC-Senegal-11-Jackson",
+"name": "Jackson",
+"number": 11,
+"position": "Attacker",
+"rating": 80,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Senegal-12-Cherif",
+"name": "Cherif",
+"number": 12,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Samsunspor"
+},
+{
+"id": "WC-Senegal-13-Ndiaye",
+"name": "Ndiaye",
+"number": 13,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Everton"
+},
+{
+"id": "WC-Senegal-18-Sarr",
+"name": "Sarr",
+"number": 18,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Crystal Palace"
+},
+{
+"id": "WC-Senegal-20-Mbaye",
+"name": "Mbaye",
+"number": 20,
+"position": "Attacker",
+"rating": 73,
+"clubName": "PSG"
+}
+],
+"Canada": [
+{
+"id": "WC-Canada-1-St.Clair",
+"name": "St. Clair",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 70,
+"clubName": "Inter Miami"
+},
+{
+"id": "WC-Canada-16-Crepeau",
+"name": "Crepeau",
+"number": 16,
+"position": "Goalkeeper",
+"rating": 73,
+"clubName": "Orlando City"
+},
+{
+"id": "WC-Canada-18-Goodman",
+"name": "Goodman",
+"number": 18,
+"position": "Goalkeeper",
+"rating": 65,
+"clubName": "Barnsley"
+},
+{
+"id": "WC-Canada-2-Johnston",
+"name": "Johnston",
+"number": 2,
+"position": "Defender",
+"rating": 76,
+"clubName": "Celtic"
+},
+{
+"id": "WC-Canada-3-Jones",
+"name": "Jones",
+"number": 3,
+"position": "Defender",
+"rating": 68,
+"clubName": "Middlesbrough"
+},
+{
+"id": "WC-Canada-4-deFougerolles",
+"name": "de Fougerolles",
+"number": 4,
+"position": "Defender",
+"rating": 65,
+"clubName": "Dender EH"
+},
+{
+"id": "WC-Canada-5-Waterman",
+"name": "Waterman",
+"number": 5,
+"position": "Defender",
+"rating": 65,
+"clubName": "Chicago Fire"
+},
+{
+"id": "WC-Canada-13-Cornelius",
+"name": "Cornelius",
+"number": 13,
+"position": "Defender",
+"rating": 68,
+"clubName": "Rangers"
+},
+{
+"id": "WC-Canada-15-Bombito",
+"name": "Bombito",
+"number": 15,
+"position": "Defender",
+"rating": 74,
+"clubName": "Nice"
+},
+{
+"id": "WC-Canada-19-Davies",
+"name": "Davies",
+"number": 19,
+"position": "Defender",
+"rating": 85,
+"clubName": "Bayern"
+},
+{
+"id": "WC-Canada-22-Laryea",
+"name": "Laryea",
+"number": 22,
+"position": "Defender",
+"rating": 68,
+"clubName": "Toronto FC"
+},
+{
+"id": "WC-Canada-23-Sigur",
+"name": "Sigur",
+"number": 23,
+"position": "Defender",
+"rating": 65,
+"clubName": "Hajduk Split"
+},
+{
+"id": "WC-Canada-6-Choinière",
+"name": "Choinière",
+"number": 6,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "LAFC"
+},
+{
+"id": "WC-Canada-7-Eustaquio",
+"name": "Eustaquio",
+"number": 7,
+"position": "Midfielder",
+"rating": 75,
+"clubName": "LAFC"
+},
+{
+"id": "WC-Canada-8-Koné",
+"name": "Koné",
+"number": 8,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Sassuolo"
+},
+{
+"id": "WC-Canada-11-Millar",
+"name": "Millar",
+"number": 11,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Hull City"
+},
+{
+"id": "WC-Canada-14-Shaffelburg",
+"name": "Shaffelburg",
+"number": 14,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "LAFC"
+},
+{
+"id": "WC-Canada-21-Osorio",
+"name": "Osorio",
+"number": 21,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Toronto FC"
+},
+{
+"id": "WC-Canada-25-Saliba",
+"name": "Saliba",
+"number": 25,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Anderlecht"
+},
+{
+"id": "WC-Canada-26-Marcelo",
+"name": "Marcelo",
+"number": 26,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Tigres UANL"
+},
+{
+"id": "WC-Canada-9-Larin",
+"name": "Larin",
+"number": 9,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Southampton"
+},
+{
+"id": "WC-Canada-10-J.David",
+"name": "J. David",
+"number": 10,
+"position": "Attacker",
+"rating": 81,
+"clubName": "Juventus"
+},
+{
+"id": "WC-Canada-12-Oluwaseyi",
+"name": "Oluwaseyi",
+"number": 12,
+"position": "Attacker",
+"rating": 73,
+"clubName": "Villarreal"
+},
+{
+"id": "WC-Canada-17-Buchanan",
+"name": "Buchanan",
+"number": 17,
+"position": "Attacker",
+"rating": 75,
+"clubName": "Villarreal"
+},
+{
+"id": "WC-Canada-20-Ahmed",
+"name": "Ahmed",
+"number": 20,
+"position": "Attacker",
+"rating": 65,
+"clubName": "Norwich City"
+},
+{
+"id": "WC-Canada-24-Promise",
+"name": "Promise",
+"number": 24,
+"position": "Attacker",
+"rating": 65,
+"clubName": "Union SG"
+}
+],
+"South Korea": [
+{
+"id": "WC-South Korea-1-Seunggyu",
+"name": "Seunggyu",
+"number": 1,
+"position": "Goalkeeper",
+"rating": 74,
+"clubName": "FC Tokyo"
+},
+{
+"id": "WC-South Korea-12-Bumkeun",
+"name": "Bumkeun",
+"number": 12,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Jeonbuk"
+},
+{
+"id": "WC-South Korea-21-Hyeonwoo",
+"name": "Hyeonwoo",
+"number": 21,
+"position": "Goalkeeper",
+"rating": 68,
+"clubName": "Ulsan HD"
+},
+{
+"id": "WC-South Korea-2-Hanbeom",
+"name": "Hanbeom",
+"number": 2,
+"position": "Defender",
+"rating": 70,
+"clubName": "Midtjylland"
+},
+{
+"id": "WC-South Korea-4-Minjae",
+"name": "Minjae",
+"number": 4,
+"position": "Defender",
+"rating": 81,
+"clubName": "Bayern"
+},
+{
+"id": "WC-South Korea-5-Taehyeon",
+"name": "Taehyeon",
+"number": 5,
+"position": "Defender",
+"rating": 68,
+"clubName": "Kashima Antlers"
+},
+{
+"id": "WC-South Korea-13-Taeseok",
+"name": "Taeseok",
+"number": 13,
+"position": "Defender",
+"rating": 68,
+"clubName": "Austria Wien"
+},
+{
+"id": "WC-South Korea-14-Wije",
+"name": "Wije",
+"number": 14,
+"position": "Defender",
+"rating": 65,
+"clubName": "Jeonbuk"
+},
+{
+"id": "WC-South Korea-15-Moonhwan",
+"name": "Moonhwan",
+"number": 15,
+"position": "Defender",
+"rating": 65,
+"clubName": "Daejeon Hana Citizen"
+},
+{
+"id": "WC-South Korea-16-Jinseob",
+"name": "Jinseob",
+"number": 16,
+"position": "Defender",
+"rating": 65,
+"clubName": "Zhejiang"
+},
+{
+"id": "WC-South Korea-22-Youngwoo",
+"name": "Youngwoo",
+"number": 22,
+"position": "Defender",
+"rating": 65,
+"clubName": "Crvena Zvezda"
+},
+{
+"id": "WC-South Korea-23-Jens",
+"name": "Jens",
+"number": 23,
+"position": "Defender",
+"rating": 68,
+"clubName": "Mönchengladbach"
+},
+{
+"id": "WC-South Korea-3-Gihyuk",
+"name": "Gihyuk",
+"number": 3,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Gangwon"
+},
+{
+"id": "WC-South Korea-6-Inbeom",
+"name": "Inbeom",
+"number": 6,
+"position": "Midfielder",
+"rating": 76,
+"clubName": "Feyenoord"
+},
+{
+"id": "WC-South Korea-8-Seungho",
+"name": "Seungho",
+"number": 8,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Birmingham City"
+},
+{
+"id": "WC-South Korea-10-Jaesung",
+"name": "Jaesung",
+"number": 10,
+"position": "Midfielder",
+"rating": 73,
+"clubName": "Mainz"
+},
+{
+"id": "WC-South Korea-17-Junho",
+"name": "Junho",
+"number": 17,
+"position": "Midfielder",
+"rating": 68,
+"clubName": "Stoke City"
+},
+{
+"id": "WC-South Korea-19-Kangin",
+"name": "Kangin",
+"number": 19,
+"position": "Midfielder",
+"rating": 78,
+"clubName": "PSG"
+},
+{
+"id": "WC-South Korea-20-Hyunjun",
+"name": "Hyunjun",
+"number": 20,
+"position": "Midfielder",
+"rating": 71,
+"clubName": "Celtic"
+},
+{
+"id": "WC-South Korea-24-Jingyu",
+"name": "Jingyu",
+"number": 24,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Jeonbuk"
+},
+{
+"id": "WC-South Korea-25-Jisung",
+"name": "Jisung",
+"number": 25,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Swansea City"
+},
+{
+"id": "WC-South Korea-26-Donggyeong",
+"name": "Donggyeong",
+"number": 26,
+"position": "Midfielder",
+"rating": 65,
+"clubName": "Ulsan HD"
+},
+{
+"id": "WC-South Korea-7-Heungmin",
+"name": "Heungmin",
+"number": 7,
+"position": "Attacker",
+"rating": 86,
+"clubName": "LAFC"
+},
+{
+"id": "WC-South Korea-9-Guseung",
+"name": "Guseung",
+"number": 9,
+"position": "Attacker",
+"rating": 71,
+"clubName": "Midtjylland"
+},
+{
+"id": "WC-South Korea-11-Heechan",
+"name": "Heechan",
+"number": 11,
+"position": "Attacker",
+"rating": 78,
+"clubName": "Wolves"
+},
+{
+"id": "WC-South Korea-18-Hyeongyu",
+"name": "Hyeongyu",
+"number": 18,
+"position": "Attacker",
+"rating": 68,
+"clubName": "Beşiktaş"
+}
+]
+}
