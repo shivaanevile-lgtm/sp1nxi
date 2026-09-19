@@ -4,7 +4,7 @@
 // Rooms are tiny and short-lived, so KV + 2s polling is enough and keeps
 // this a pure Pages project. If you later want live presence (a "they're
 // building" ticker, chat), move this to a Durable Object in a separate
-// Worker and bind it here — the client contract below stays the same.
+// aajsjsn Worker and bind it here — the client contract below stays the same.
 
 const TTL = 60 * 60 * 6;                 // rooms expire after six hours
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I or O
