@@ -65,8 +65,10 @@ function kitFor(name) {
 }
 
 // Live club data (Premier League only, via FPL) is fetched once per
-// session and cached here — clubs list, squads, and the correct current
-// top-flight membership all come from one call, no manual maintenance.
+// session and cached here. Club MEMBERSHIP (which 20 teams are actually
+// in the Prem right now) comes from this — promotion/relegation just
+// resolves itself. But it is NOT the rating source for curated players;
+// see loadPLNameIndex below for how it's actually used.
 let livePLCache = null;
 async function loadLivePL() {
   if (livePLCache) return livePLCache;
@@ -78,6 +80,26 @@ async function loadLivePL() {
     }
   } catch (e) { /* fall through to static/demo below */ }
   return null;
+}
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
+
+// name -> current club, built once from the live feed. This is the ONLY
+// thing FPL is used for on curated players: confirming someone hasn't
+// quietly left the Premier League or moved to a different club since the
+// curated file was written. Hand-set ratings always win when a player is
+// still confirmed present — FPL's price never overrides them.
+let plNameIndexCache = null;
+async function loadPLNameIndex() {
+  if (plNameIndexCache) return plNameIndexCache;
+  const live = await loadLivePL();
+  const idx = new Map();
+  if (live) {
+    for (const [club, players] of Object.entries(live.squads)) {
+      for (const p of players) idx.set(norm(p.name), club);
+    }
+  }
+  plNameIndexCache = idx;
+  return idx;
 }
 
 // Resolves a league's club list — live for PL, static for everything else.
@@ -307,12 +329,30 @@ async function getSquad(leagueKey, club) {
   const key = leagueKey + '|' + club.name;
   if (cache.has(key)) return cache.get(key);
   let squad = null;
+
+  // PL: hand-set curated ratings are primary. FPL only confirms a player
+  // is still at this club — anyone it shows as gone or moved elsewhere
+  // gets dropped, but the rating on anyone who stays is always ours, not
+  // FPL's price. Only if that filtering leaves a club too thin does the
+  // live FPL squad (with its own price-based rating) step in to fill it.
   if (leagueKey === 'PL') {
-    const live = await loadLivePL();
-    if (live && live.squads[club.name] && live.squads[club.name].length >= 10) {
-      squad = live.squads[club.name];
+    const curatedPL = await loadCurated('PL');
+    const curatedSquad = curatedPL && curatedPL[club.name];
+    if (curatedSquad && curatedSquad.length) {
+      const idx = await loadPLNameIndex();
+      const confirmed = idx.size
+        ? curatedSquad.filter(p => idx.get(norm(p.name)) === club.name)
+        : curatedSquad; // live feed unreachable — trust the curated file as-is
+      if (confirmed.length >= 10) squad = confirmed;
+    }
+    if (!squad) {
+      const live = await loadLivePL();
+      if (live && live.squads[club.name] && live.squads[club.name].length >= 10) {
+        squad = live.squads[club.name];
+      }
     }
   }
+
   const curated = squad ? null : await loadCurated(leagueKey);
   if (!squad && curated && curated[club.name] && curated[club.name].length >= 10) {
     squad = curated[club.name];
