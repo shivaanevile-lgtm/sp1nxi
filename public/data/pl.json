@@ -5,7 +5,7 @@
 "name": "David Raya",
 "number": 2,
 "position": "Goalkeeper",
-"rating": 88
+"rating": 92
 },
 {
 "id": "PL-Arsenal-2",
@@ -19,21 +19,21 @@
 "name": "William Saliba",
 "number": 4,
 "position": "Defender",
-"rating": 89
+"rating": 93
 },
 {
 "id": "PL-Arsenal-4",
 "name": "Gabriel Magalhaes",
 "number": 5,
 "position": "Defender",
-"rating": 87
+"rating": 92
 },
 {
 "id": "PL-Arsenal-5",
 "name": "Jurrien Timber",
 "number": 6,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Arsenal-6",
@@ -68,14 +68,14 @@
 "name": "Declan Rice",
 "number": 11,
 "position": "Midfielder",
-"rating": 90
+"rating": 94
 },
 {
 "id": "PL-Arsenal-11",
 "name": "Martin Odegaard",
 "number": 12,
 "position": "Midfielder",
-"rating": 89
+"rating": 86
 },
 {
 "id": "PL-Arsenal-12",
@@ -110,7 +110,7 @@
 "name": "Bukayo Saka",
 "number": 17,
 "position": "Attacker",
-"rating": 90
+"rating": 94
 },
 {
 "id": "PL-Arsenal-17",
@@ -139,13 +139,6 @@
 "number": 21,
 "position": "Attacker",
 "rating": 81
-},
-{
-"id": "PL-Arsenal-madueke",
-"name": "Noni Madueke",
-"number": 30,
-"position": "Attacker",
-"rating": 79
 }
 ],
 "Aston Villa": [
@@ -154,7 +147,7 @@
 "name": "Emiliano Martinez",
 "number": 22,
 "position": "Goalkeeper",
-"rating": 87
+"rating": 91
 },
 {
 "id": "PL-Aston Villa-22",
@@ -245,7 +238,7 @@
 "name": "Ollie Watkins",
 "number": 5,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Aston Villa-35",
@@ -473,7 +466,7 @@
 "name": "Bryan Mbeumo",
 "number": 7,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Brentford-67",
@@ -673,14 +666,14 @@
 "name": "Moises Caicedo",
 "number": 5,
 "position": "Midfielder",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Chelsea-95",
 "name": "Enzo Fernandez",
 "number": 6,
 "position": "Midfielder",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Chelsea-96",
@@ -694,7 +687,7 @@
 "name": "Cole Palmer",
 "number": 8,
 "position": "Midfielder",
-"rating": 89
+"rating": 93
 },
 {
 "id": "PL-Chelsea-98",
@@ -715,7 +708,14 @@
 "name": "Pedro Neto",
 "number": 11,
 "position": "Attacker",
-"rating": 80
+"rating": 74
+},
+{
+"id": "PL-Chelsea-101",
+"name": "Noni Madueke",
+"number": 12,
+"position": "Attacker",
+"rating": 79
 },
 {
 "id": "PL-Chelsea-102",
@@ -738,7 +738,7 @@
 "name": "Remi Matthews",
 "number": 15,
 "position": "Goalkeeper",
-"rating": 68
+"rating": 70
 },
 {
 "id": "PL-Crystal Palace-105",
@@ -1115,7 +1115,7 @@
 "name": "Massimo Luongo",
 "number": 8,
 "position": "Midfielder",
-"rating": 69
+"rating": 70
 },
 {
 "id": "PL-Ipswich Town-158",
@@ -1152,7 +1152,7 @@
 "name": "Jakub Stolarczyk",
 "number": 13,
 "position": "Goalkeeper",
-"rating": 68
+"rating": 70
 },
 {
 "id": "PL-Leicester City-163",
@@ -1231,7 +1231,7 @@
 "name": "Alisson Becker",
 "number": 24,
 "position": "Goalkeeper",
-"rating": 89
+"rating": 93
 },
 {
 "id": "PL-Liverpool-174",
@@ -1245,7 +1245,7 @@
 "name": "Virgil van Dijk",
 "number": 26,
 "position": "Defender",
-"rating": 89
+"rating": 93
 },
 {
 "id": "PL-Liverpool-176",
@@ -1259,7 +1259,7 @@
 "name": "Trent Alexander-Arnold",
 "number": 28,
 "position": "Defender",
-"rating": 86
+"rating": 90
 },
 {
 "id": "PL-Liverpool-178",
@@ -1294,7 +1294,7 @@
 "name": "Alexis Mac Allister",
 "number": 3,
 "position": "Midfielder",
-"rating": 86
+"rating": 90
 },
 {
 "id": "PL-Liverpool-183",
@@ -1322,14 +1322,14 @@
 "name": "Mohamed Salah",
 "number": 7,
 "position": "Attacker",
-"rating": 91
+"rating": 95
 },
 {
 "id": "PL-Liverpool-187",
 "name": "Luis Diaz",
 "number": 8,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Liverpool-188",
@@ -1359,7 +1359,7 @@
 "name": "Ederson",
 "number": 12,
 "position": "Goalkeeper",
-"rating": 87
+"rating": 91
 },
 {
 "id": "PL-Manchester City-192",
@@ -1373,7 +1373,7 @@
 "name": "Ruben Dias",
 "number": 14,
 "position": "Defender",
-"rating": 88
+"rating": 92
 },
 {
 "id": "PL-Manchester City-194",
@@ -1387,7 +1387,7 @@
 "name": "Josko Gvardiol",
 "number": 16,
 "position": "Defender",
-"rating": 86
+"rating": 90
 },
 {
 "id": "PL-Manchester City-196",
@@ -1415,21 +1415,21 @@
 "name": "Rodri",
 "number": 20,
 "position": "Midfielder",
-"rating": 92
+"rating": 96
 },
 {
 "id": "PL-Manchester City-200",
 "name": "Kevin De Bruyne",
 "number": 21,
 "position": "Midfielder",
-"rating": 88
+"rating": 92
 },
 {
 "id": "PL-Manchester City-201",
 "name": "Bernardo Silva",
 "number": 22,
 "position": "Midfielder",
-"rating": 87
+"rating": 91
 },
 {
 "id": "PL-Manchester City-202",
@@ -1450,14 +1450,14 @@
 "name": "Erling Haaland",
 "number": 25,
 "position": "Attacker",
-"rating": 93
+"rating": 96
 },
 {
 "id": "PL-Manchester City-205",
 "name": "Phil Foden",
 "number": 26,
 "position": "Attacker",
-"rating": 87
+"rating": 91
 },
 {
 "id": "PL-Manchester City-206",
@@ -1529,7 +1529,7 @@
 "name": "Diogo Dalot",
 "number": 6,
 "position": "Defender",
-"rating": 78
+"rating": 74
 },
 {
 "id": "PL-Manchester United-216",
@@ -1550,7 +1550,7 @@
 "name": "Bruno Fernandes",
 "number": 9,
 "position": "Midfielder",
-"rating": 87
+"rating": 91
 },
 {
 "id": "PL-Manchester United-219",
@@ -1664,7 +1664,7 @@
 "name": "Bruno Guimaraes",
 "number": 25,
 "position": "Midfielder",
-"rating": 86
+"rating": 85
 },
 {
 "id": "PL-Newcastle-235",
@@ -1692,7 +1692,14 @@
 "name": "Alexander Isak",
 "number": 29,
 "position": "Attacker",
-"rating": 87
+"rating": 91
+},
+{
+"id": "PL-Newcastle-239",
+"name": "Anthony Gordon",
+"number": 30,
+"position": "Attacker",
+"rating": 82
 },
 {
 "id": "PL-Newcastle-240",
@@ -1915,7 +1922,7 @@
 "name": "Cristian Romero",
 "number": 1,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "PL-Tottenham-271",
@@ -1978,7 +1985,7 @@
 "name": "Son Heung-min",
 "number": 10,
 "position": "Attacker",
-"rating": 86
+"rating": 90
 },
 {
 "id": "PL-Tottenham-280",
@@ -2186,6 +2193,178 @@
 "number": 9,
 "position": "Attacker",
 "rating": 78
+}
+],
+"Leeds United": [
+{
+"id": "PL-Leeds United-80001",
+"name": "Illan Meslier",
+"number": 22,
+"position": "Goalkeeper",
+"rating": 73
+},
+{
+"id": "PL-Leeds United-80002",
+"name": "Karl Darlow",
+"number": 23,
+"position": "Goalkeeper",
+"rating": 63
+},
+{
+"id": "PL-Leeds United-80003",
+"name": "Pascal Struijk",
+"number": 24,
+"position": "Defender",
+"rating": 76
+},
+{
+"id": "PL-Leeds United-80004",
+"name": "Joe Rodon",
+"number": 25,
+"position": "Defender",
+"rating": 75
+},
+{
+"id": "PL-Leeds United-80005",
+"name": "Ethan Ampadu",
+"number": 26,
+"position": "Defender",
+"rating": 77
+},
+{
+"id": "PL-Leeds United-80006",
+"name": "Jayden Bogle",
+"number": 27,
+"position": "Defender",
+"rating": 73
+},
+{
+"id": "PL-Leeds United-80007",
+"name": "Sam Byram",
+"number": 28,
+"position": "Defender",
+"rating": 68
+},
+{
+"id": "PL-Leeds United-80008",
+"name": "Ilia Gruev",
+"number": 29,
+"position": "Midfielder",
+"rating": 71
+},
+{
+"id": "PL-Leeds United-80009",
+"name": "Ao Tanaka",
+"number": 30,
+"position": "Midfielder",
+"rating": 71
+},
+{
+"id": "PL-Leeds United-80010",
+"name": "Wilfried Gnonto",
+"number": 1,
+"position": "Attacker",
+"rating": 76
+},
+{
+"id": "PL-Leeds United-80011",
+"name": "Daniel James",
+"number": 2,
+"position": "Attacker",
+"rating": 74
+},
+{
+"id": "PL-Leeds United-80012",
+"name": "Joel Piroe",
+"number": 3,
+"position": "Attacker",
+"rating": 76
+},
+{
+"id": "PL-Leeds United-80013",
+"name": "Largie Ramazani",
+"number": 4,
+"position": "Attacker",
+"rating": 72
+}
+],
+"Sunderland": [
+{
+"id": "PL-Sunderland-80014",
+"name": "Anthony Patterson",
+"number": 5,
+"position": "Goalkeeper",
+"rating": 73
+},
+{
+"id": "PL-Sunderland-80015",
+"name": "Dan Ballard",
+"number": 6,
+"position": "Defender",
+"rating": 75
+},
+{
+"id": "PL-Sunderland-80016",
+"name": "Trai Hume",
+"number": 7,
+"position": "Defender",
+"rating": 74
+},
+{
+"id": "PL-Sunderland-80017",
+"name": "Dennis Cirkin",
+"number": 8,
+"position": "Defender",
+"rating": 71
+},
+{
+"id": "PL-Sunderland-80018",
+"name": "Nordi Mukiele",
+"number": 9,
+"position": "Defender",
+"rating": 73
+},
+{
+"id": "PL-Sunderland-80019",
+"name": "Chris Rigg",
+"number": 10,
+"position": "Midfielder",
+"rating": 74
+},
+{
+"id": "PL-Sunderland-80020",
+"name": "Jobe Bellingham",
+"number": 11,
+"position": "Midfielder",
+"rating": 78
+},
+{
+"id": "PL-Sunderland-80021",
+"name": "Dan Neil",
+"number": 12,
+"position": "Midfielder",
+"rating": 73
+},
+{
+"id": "PL-Sunderland-80022",
+"name": "Wilson Isidor",
+"number": 13,
+"position": "Attacker",
+"rating": 73
+},
+{
+"id": "PL-Sunderland-80023",
+"name": "Eliezer Mayenda",
+"number": 14,
+"position": "Attacker",
+"rating": 73
+},
+{
+"id": "PL-Sunderland-80024",
+"name": "Patrick Roberts",
+"number": 15,
+"position": "Attacker",
+"rating": 71
 }
 ]
 }
