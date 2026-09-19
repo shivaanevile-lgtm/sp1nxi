@@ -13,10 +13,15 @@ const POSITION_MAP = { 'Goalkeeper': 'Goalkeeper', 'Defender': 'Defender',
 
 // A player's FPL price (now_cost, in £0.1m units) is the closest thing to a
 // single "how good is this player" number the API offers, so it's the basis
-// for rating. Roughly £4.0m -> low 30s, £15m+ -> high 90s.
+// for rating. Prices bunch heavily at the cheap end — most squad players
+// sit around £4.5-6.0m — so a straight linear map crushes that whole bulk
+// into the 30s-40s. A square-root curve lifts the middle: an ordinary
+// squad player lands in the 50s-60s, a good regular in the 70s, and only
+// genuine stars (£12m+) reach the 90s.
 function ratingFromCost(cost) {
-  const r = 28 + (cost - 38) * (96 - 28) / (150 - 38);
-  return Math.max(28, Math.min(97, Math.round(r)));
+  const frac = Math.max(0, Math.min(1, (cost - 38) / (150 - 38)));
+  const r = 38 + 58 * Math.sqrt(frac);
+  return Math.max(35, Math.min(98, Math.round(r)));
 }
 
 export async function onRequestGet() {
