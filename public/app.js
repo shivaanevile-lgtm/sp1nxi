@@ -696,7 +696,7 @@ function screenBuild() {
       <div style="left:35%;right:35%;top:43.5%;height:13%;border-radius:50%"></div>
     </div></div>
     <div class="picker" id="picker"></div>
-    <button class="btn primary" id="act">Spin for a club</button>
+    <div class="actionbar"><button class="btn primary" id="act">Spin for a club</button></div>
   </section>`);
 
   const pitch = v.querySelector('.pitch'), picker = v.querySelector('#picker');
