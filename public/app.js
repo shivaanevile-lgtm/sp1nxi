@@ -485,13 +485,40 @@ async function predictTable(leagueKey, squads) {
   // points need to scale to whichever the actual competition plays, or a
   // UCL table would show Premier-League-sized numbers for an 8-game phase.
   const games = leagueKey === 'UCL' ? 8 : leagueKey === 'WC' ? 3 : 38;
-  const ppgMin = 0.4, ppgMax = 2.5; // realistic worst/best points-per-game
+  const ppgMin = 0.4, ppgMax = leagueKey === 'WC' ? 3.0 : 2.5; // WC: 3 games, so max is a clean 9 points
   rows.forEach((r, i) => {
     const t = (r.strength - bot) / Math.max(top - bot, 0.01);
     r.pts = Math.round((ppgMin + t * (ppgMax - ppgMin)) * games);
     r.pos = i + 1;
   });
   return rows;
+}
+
+// Real 2026 World Cup groups, for the nations we actually have curated —
+// used to show the one or two groups that matter to this match instead of
+// a flat, unrealistic 20-nation table (the real tournament has no such
+// combined table; it's always groups of 4).
+const WC_GROUPS = {
+  Mexico: 'A', 'South Korea': 'A',
+  Canada: 'B', Switzerland: 'B',
+  Brazil: 'C', Morocco: 'C',
+  USA: 'D',
+  Germany: 'E',
+  Netherlands: 'F', Japan: 'F',
+  Belgium: 'G',
+  Spain: 'H', Uruguay: 'H',
+  France: 'I', Senegal: 'I',
+  Argentina: 'J',
+  Portugal: 'K', Colombia: 'K',
+  England: 'L', Croatia: 'L'
+};
+// Which real nation an XI "represents" — whichever nation contributed the
+// most players to it, since a built XI is a cross-nation squad, not one
+// team, but still needs a group to be shown against.
+function representedNation(p) {
+  const counts = {};
+  p.xi.forEach(s => { const n = s.player.club.name; counts[n] = (counts[n] || 0) + 1; });
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
 }
 
 /* ------------------------------------------------------------------ *
@@ -1031,13 +1058,13 @@ async function screenMatchSim(A, B, m) {
   const v = el(`<section>
     <div class="sheet" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
       background:linear-gradient(100deg,var(--club-a) 0%,var(--club-a) 48%,var(--club-b2,#241F19) 52%);
-      border-radius:14px;color:#fff">
-      <b style="flex:1">${esc(A.label)}</b>
-      <div style="text-align:center">
-        <div id="score" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.6rem">0 – 0</div>
-        <div id="clock" style="font-size:.8rem;opacity:.85">0'</div>
+      border-radius:14px">
+      <b style="flex:1;color:${readable(A.badge.home)}">${esc(A.label)}</b>
+      <div style="text-align:center;background:rgba(0,0,0,.32);border-radius:10px;padding:4px 12px">
+        <div id="score" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.6rem;color:#fff">0 – 0</div>
+        <div id="clock" style="font-size:.8rem;opacity:.9;color:#fff">0'</div>
       </div>
-      <b style="flex:1;text-align:right">${esc(B.label)}</b>
+      <b style="flex:1;text-align:right;color:${readable(B.badge.home)}">${esc(B.label)}</b>
     </div>
     <div class="pitch" id="matchpitch" style="margin-top:10px">${PITCH_HALF_MARKINGS}
       <div id="ball" style="position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;
@@ -1329,9 +1356,9 @@ function screenResult(A, B, m) {
     <h2>${verdict}</h2>
     <div class="sheet">
       <div class="score">
-        <div class="side">${esc(A.label)}<br><small style="opacity:.8">${esc(A.formation)}</small></div>
-        <div class="nums">${m.gA} – ${m.gB}</div>
-        <div class="side">${esc(B.label)}<br><small style="opacity:.8">${esc(B.formation)}</small></div>
+        <div class="side" style="color:${readable(A.badge.home)}">${esc(A.label)}<br><small style="opacity:.8">${esc(A.formation)}</small></div>
+        <div class="nums" style="color:#fff;background:rgba(0,0,0,.32);border-radius:10px;padding:2px 10px">${m.gA} – ${m.gB}</div>
+        <div class="side" style="color:${readable(B.badge.home)}">${esc(B.label)}<br><small style="opacity:.8">${esc(B.formation)}</small></div>
       </div>
       <div class="events">${evRows}</div>
       ${statRows}
@@ -1480,7 +1507,9 @@ async function screenKnockout(A, B, tableRows) {
 }
 
 async function screenTable(A, B) {
-  setCrumb('Predicted table');
+  setCrumb(S.leagueKey === 'WC' ? 'Group stage' : 'Predicted table');
+  if (S.leagueKey === 'WC') return screenGroupTable(A, B);
+
   const legend = S.leagueKey === 'UCL'
     ? `<p style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0">
         <small><span style="display:inline-block;width:10px;height:10px;background:#22C55E;border-radius:2px;margin-right:4px"></span>Straight to Round of 16</small>
@@ -1537,6 +1566,67 @@ async function screenTable(A, B) {
   } catch (e) {
     diag.innerHTML = `<small>Table error: ${esc(String(e && e.stack || e))}</small>`;
   }
+}
+
+/* World Cup: the real tournament has no single combined table — just
+ * groups of 4, three games each. Show the one or two groups that
+ * actually matter here (each XI's group, by whichever nation supplied
+ * most of its players) instead of a flat, unrealistic ranking. */
+async function screenGroupTable(A, B) {
+  const v = el(`<section>
+    <h2>Group stage</h2>
+    <p id="diag"><small>Building group table…</small></p>
+    <div id="groups"></div>
+    <p style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0">
+      <small><span style="display:inline-block;width:10px;height:10px;background:#22C55E;border-radius:2px;margin-right:4px"></span>Advances from group</small>
+    </p>
+    <button class="btn primary" id="toko" style="margin-top:14px">See the knockout bracket</button>
+    <button class="btn ghost" id="back" style="margin-top:10px">Back to the scoresheet</button>
+  </section>`);
+  v.querySelector('#back').onclick = () => screenResult(A, B, S.lastMatch.m);
+  show(v);
+  const diag = v.querySelector('#diag'), groupsEl = v.querySelector('#groups');
+  let rows;
+  try {
+    rows = await predictTable('WC', [
+      { label: `${A.label}'s XI`, strength: A.strength },
+      { label: `${B.label}'s XI`, strength: B.strength }
+    ]);
+  } catch (e) {
+    diag.innerHTML = `<small>Table error: ${esc(String(e && e.stack || e))}</small>`;
+    return;
+  }
+  diag.remove();
+
+  const labelA = `${A.label}'s XI`, labelB = `${B.label}'s XI`;
+  const repA = representedNation(A), repB = representedNation(B);
+  const gA = WC_GROUPS[repA] || '?', gB = WC_GROUPS[repB] || '?';
+  rows.forEach(r => {
+    if (r.mine) r.group = r.name === labelA ? gA : gB;
+    else r.group = WC_GROUPS[r.name] || null;
+  });
+
+  const needed = gA === gB ? [gA] : [gA, gB];
+  for (const letter of needed) {
+    const members = rows.filter(r => r.group === letter).sort((a, b) => b.strength - a.strength);
+    const card = el(`<div class="card"><h3>Group ${letter}</h3>
+      <table class="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table>
+    </div>`);
+    groupsEl.appendChild(card);
+    const t = card.querySelector('table');
+    members.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      if (r.mine) tr.className = 'me';
+      [i + 1, r.name, r.strength, r.pts].forEach((val, ci) => {
+        const td = document.createElement('td');
+        td.textContent = String(val);
+        if (ci === 0 && i < 2) { td.style.borderLeft = '4px solid #22C55E'; td.style.paddingLeft = '8px'; }
+        tr.appendChild(td);
+      });
+      t.appendChild(tr);
+    });
+  }
+  v.querySelector('#toko').onclick = () => screenKnockout(A, B, rows.filter(r => r.real || r.mine));
 }
 
 // Left-edge status colour for a table row — mirrors how real league and
