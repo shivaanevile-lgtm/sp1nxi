@@ -478,9 +478,14 @@ async function predictTable(leagueKey, squads) {
   if (!rows.length) return rows;
   rows.sort((a, b) => b.strength - a.strength);
   const top = rows[0].strength, bot = rows[rows.length - 1].strength;
+  // UCL's league phase is 8 games per club, not a full 38-game season —
+  // points need to scale to whichever the actual competition plays, or a
+  // UCL table would show Premier-League-sized numbers for an 8-game phase.
+  const games = leagueKey === 'UCL' ? 8 : 38;
+  const ppgMin = 0.4, ppgMax = 2.5; // realistic worst/best points-per-game
   rows.forEach((r, i) => {
     const t = (r.strength - bot) / Math.max(top - bot, 0.01);
-    r.pts = Math.round(30 + t * 62);
+    r.pts = Math.round((ppgMin + t * (ppgMax - ppgMin)) * games);
     r.pos = i + 1;
   });
   return rows;
@@ -1250,13 +1255,21 @@ async function screenKnockout(A, B, tableRows) {
 
   // Simulate the whole bracket up front — a real visual bracket needs
   // every round's result to lay out and draw connector lines correctly.
+  // Standard 16-team seeding: seed 1 meets 16, and that pair's eventual
+  // winner meets the winner of 8-v-9 in the quarter-final — a FIXED
+  // bracket where each side of the draw stays on its own side the whole
+  // way, not a re-shuffle of winners by strength every round.
+  const SEED_ORDER = [0, 15, 7, 8, 3, 12, 4, 11, 1, 14, 6, 9, 2, 13, 5, 10];
+  const bracketOrder = SEED_ORDER.map(i => field[i]);
   const roundNames = ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'];
   const rounds = []; // each: [{x, y, winner}]
-  let current = field;
+  let current = bracketOrder;
   for (const _ of roundNames) {
-    const pairs = [];
-    for (let i = 0; i < current.length / 2; i++) pairs.push([current[i], current[current.length - 1 - i]]);
-    const matches = pairs.map(([x, y]) => ({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y }));
+    const matches = [];
+    for (let i = 0; i < current.length; i += 2) {
+      const x = current[i], y = current[i + 1];
+      matches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
+    }
     rounds.push(matches);
     current = matches.map(m => m.winner);
   }
@@ -1338,12 +1351,23 @@ async function screenKnockout(A, B, tableRows) {
 
 async function screenTable(A, B) {
   setCrumb('Predicted table');
+  const legend = S.leagueKey === 'UCL'
+    ? `<p style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0">
+        <small><span style="display:inline-block;width:10px;height:10px;background:#22C55E;border-radius:2px;margin-right:4px"></span>Straight to Round of 16</small>
+        <small><span style="display:inline-block;width:10px;height:10px;background:#3B82F6;border-radius:2px;margin-right:4px"></span>Knockout playoff round</small>
+       </p>`
+    : `<p style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0">
+        <small><span style="display:inline-block;width:10px;height:10px;background:#22C55E;border-radius:2px;margin-right:4px"></span>Champions League</small>
+        <small><span style="display:inline-block;width:10px;height:10px;background:#3B82F6;border-radius:2px;margin-right:4px"></span>Europa League</small>
+        <small><span style="display:inline-block;width:10px;height:10px;background:#E5484D;border-radius:2px;margin-right:4px"></span>Relegation</small>
+       </p>`;
   const v = el(`<section>
     <h2>Where they'd finish</h2>
     <p><small>Both XIs ranked against every squad in ${esc(LEAGUES[S.leagueKey].name)}.</small></p>
     <p id="diag"><small>Building table…</small></p>
     <table class="tbl" id="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table>
-    <button class="btn ghost" id="back">Back to the scoresheet</button>
+    ${legend}
+    <button class="btn ghost" id="back" style="margin-top:14px">Back to the scoresheet</button>
   </section>`);
   v.querySelector('#back').onclick = () => screenResult(A, B, S.lastMatch.m);
   show(v);
@@ -1365,6 +1389,10 @@ async function screenTable(A, B) {
       cells.forEach((val, i) => {
         const td = document.createElement('td');
         td.textContent = val === undefined ? '' : String(val);
+        if (i === 0) {
+          const color = rowColor(r.pos, rows.length, S.leagueKey);
+          if (color) { td.style.borderLeft = `4px solid ${color}`; td.style.paddingLeft = '8px'; }
+        }
         tr.appendChild(td);
       });
       tbl.appendChild(tr);
@@ -1379,6 +1407,20 @@ async function screenTable(A, B) {
   } catch (e) {
     diag.innerHTML = `<small>Table error: ${esc(String(e && e.stack || e))}</small>`;
   }
+}
+
+// Left-edge status colour for a table row — mirrors how real league and
+// UCL tables mark qualification/relegation zones.
+function rowColor(pos, total, leagueKey) {
+  if (leagueKey === 'UCL') {
+    if (pos <= 8) return '#22C55E';   // straight to Round of 16
+    if (pos <= 24) return '#3B82F6';  // knockout playoff round
+    return null;                      // eliminated
+  }
+  if (pos <= 4) return '#22C55E';     // Champions League
+  if (pos === 5) return '#3B82F6';    // Europa League
+  if (pos > total - 3) return '#E5484D'; // relegation, bottom 3
+  return null;
 }
 
 /* --- line-ups: a real pitch, one team at a time -------------------- */
