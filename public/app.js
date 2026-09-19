@@ -1021,21 +1021,27 @@ async function screenMatchSim(A, B, m) {
   setCrumb('Kick-off');
 
   const v = el(`<section>
-    <div style="display:flex;justify-content:space-between;align-items:baseline">
-      <b>${esc(A.label)}</b>
-      <span id="clock" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.3rem">0'</span>
-      <b>${esc(B.label)}</b>
+    <div class="sheet" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+      background:linear-gradient(100deg,var(--club-a) 0%,var(--club-a) 48%,var(--club-b2,#241F19) 52%);
+      border-radius:14px;color:#fff">
+      <b style="flex:1">${esc(A.label)}</b>
+      <div style="text-align:center">
+        <div id="score" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.6rem">0 – 0</div>
+        <div id="clock" style="font-size:.8rem;opacity:.85">0'</div>
+      </div>
+      <b style="flex:1;text-align:right">${esc(B.label)}</b>
     </div>
     <div class="pitch" id="matchpitch" style="margin-top:10px">${PITCH_HALF_MARKINGS}
       <div id="ball" style="position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;
         background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%);
-        transition:left .55s ease,top .55s ease;z-index:5"></div>
+        transition:left 1.05s linear,top 1.05s linear;z-index:5"></div>
     </div>
     <p id="commentary" style="min-height:1.4em;text-align:center;margin-top:10px"><small>Kicking off…</small></p>
     <button class="btn ghost" id="skip">Skip to full time</button>
   </section>`);
   const pitch = v.querySelector('#matchpitch'), ball = v.querySelector('#ball');
-  const clock = v.querySelector('#clock'), commentary = v.querySelector('#commentary');
+  const clock = v.querySelector('#clock'), commentary = v.querySelector('#commentary'), scoreEl = v.querySelector('#score');
+  let scoreA = 0, scoreB = 0;
 
   // Every player is a real dot at their formation position, tagged with
   // its base spot so it can be nudged around and always drift back home.
@@ -1046,7 +1052,7 @@ async function screenMatchSim(A, B, m) {
       const dot = el(`<div style="position:absolute;left:${bx}%;top:${by}%;
         width:15px;height:15px;border-radius:50%;transform:translate(-50%,-50%);
         background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5);
-        transition:left .7s ease,top .7s ease"></div>`);
+        transition:left .8s linear,top .8s linear"></div>`);
       dot.dataset.bx = bx; dot.dataset.by = by;
       pitch.appendChild(dot);
       dotEls[side][s.player.name] = dot;
@@ -1054,62 +1060,89 @@ async function screenMatchSim(A, B, m) {
   });
 
   let skipped = false;
-  v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); screenResult(A, B, m); };
+  v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); clearInterval(clockT); screenResult(A, B, m); };
   show(v);
 
-  // Constant subtle drift for every player — always computed fresh from
-  // their formation spot (never cumulative), so the shape never wanders
-  // off itself; a dot that just got moved onto the ball simply gets
-  // pulled back toward its own position within a tick or two.
+  // Constant, continuous drift for every player — ticks often enough with
+  // a transition that matches the tick interval that there's no pause
+  // between moves, so it reads as flowing movement rather than a snap to
+  // a new spot and a hold, which is what made it feel "fixed" before.
+  // Always computed fresh from the formation spot (never cumulative), so
+  // a dot that just got pulled onto the ball drifts back within a beat.
   const wobbleT = setInterval(() => {
     Object.values(dotEls).forEach(team => Object.values(team).forEach(dot => {
       const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
-      dot.style.left = Math.max(4, Math.min(96, bx + (Math.random() * 8 - 4))) + '%';
-      dot.style.top = Math.max(3, Math.min(97, by + (Math.random() * 6 - 3))) + '%';
+      dot.style.left = Math.max(4, Math.min(96, bx + (Math.random() * 6 - 3))) + '%';
+      dot.style.top = Math.max(3, Math.min(97, by + (Math.random() * 5 - 2.5))) + '%';
     }));
-  }, 1300);
+  }, 750);
 
   // A real 90 minutes compressed to ~30 seconds, played as a fixed number
-  // of short "chains" — a couple of passes ending in a shot, a tackle, or
+  // of short "chains" — a passing move ending in a shot, a tackle, or
   // nothing much — rather than jumping straight to each scripted event.
   // Real goals/cards get woven into the chain nearest their minute so the
   // motion never just teleports to them.
   const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
   const events = m.events.slice().sort((a, b) => a.min - b.min);
-  const totalMin = 93, CHAINS = 22;
+  const totalMin = 93, CHAINS = 22, TOTAL_MS = 29000;
   const used = new Set();
   const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // The clock ticks continuously on its own timer rather than jumping in
+  // big steps once per chain, so it visibly counts up the whole time.
+  const startTime = Date.now();
+  const clockT = setInterval(() => {
+    const frac = Math.min(1, (Date.now() - startTime) / TOTAL_MS);
+    clock.textContent = Math.min(90, Math.round(frac * totalMin)) + "'";
+  }, 250);
 
   async function hop(x, y, caption, holdMs, mover) {
     if (skipped) return;
     ball.style.left = x + '%'; ball.style.top = y + '%';
     if (mover) { const dot = dotEls[mover.side][mover.name]; if (dot) { dot.style.left = x + '%'; dot.style.top = y + '%'; } }
-    await sleep(340);
-    if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 550); }
+    await sleep(680);
+    if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
   }
 
   for (let c = 0; c < CHAINS; c++) {
     if (skipped) return;
     const chainMin = Math.round((c / (CHAINS - 1)) * totalMin);
-    clock.textContent = chainMin + "'";
     const tolMin = Math.ceil(totalMin / CHAINS / 2) + 1;
     const ev = events.find(e => !used.has(e) && Math.abs(e.min - chainMin) <= tolMin);
 
     if (ev) {
       used.add(ev);
       const side = ev.side, team = teams[side].team;
-      const slot = team.xi.find(sl => sl.player.name === ev.player) || pickDot(side);
-      const builder = pickDot(side);
-      const build = slotXY(side, builder);
-      await hop(build.x, build.y, null, null, { side, name: builder.player.name });
-      const p = slotXY(side, slot);
-      await hop(p.x, p.y, null, null, { side, name: slot.player.name });
+      const gy = teams[side].isTop ? 94 : 6; // the goal this side is attacking
+      const scorerSlot = team.xi.find(sl => sl.player.name === ev.player) || pickDot(side);
+
       if (ev.type === 'goal') {
-        const gy = teams[side].isTop ? 94 : 6;
-        await hop(40 + Math.random() * 20, gy, `⚽ <b>${esc(ev.player)}</b> scores for ${esc(team.label)}!`, 900, { side, name: slot.player.name });
+        // A real move: two build-up passes among teammates, then the
+        // scorer dribbles forward in two small steps rather than
+        // snapping straight there, then the shot.
+        commentary.innerHTML = `${esc(team.label)} build an attack…`;
+        for (let i = 0; i < 2; i++) {
+          const passer = pickDot(side);
+          const pp = slotXY(side, passer);
+          await hop(pp.x, pp.y, null, null, { side, name: passer.player.name });
+        }
+        const start = slotXY(side, scorerSlot);
+        await hop(start.x, start.y, `${esc(ev.player)} takes it on…`, 500, { side, name: scorerSlot.player.name });
+        const shotX = 40 + Math.random() * 20;
+        for (const t of [0.45, 0.8]) {
+          await hop(lerp(start.x, shotX, t), lerp(start.y, gy, t), null, null, { side, name: scorerSlot.player.name });
+        }
+        await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> scores for ${esc(team.label)}!`, 1000, { side, name: scorerSlot.player.name });
+        if (side === 'home') scoreA++; else scoreB++;
+        scoreEl.textContent = `${scoreA} – ${scoreB}`;
       } else {
-        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked`, 700, { side, name: slot.player.name });
+        const builder = pickDot(side);
+        const build = slotXY(side, builder);
+        await hop(build.x, build.y, null, null, { side, name: builder.player.name });
+        const p = slotXY(side, scorerSlot);
+        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked`, 750, { side, name: scorerSlot.player.name });
       }
       await hop(50, 50);
     } else {
@@ -1122,14 +1155,14 @@ async function screenMatchSim(A, B, m) {
       }
       if (Math.random() < 0.18) {
         const gy = teams[side].isTop ? 80 : 20;
-        await hop(40 + Math.random() * 20, gy, Math.random() < 0.5 ? '🧤 Comfortable save' : '🛡️ Tackled, cleared away', 550);
+        await hop(40 + Math.random() * 20, gy, Math.random() < 0.5 ? '🧤 Comfortable save' : '🛡️ Tackled, cleared away', 600);
         await hop(50, 50);
       }
     }
   }
 
   if (skipped) return;
-  clearInterval(wobbleT);
+  clearInterval(wobbleT); clearInterval(clockT);
   clock.textContent = '90+';
   commentary.innerHTML = '<b>Full time.</b>';
   await sleep(600);
@@ -1215,45 +1248,92 @@ async function screenKnockout(A, B, tableRows) {
   });
   field.sort((a, b) => b.strength - a.strength);
 
+  // Simulate the whole bracket up front — a real visual bracket needs
+  // every round's result to lay out and draw connector lines correctly.
+  const roundNames = ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'];
+  const rounds = []; // each: [{x, y, winner}]
+  let current = field;
+  for (const _ of roundNames) {
+    const pairs = [];
+    for (let i = 0; i < current.length / 2; i++) pairs.push([current[i], current[current.length - 1 - i]]);
+    const matches = pairs.map(([x, y]) => ({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y }));
+    rounds.push(matches);
+    current = matches.map(m => m.winner);
+  }
+  const champ = current[0];
+
   const v = el(`<section>
     <h2>Knockout stage</h2>
     <p><small>Seeded from the table — 1 plays 16, 2 plays 15, and so on.</small></p>
-    <div id="rounds"></div>
-    <button class="btn ghost" id="back">Back to the table</button>
+    <div style="overflow-x:auto;margin:0 -16px;padding:4px 16px">
+      <div class="bracket" id="bracket" style="position:relative;display:flex;gap:30px;min-height:340px"></div>
+    </div>
+    <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
+      <h3>Champions</h3>
+      <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
+    </div>
+    <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
   </section>`);
   v.querySelector('#back').onclick = () => screenTable(A, B);
   show(v);
-  const roundsEl = v.querySelector('#rounds');
 
-  let current = field;
-  const roundNames = ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'];
-  for (const roundName of roundNames) {
-    const card = el(`<div class="card"><h3>${roundName}</h3></div>`);
-    roundsEl.appendChild(card);
-    await sleep(200);
-    const pairs = [];
-    for (let i = 0; i < current.length / 2; i++) pairs.push([current[i], current[current.length - 1 - i]]);
-    const winners = [];
-    for (const [x, y] of pairs) {
-      const xWins = knockoutOutcome(x.strength, y.strength);
-      const winner = xWins ? x : y;
-      winners.push(winner);
-      const notable = x.mine || y.mine;
-      const row = el(`<p style="margin:7px 0;opacity:0;transition:opacity .3s ease;${notable ? 'font-weight:700' : ''}">
-        ${notable ? '🔶 ' : ''}${esc(x.name)} vs ${esc(y.name)} → <b>${esc(winner.name)}</b></p>`);
-      card.appendChild(row);
-      requestAnimationFrame(() => { row.style.opacity = 1; });
-      await sleep(320);
-    }
-    current = winners;
+  const bracket = v.querySelector('#bracket');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('style', 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible');
+  bracket.appendChild(svg);
+
+  const matchBoxes = []; // [{round, idx, el}]
+  rounds.forEach((matches, r) => {
+    const col = el(`<div class="bround" style="display:flex;flex-direction:column;justify-content:space-around;
+      gap:16px;min-width:152px;flex:none;opacity:0;transition:opacity .4s ease"></div>`);
+    matches.forEach(mt => {
+      const box = el(`<div class="card bmatch" style="padding:8px 10px;margin:0;font-size:.8rem;
+        ${(mt.x.mine || mt.y.mine) ? 'border-color:var(--orange)' : ''}">
+        <div style="display:flex;justify-content:space-between;padding:2px 0;${mt.winner === mt.x ? 'font-weight:700' : 'opacity:.6'}">
+          <span>${mt.x.mine ? '🔶 ' : ''}${esc(mt.x.name)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;${mt.winner === mt.y ? 'font-weight:700' : 'opacity:.6'}">
+          <span>${mt.y.mine ? '🔶 ' : ''}${esc(mt.y.name)}</span></div>
+      </div>`);
+      col.appendChild(box);
+      matchBoxes.push({ round: r, mt, el: box });
+    });
+    bracket.appendChild(col);
+  });
+
+  // Reveal columns left to right, then draw the connector lines once
+  // everything has its final layout position.
+  const cols = bracket.querySelectorAll('.bround');
+  for (const col of cols) {
+    col.style.opacity = 1;
+    await sleep(260);
   }
-  const champ = current[0];
-  const champCard = el(`<div class="card" style="text-align:center;opacity:0;transition:opacity .4s ease">
-    <h3>Champions</h3>
-    <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
-  </div>`);
-  roundsEl.appendChild(champCard);
-  requestAnimationFrame(() => { champCard.style.opacity = 1; });
+  await sleep(80);
+
+  const wrapRect = bracket.getBoundingClientRect();
+  svg.setAttribute('width', bracket.scrollWidth);
+  svg.setAttribute('height', bracket.scrollHeight);
+  const centerOf = box => {
+    const r = box.getBoundingClientRect();
+    return { x: r.left - wrapRect.left + r.width, y: r.top - wrapRect.top + r.height / 2, left: r.left - wrapRect.left, midY: r.top - wrapRect.top + r.height / 2 };
+  };
+  for (let r = 0; r < rounds.length - 1; r++) {
+    rounds[r].forEach((mt, i) => {
+      const fromBox = matchBoxes.find(b => b.round === r && b.mt === mt).el;
+      const nextRoundIdx = Math.floor(i / 2);
+      const toBox = matchBoxes.find(b => b.round === r + 1 && b.mt === rounds[r + 1][nextRoundIdx]).el;
+      const from = centerOf(fromBox), to = { x: toBox.getBoundingClientRect().left - wrapRect.left, y: centerOf(toBox).y };
+      const midX = (from.x + to.x) / 2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${from.x},${from.y} H${midX} V${to.y} H${to.x}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', document.body.classList.contains('ucl-mode') ? 'rgba(255,255,255,.28)' : 'var(--line)');
+      path.setAttribute('stroke-width', '1.5');
+      svg.appendChild(path);
+    });
+  }
+
+  const champCard = v.querySelector('#champCard');
+  champCard.style.opacity = 1;
 }
 
 async function screenTable(A, B) {
