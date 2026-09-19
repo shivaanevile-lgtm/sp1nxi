@@ -20,7 +20,14 @@ const API = 'https://v3.football.api-sports.io';
 const json = (o, s = 200) =>
   new Response(JSON.stringify(o, null, 2), { status: s, headers: { 'content-type': 'application/json' } });
 
+// Free plan allows 10 requests/minute. Waiting between calls costs nothing —
+// Workers only meter active CPU time, and time spent awaiting is free even
+// on the Free plan — so pace conservatively at 9/minute.
+const PACE_MS = 6600;
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+
 async function call(env, path, counter) {
+  if (counter.used > 0) await sleep(PACE_MS);
   counter.used++;
   const r = await fetch(API + path, { headers: { 'x-apisports-key': env.API_FOOTBALL_KEY } });
   if (!r.ok) throw new Error(`api-football ${r.status} on ${path}`);
@@ -76,7 +83,9 @@ export async function onRequestGet({ request, env }) {
   if (!leagueId) return json({ error: 'league must be one of ' + Object.keys(LEAGUE_IDS) }, 400);
 
   const season = Number(url.searchParams.get('season')) || new Date().getFullYear() - (new Date().getMonth() < 6 ? 1 : 0);
-  const budget = Math.min(Number(url.searchParams.get('budget')) || 40, 95);
+  // Free Workers cap subrequests at 50 per invocation, so keep budget under that
+  // regardless of what's asked for.
+  const budget = Math.min(Number(url.searchParams.get('budget')) || 20, 45);
   const counter = { used: 0 };
   const report = { league: leagueKey, season, done: [], skipped: [], errors: [] };
 
