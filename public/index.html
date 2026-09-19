@@ -161,6 +161,30 @@ tr.me td{background:#fff;font-weight:600}
 :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .foot{color:var(--ink-soft);font-size:.74rem;padding:18px 0 4px;text-align:center}
 
+/* Sticky action bar — the build screen's primary button lives here so
+   spinning the next club never requires scrolling back to the top. */
+.actionbar{
+  position:sticky;bottom:0;left:0;right:0;z-index:15;
+  margin:14px -16px 0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, rgba(246,239,226,0) 0%, var(--cream) 28%, var(--cream) 100%);
+}
+body.ucl-mode .actionbar{
+  background:linear-gradient(180deg, rgba(10,15,36,0) 0%, #0A1968 28%, #0A1968 100%);
+}
+.actionbar .btn{margin:0}
+
+/* Tighter vertical rhythm on small screens — the build screen especially
+   packs a club card, reel, pitch and picker in one view. */
+@media (max-width:420px){
+  .card{padding:12px 14px;margin:8px 0}
+  h2{font-size:1.18rem}
+  .reel{height:76px}
+  .reel-item{height:76px;font-size:1.35rem}
+  .pitch{aspect-ratio:68/86}
+  .slot{width:52px;padding:4px 2px}
+  .plyr{padding:8px 10px}
+}
+
 /* Champions League night — floodlit, starball motif, replaces cream/orange
    whenever a UCL game is active (body.ucl-mode) */
 body.ucl-mode{
