@@ -5,7 +5,7 @@
 "name": "Thibaut Courtois",
 "number": 2,
 "position": "Goalkeeper",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Real Madrid-2",
@@ -26,7 +26,7 @@
 "name": "Antonio Rudiger",
 "number": 5,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Real Madrid-5",
@@ -47,7 +47,7 @@
 "name": "Trent Alexander-Arnold",
 "number": 8,
 "position": "Defender",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Real Madrid-8",
@@ -61,14 +61,14 @@
 "name": "Jude Bellingham",
 "number": 10,
 "position": "Midfielder",
-"rating": 90
+"rating": 94
 },
 {
 "id": "UCL-Real Madrid-10",
 "name": "Federico Valverde",
 "number": 11,
 "position": "Midfielder",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Real Madrid-11",
@@ -96,14 +96,14 @@
 "name": "Kylian Mbappe",
 "number": 15,
 "position": "Attacker",
-"rating": 93
+"rating": 96
 },
 {
 "id": "UCL-Real Madrid-15",
 "name": "Vinicius Junior",
 "number": 16,
 "position": "Attacker",
-"rating": 90
+"rating": 94
 },
 {
 "id": "UCL-Real Madrid-16",
@@ -133,7 +133,7 @@
 "name": "Gianluigi Donnarumma",
 "number": 20,
 "position": "Goalkeeper",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Manchester City-20",
@@ -147,14 +147,14 @@
 "name": "Ruben Dias",
 "number": 22,
 "position": "Defender",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Manchester City-22",
 "name": "Josko Gvardiol",
 "number": 23,
 "position": "Defender",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Manchester City-23",
@@ -189,7 +189,7 @@
 "name": "Rodri",
 "number": 28,
 "position": "Midfielder",
-"rating": 92
+"rating": 96
 },
 {
 "id": "UCL-Manchester City-28",
@@ -203,7 +203,7 @@
 "name": "Bernardo Silva",
 "number": 30,
 "position": "Midfielder",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Manchester City-30",
@@ -224,14 +224,14 @@
 "name": "Erling Haaland",
 "number": 3,
 "position": "Attacker",
-"rating": 93
+"rating": 96
 },
 {
 "id": "UCL-Manchester City-33",
 "name": "Phil Foden",
 "number": 4,
 "position": "Attacker",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Manchester City-34",
@@ -275,7 +275,7 @@
 "name": "Dayot Upamecano",
 "number": 10,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Bayern M\u00fcnchen-40",
@@ -289,7 +289,7 @@
 "name": "Alphonso Davies",
 "number": 12,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Bayern M\u00fcnchen-42",
@@ -310,7 +310,7 @@
 "name": "Joshua Kimmich",
 "number": 15,
 "position": "Midfielder",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Bayern M\u00fcnchen-45",
@@ -331,21 +331,21 @@
 "name": "Jamal Musiala",
 "number": 18,
 "position": "Midfielder",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Bayern M\u00fcnchen-48",
 "name": "Harry Kane",
 "number": 19,
 "position": "Attacker",
-"rating": 92
+"rating": 96
 },
 {
 "id": "UCL-Bayern M\u00fcnchen-49",
 "name": "Michael Olise",
 "number": 20,
 "position": "Attacker",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Bayern M\u00fcnchen-50",
@@ -359,7 +359,7 @@
 "name": "Luis Diaz",
 "number": 22,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 }
 ],
 "Paris Saint-Germain": [
@@ -375,7 +375,7 @@
 "name": "Gianluigi Donnarumma",
 "number": 24,
 "position": "Goalkeeper",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Paris Saint-Germain-54",
@@ -389,7 +389,7 @@
 "name": "Achraf Hakimi",
 "number": 26,
 "position": "Defender",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Paris Saint-Germain-56",
@@ -417,7 +417,7 @@
 "name": "Vitinha",
 "number": 30,
 "position": "Midfielder",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Paris Saint-Germain-60",
@@ -445,7 +445,7 @@
 "name": "Ousmane Dembele",
 "number": 4,
 "position": "Attacker",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Paris Saint-Germain-64",
@@ -459,7 +459,7 @@
 "name": "Khvicha Kvaratskhelia",
 "number": 6,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Paris Saint-Germain-66",
@@ -475,7 +475,7 @@
 "name": "Alisson Becker",
 "number": 8,
 "position": "Goalkeeper",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Liverpool-68",
@@ -489,7 +489,7 @@
 "name": "Virgil van Dijk",
 "number": 10,
 "position": "Defender",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Liverpool-70",
@@ -524,7 +524,7 @@
 "name": "Alexis Mac Allister",
 "number": 15,
 "position": "Midfielder",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Liverpool-75",
@@ -545,7 +545,7 @@
 "name": "Florian Wirtz",
 "number": 18,
 "position": "Midfielder",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Liverpool-78",
@@ -559,7 +559,7 @@
 "name": "Mohamed Salah",
 "number": 20,
 "position": "Attacker",
-"rating": 91
+"rating": 95
 },
 {
 "id": "UCL-Liverpool-80",
@@ -580,7 +580,7 @@
 "name": "Alexander Isak",
 "number": 23,
 "position": "Attacker",
-"rating": 87
+"rating": 91
 }
 ],
 "Barcelona": [
@@ -638,14 +638,14 @@
 "name": "Pedri",
 "number": 1,
 "position": "Midfielder",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Barcelona-91",
 "name": "Frenkie de Jong",
 "number": 2,
 "position": "Midfielder",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Barcelona-92",
@@ -666,21 +666,21 @@
 "name": "Lamine Yamal",
 "number": 5,
 "position": "Attacker",
-"rating": 91
+"rating": 95
 },
 {
 "id": "UCL-Barcelona-95",
 "name": "Robert Lewandowski",
 "number": 6,
 "position": "Attacker",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Barcelona-96",
 "name": "Raphinha",
 "number": 7,
 "position": "Attacker",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Barcelona-97",
@@ -696,7 +696,7 @@
 "name": "David Raya",
 "number": 9,
 "position": "Goalkeeper",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Arsenal-99",
@@ -710,21 +710,21 @@
 "name": "William Saliba",
 "number": 11,
 "position": "Defender",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Arsenal-101",
 "name": "Gabriel Magalhaes",
 "number": 12,
 "position": "Defender",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Arsenal-102",
 "name": "Jurrien Timber",
 "number": 13,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Arsenal-103",
@@ -745,14 +745,14 @@
 "name": "Declan Rice",
 "number": 16,
 "position": "Midfielder",
-"rating": 90
+"rating": 94
 },
 {
 "id": "UCL-Arsenal-106",
 "name": "Martin Odegaard",
 "number": 17,
 "position": "Midfielder",
-"rating": 89
+"rating": 93
 },
 {
 "id": "UCL-Arsenal-107",
@@ -773,7 +773,7 @@
 "name": "Bukayo Saka",
 "number": 20,
 "position": "Attacker",
-"rating": 90
+"rating": 94
 },
 {
 "id": "UCL-Arsenal-110",
@@ -824,7 +824,7 @@
 "name": "Alessandro Bastoni",
 "number": 27,
 "position": "Defender",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Inter-117",
@@ -859,7 +859,7 @@
 "name": "Nicolo Barella",
 "number": 2,
 "position": "Midfielder",
-"rating": 86
+"rating": 90
 },
 {
 "id": "UCL-Inter-122",
@@ -887,14 +887,14 @@
 "name": "Lautaro Martinez",
 "number": 6,
 "position": "Attacker",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Inter-126",
 "name": "Marcus Thuram",
 "number": 7,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Inter-127",
@@ -1010,7 +1010,7 @@
 "name": "Jan Oblak",
 "number": 23,
 "position": "Goalkeeper",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Atl\u00e9tico Madrid-143",
@@ -1080,14 +1080,14 @@
 "name": "Julian Alvarez",
 "number": 3,
 "position": "Attacker",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Atl\u00e9tico Madrid-153",
 "name": "Antoine Griezmann",
 "number": 4,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Atl\u00e9tico Madrid-154",
@@ -1180,7 +1180,7 @@
 "name": "Kevin De Bruyne",
 "number": 17,
 "position": "Attacker",
-"rating": 88
+"rating": 92
 },
 {
 "id": "UCL-Napoli-167",
@@ -1252,7 +1252,7 @@
 "name": "Bruno Fernandes",
 "number": 27,
 "position": "Midfielder",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Manchester United-177",
@@ -1280,7 +1280,7 @@
 "name": "Bryan Mbeumo",
 "number": 1,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Manchester United-181",
@@ -1524,7 +1524,7 @@
 "name": "Viktor Gyokeres",
 "number": 5,
 "position": "Attacker",
-"rating": 84
+"rating": 85
 },
 {
 "id": "UCL-Sporting CP-215",
@@ -1669,34 +1669,6 @@
 "number": 25,
 "position": "Attacker",
 "rating": 74
-},
-{
-"id": "UCL-Club Brugge-x90001",
-"name": "Bjorn Meijer",
-"number": 2,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Club Brugge-x90002",
-"name": "Kyriani Sabbe",
-"number": 3,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Club Brugge-x90003",
-"name": "Raphael Onyedika",
-"number": 4,
-"position": "Midfielder",
-"rating": 75
-},
-{
-"id": "UCL-Club Brugge-x90004",
-"name": "Ferran Jutgla",
-"number": 5,
-"position": "Attacker",
-"rating": 73
 }
 ],
 "Galatasaray": [
@@ -1740,7 +1712,7 @@
 "name": "Victor Osimhen",
 "number": 1,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Galatasaray-241",
@@ -1755,27 +1727,6 @@
 "number": 3,
 "position": "Attacker",
 "rating": 76
-},
-{
-"id": "UCL-Galatasaray-x90005",
-"name": "Eren Elmali",
-"number": 6,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Galatasaray-x90006",
-"name": "Kaan Ayhan",
-"number": 7,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Galatasaray-x90007",
-"name": "Berkan Kutlu",
-"number": 8,
-"position": "Midfielder",
-"rating": 73
 }
 ],
 "PSV Eindhoven": [
@@ -1834,34 +1785,6 @@
 "number": 11,
 "position": "Attacker",
 "rating": 77
-},
-{
-"id": "UCL-PSV Eindhoven-x90008",
-"name": "Sergino Dest",
-"number": 9,
-"position": "Defender",
-"rating": 76
-},
-{
-"id": "UCL-PSV Eindhoven-x90009",
-"name": "Jerdy Schouten",
-"number": 10,
-"position": "Defender",
-"rating": 74
-},
-{
-"id": "UCL-PSV Eindhoven-x90010",
-"name": "Malik Tillman",
-"number": 11,
-"position": "Midfielder",
-"rating": 76
-},
-{
-"id": "UCL-PSV Eindhoven-x90011",
-"name": "Couhaib Driouech",
-"number": 12,
-"position": "Attacker",
-"rating": 74
 }
 ],
 "Shakhtar Donetsk": [
@@ -1913,34 +1836,6 @@
 "number": 18,
 "position": "Attacker",
 "rating": 74
-},
-{
-"id": "UCL-Shakhtar Donetsk-x90012",
-"name": "Mykola Matviyenko",
-"number": 13,
-"position": "Defender",
-"rating": 74
-},
-{
-"id": "UCL-Shakhtar Donetsk-x90013",
-"name": "Bogdan Mykhaylichenko",
-"number": 14,
-"position": "Defender",
-"rating": 71
-},
-{
-"id": "UCL-Shakhtar Donetsk-x90014",
-"name": "Ivan Petryak",
-"number": 15,
-"position": "Midfielder",
-"rating": 71
-},
-{
-"id": "UCL-Shakhtar Donetsk-x90015",
-"name": "Eguinaldo",
-"number": 16,
-"position": "Attacker",
-"rating": 71
 }
 ],
 "Aston Villa": [
@@ -1949,7 +1844,7 @@
 "name": "Emiliano Martinez",
 "number": 19,
 "position": "Goalkeeper",
-"rating": 87
+"rating": 91
 },
 {
 "id": "UCL-Aston Villa-259",
@@ -2012,7 +1907,7 @@
 "name": "Ollie Watkins",
 "number": 28,
 "position": "Attacker",
-"rating": 85
+"rating": 89
 },
 {
 "id": "UCL-Aston Villa-268",
@@ -2157,27 +2052,6 @@
 "number": 18,
 "position": "Attacker",
 "rating": 73
-},
-{
-"id": "UCL-Real Betis-x90016",
-"name": "Diego Llorente",
-"number": 17,
-"position": "Defender",
-"rating": 76
-},
-{
-"id": "UCL-Real Betis-x90017",
-"name": "Ricardo Rodriguez",
-"number": 18,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Real Betis-x90018",
-"name": "Johnny Cardoso",
-"number": 19,
-"position": "Midfielder",
-"rating": 76
 }
 ],
 "Feyenoord": [
@@ -2229,34 +2103,6 @@
 "number": 25,
 "position": "Attacker",
 "rating": 74
-},
-{
-"id": "UCL-Feyenoord-x90019",
-"name": "Bart Nieuwkoop",
-"number": 20,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Feyenoord-x90020",
-"name": "Hugo Bueno",
-"number": 21,
-"position": "Defender",
-"rating": 72
-},
-{
-"id": "UCL-Feyenoord-x90021",
-"name": "Ramiz Zerrouki",
-"number": 22,
-"position": "Midfielder",
-"rating": 74
-},
-{
-"id": "UCL-Feyenoord-x90022",
-"name": "Antoni Milambo",
-"number": 23,
-"position": "Midfielder",
-"rating": 73
 }
 ],
 "Stuttgart": [
@@ -2308,34 +2154,6 @@
 "number": 2,
 "position": "Attacker",
 "rating": 78
-},
-{
-"id": "UCL-Stuttgart-x90023",
-"name": "Ramon Hendriks",
-"number": 24,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Stuttgart-x90024",
-"name": "Finn Jeltsch",
-"number": 25,
-"position": "Defender",
-"rating": 71
-},
-{
-"id": "UCL-Stuttgart-x90025",
-"name": "Chris Fuhrich",
-"number": 26,
-"position": "Midfielder",
-"rating": 74
-},
-{
-"id": "UCL-Stuttgart-x90026",
-"name": "El Bilal Toure",
-"number": 27,
-"position": "Attacker",
-"rating": 72
 }
 ],
 "Lille": [
@@ -2387,34 +2205,6 @@
 "number": 9,
 "position": "Attacker",
 "rating": 78
-},
-{
-"id": "UCL-Lille-x90027",
-"name": "Bafode Diakite",
-"number": 28,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Lille-x90028",
-"name": "Alexsandro",
-"number": 29,
-"position": "Defender",
-"rating": 74
-},
-{
-"id": "UCL-Lille-x90029",
-"name": "R\u00e9my Cabella",
-"number": 30,
-"position": "Midfielder",
-"rating": 74
-},
-{
-"id": "UCL-Lille-x90030",
-"name": "Mohamed Bayo",
-"number": 1,
-"position": "Attacker",
-"rating": 72
 }
 ],
 "Lens": [
@@ -2466,34 +2256,6 @@
 "number": 16,
 "position": "Attacker",
 "rating": 72
-},
-{
-"id": "UCL-Lens-x90031",
-"name": "Facundo Medina",
-"number": 2,
-"position": "Defender",
-"rating": 76
-},
-{
-"id": "UCL-Lens-x90032",
-"name": "Malang Sarr",
-"number": 3,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Lens-x90033",
-"name": "Neil El Aynaoui",
-"number": 4,
-"position": "Midfielder",
-"rating": 74
-},
-{
-"id": "UCL-Lens-x90034",
-"name": "Elye Wahi",
-"number": 5,
-"position": "Attacker",
-"rating": 74
 }
 ],
 "Como": [
@@ -2545,27 +2307,6 @@
 "number": 23,
 "position": "Attacker",
 "rating": 75
-},
-{
-"id": "UCL-Como-x90035",
-"name": "Marc-Oliver Kempf",
-"number": 6,
-"position": "Defender",
-"rating": 72
-},
-{
-"id": "UCL-Como-x90036",
-"name": "Alieu Fadera",
-"number": 7,
-"position": "Defender",
-"rating": 71
-},
-{
-"id": "UCL-Como-x90037",
-"name": "Maxence Caqueret",
-"number": 8,
-"position": "Midfielder",
-"rating": 76
 }
 ],
 "Fenerbah\u00e7e": [
@@ -2623,27 +2364,6 @@
 "name": "Archie Brown",
 "number": 1,
 "position": "Attacker",
-"rating": 73
-},
-{
-"id": "UCL-Fenerbah\u00e7e-x90038",
-"name": "Bright Osayi-Samuel",
-"number": 9,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Fenerbah\u00e7e-x90039",
-"name": "Rodrigo Becao",
-"number": 10,
-"position": "Defender",
-"rating": 73
-},
-{
-"id": "UCL-Fenerbah\u00e7e-x90040",
-"name": "Ismail Yuksek",
-"number": 11,
-"position": "Midfielder",
 "rating": 73
 }
 ]
