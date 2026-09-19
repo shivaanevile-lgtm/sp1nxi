@@ -457,7 +457,8 @@ function simulate(A, B) {
    league, using each club's own best available XI in that formation. */
 async function predictTable(leagueKey, squads) {
   const rows = [];
-  for (const club of S.leagueClubs) {
+  const clubs = S.leagueClubs || [];
+  for (const club of clubs) {
     try {
       const sq = await getSquad(leagueKey, club);
       const best = g => {
@@ -471,6 +472,8 @@ async function predictTable(leagueKey, squads) {
       rows.push({ name: club.name, strength: Math.round(strength * 10) / 10, real: true });
     } catch (e) { /* one club failing shouldn't blank the whole table — skip it */ }
   }
+  // These two never depend on club data, so they show up even if every
+  // real club above failed or the league's club list wasn't available.
   squads.forEach(s => rows.push({ name: s.label, strength: s.strength.overall, mine: true }));
   if (!rows.length) return rows;
   rows.sort((a, b) => b.strength - a.strength);
@@ -1021,18 +1024,37 @@ async function screenMatchSim(A, B, m) {
   const pitch = v.querySelector('#matchpitch'), ball = v.querySelector('#ball');
   const clock = v.querySelector('#clock'), commentary = v.querySelector('#commentary');
 
-  [[A, false], [B, true]].forEach(([team, isTop]) => {
+  // Every player is a real dot at their formation position, tagged with
+  // its base spot so it can be nudged around and always drift back home.
+  const dotEls = { home: {}, away: {} };
+  [['home', A, false], ['away', B, true]].forEach(([side, team, isTop]) => {
     team.xi.forEach(s => {
-      const dot = el(`<div style="position:absolute;left:${s.x}%;top:${matchY(s, isTop)}%;
+      const bx = s.x, by = matchY(s, isTop);
+      const dot = el(`<div style="position:absolute;left:${bx}%;top:${by}%;
         width:15px;height:15px;border-radius:50%;transform:translate(-50%,-50%);
-        background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5)"></div>`);
+        background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5);
+        transition:left .7s ease,top .7s ease"></div>`);
+      dot.dataset.bx = bx; dot.dataset.by = by;
       pitch.appendChild(dot);
+      dotEls[side][s.player.name] = dot;
     });
   });
 
   let skipped = false;
-  v.querySelector('#skip').onclick = () => { skipped = true; screenResult(A, B, m); };
+  v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); screenResult(A, B, m); };
   show(v);
+
+  // Constant subtle drift for every player — always computed fresh from
+  // their formation spot (never cumulative), so the shape never wanders
+  // off itself; a dot that just got moved onto the ball simply gets
+  // pulled back toward its own position within a tick or two.
+  const wobbleT = setInterval(() => {
+    Object.values(dotEls).forEach(team => Object.values(team).forEach(dot => {
+      const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
+      dot.style.left = Math.max(4, Math.min(96, bx + (Math.random() * 8 - 4))) + '%';
+      dot.style.top = Math.max(3, Math.min(97, by + (Math.random() * 6 - 3))) + '%';
+    }));
+  }, 1300);
 
   // A real 90 minutes compressed to ~30 seconds, played as a fixed number
   // of short "chains" — a couple of passes ending in a shot, a tackle, or
@@ -1046,9 +1068,10 @@ async function screenMatchSim(A, B, m) {
   const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
 
-  async function hop(x, y, caption, holdMs) {
+  async function hop(x, y, caption, holdMs, mover) {
     if (skipped) return;
     ball.style.left = x + '%'; ball.style.top = y + '%';
+    if (mover) { const dot = dotEls[mover.side][mover.name]; if (dot) { dot.style.left = x + '%'; dot.style.top = y + '%'; } }
     await sleep(340);
     if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 550); }
   }
@@ -1064,23 +1087,25 @@ async function screenMatchSim(A, B, m) {
       used.add(ev);
       const side = ev.side, team = teams[side].team;
       const slot = team.xi.find(sl => sl.player.name === ev.player) || pickDot(side);
-      const build = slotXY(side, pickDot(side));
-      await hop(build.x, build.y);
+      const builder = pickDot(side);
+      const build = slotXY(side, builder);
+      await hop(build.x, build.y, null, null, { side, name: builder.player.name });
       const p = slotXY(side, slot);
-      await hop(p.x, p.y);
+      await hop(p.x, p.y, null, null, { side, name: slot.player.name });
       if (ev.type === 'goal') {
         const gy = teams[side].isTop ? 94 : 6;
-        await hop(40 + Math.random() * 20, gy, `⚽ <b>${esc(ev.player)}</b> scores for ${esc(team.label)}!`, 900);
+        await hop(40 + Math.random() * 20, gy, `⚽ <b>${esc(ev.player)}</b> scores for ${esc(team.label)}!`, 900, { side, name: slot.player.name });
       } else {
-        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked`, 700);
+        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked`, 700, { side, name: slot.player.name });
       }
       await hop(50, 50);
     } else {
       const side = Math.random() < (m.xgA / (m.xgA + m.xgB || 1)) ? 'home' : 'away';
       const hops = 2 + Math.floor(Math.random() * 2);
       for (let i = 0; i < hops; i++) {
-        const p = slotXY(side, pickDot(side));
-        await hop(p.x, p.y);
+        const d = pickDot(side);
+        const p = slotXY(side, d);
+        await hop(p.x, p.y, null, null, { side, name: d.player.name });
       }
       if (Math.random() < 0.18) {
         const gy = teams[side].isTop ? 80 : 20;
@@ -1091,6 +1116,7 @@ async function screenMatchSim(A, B, m) {
   }
 
   if (skipped) return;
+  clearInterval(wobbleT);
   clock.textContent = '90+';
   commentary.innerHTML = '<b>Full time.</b>';
   await sleep(600);
