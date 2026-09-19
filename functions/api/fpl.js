@@ -19,9 +19,11 @@ const POSITION_MAP = { 'Goalkeeper': 'Goalkeeper', 'Defender': 'Defender',
 // squad player lands in the 50s-60s, a good regular in the 70s, and only
 // genuine stars (£12m+) reach the 90s.
 function ratingFromCost(cost) {
+  // Only reached for clubs with no curated data at all — kept in the same
+  // "mostly 70-100" range as the hand-set ratings so it doesn't stick out.
   const frac = Math.max(0, Math.min(1, (cost - 38) / (150 - 38)));
-  const r = 38 + 58 * Math.sqrt(frac);
-  return Math.max(35, Math.min(98, Math.round(r)));
+  const r = 58 + 38 * Math.sqrt(frac);
+  return Math.max(52, Math.min(97, Math.round(r)));
 }
 
 export async function onRequestGet() {
