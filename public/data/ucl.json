@@ -802,6 +802,13 @@
 "number": 24,
 "position": "Attacker",
 "rating": 84
+},
+{
+"id": "UCL-Arsenal-gyokeres",
+"name": "Viktor Gyokeres",
+"number": 5,
+"position": "Attacker",
+"rating": 85
 }
 ],
 "Inter": [
@@ -1518,13 +1525,6 @@
 "number": 4,
 "position": "Midfielder",
 "rating": 75
-},
-{
-"id": "UCL-Sporting CP-214",
-"name": "Viktor Gyokeres",
-"number": 5,
-"position": "Attacker",
-"rating": 85
 },
 {
 "id": "UCL-Sporting CP-215",
