@@ -766,11 +766,12 @@ function screenFormationSpin() {
 function screenBuild() {
   const p = me();
   theme(null);
-  p.xi = FORMATIONS[p.formation].map(s => ({ ...s, player:null, rerolls:2 }));
+  p.xi = FORMATIONS[p.formation].map(s => ({ ...s, player: null }));
+  p.rerollsLeft = 5; // whole-XI budget — a reroll discards the spun club, not a single player
 
   const clubs = S.leagueClubs;
   const usedClubs = new Set(), usedPlayers = new Set();
-  let club = null, slotIdx = -1, busy = false;
+  let club = null, busy = false;
 
   const v = el(`<section>
     <div class="card club" id="clubcard" style="padding:12px 14px">
@@ -780,7 +781,7 @@ function screenBuild() {
       </div>
     </div>
     <div class="reel"><div class="reel-track"><div class="reel-item">${esc(LEAGUES[S.leagueKey].name)}</div></div></div>
-    <p id="hint">Spin for a club, then decide which shirt to spend it on.</p>
+    <p id="hint">Spin for a club — then pick who you want from it and which shirt they take.</p>
     <div class="pitch"><div class="markings">
       <div style="left:20%;right:20%;top:-1px;height:12%;border-top:none"></div>
       <div style="left:20%;right:20%;bottom:-1px;height:12%;border-bottom:none"></div>
@@ -788,35 +789,46 @@ function screenBuild() {
       <div style="left:35%;right:35%;top:43.5%;height:13%;border-radius:50%"></div>
     </div></div>
     <div class="picker" id="picker"></div>
-    <div class="actionbar"><button class="btn primary" id="act">Spin for a club</button></div>
+    <div class="actionbar" id="actbar">
+      <div class="row">
+        <button class="btn primary" id="act" style="flex:1">Spin for a club</button>
+        <button class="btn ghost sm" id="rr" style="flex:0 0 auto">Reroll club (5)</button>
+      </div>
+    </div>
   </section>`);
 
   const pitch = v.querySelector('.pitch'), picker = v.querySelector('#picker');
-  const act = v.querySelector('#act'), hint = v.querySelector('#hint');
+  const act = v.querySelector('#act'), rr = v.querySelector('#rr'), hint = v.querySelector('#hint');
   const box = v.querySelector('.reel');
 
   const filled = () => p.xi.filter(s => s.player).length;
+  const openGroups = () => ['GK', 'DEF', 'MID', 'ATT_MID', 'FWD'].filter(g => p.xi.some(s => !s.player && GROUP[s.role] === g));
 
   function paint() {
     pitch.querySelectorAll('.slot').forEach(n => n.remove());
-    p.xi.forEach((s, i) => {
+    p.xi.forEach(s => {
       const c = s.player && s.player.club;
       const style = c
         ? `left:${s.x}%;top:${s.y}%;background:linear-gradient(150deg,${c.home},${c.away === '#FFFFFF' ? '#241F19' : c.away});
            border-color:${c.home};color:${readable(c.home)}`
         : `left:${s.x}%;top:${s.y}%`;
-      const n = el(`<button class="slot ${s.player ? 'filled' : ''} ${slotIdx === i ? 'active' : ''}" style="${style}">
+      const n = el(`<div class="slot ${s.player ? 'filled' : ''}" style="${style}">
         <span class="role">${s.role}</span>
         ${s.player ? `<span class="nm">${esc(s.player.name.split(' ').slice(-1)[0])}</span>
           <span class="rt">${s.player.rating}</span>` : ''}
-      </button>`);
-      n.onclick = () => pickSlot(i);
+      </div>`);
       pitch.appendChild(n);
     });
     v.querySelector('#count').textContent = `${filled()} of 11 picked`;
     const rated = p.xi.filter(s => s.player);
     v.querySelector('#avg').textContent = rated.length
       ? Math.round(rated.reduce((t, s) => t + s.player.rating, 0) / rated.length) : '—';
+    rr.textContent = `Reroll club (${p.rerollsLeft})`;
+    rr.disabled = !club || p.rerollsLeft <= 0;
+  }
+
+  function groupLabel(g) {
+    return { GK: 'Goalkeeper', DEF: 'Defenders', MID: 'Midfielders', ATT_MID: 'Attacking mid / wide', FWD: 'Forwards' }[g];
   }
 
   async function spin() {
@@ -832,76 +844,77 @@ function screenBuild() {
     theme(club);
     club.squad = await getSquad(S.leagueKey, club);
     v.querySelector('#clubname').textContent = club.name;
-    hint.textContent = 'Tap the shirt you want a ' + club.name + ' player in.';
     act.classList.add('hide');
     busy = false; act.disabled = false;
+    renderChoices();
     paint();
   }
 
-  function draw(i, c) {
-    const s = p.xi[i], grp = GROUP[s.role];
-    const taken = new Set(usedPlayers);
-    if (s.player) taken.delete(s.player.id);
-    const pool = c.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !taken.has(pl.id));
-    if (!pool.length) return null;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    return { ...pick, rating: getRating(pick, grp), club: c };
-  }
-
-  function pickSlot(i) {
-    if (busy) return;
-    if (!club) { toast('Spin for a club first.'); return; }
-    if (p.xi[i].player) { toast('That shirt is taken.'); return; }
-    slotIdx = i;
-    const pl = draw(i, club);
-    if (!pl) { slotIdx = -1; return toast(`${club.name} has nobody for that position.`); }
-    p.xi[i].player = pl; usedPlayers.add(pl.id);
-    paint(); renderPick(i);
-    pitch.querySelectorAll('.slot')[i].classList.add('pulse');
-  }
-
-  function renderPick(i) {
-    const s = p.xi[i], pl = s.player, st = pl.stats, grp = GROUP[s.role];
-    const line = !st ? `${pl.position} · rated ${pl.rating}`
-      : grp === 'GK' ? `${st.saves} saves · ${st.cleanSheets} clean sheets`
-      : grp === 'DEF' ? `${st.cleanSheets} clean sheets · ${st.tackles + st.interceptions + st.blocks} defensive actions`
-      : grp === 'MID' ? `${st.passes} passes · ${st.passAccuracy}% accuracy`
-      : `${st.goals} goals · ${st.assists} assists${grp === 'ATT_MID' ? ` · ${st.dribbles} dribbles` : ''}`;
-    const card = el(`<div>
-      <div class="plyr">
-        <span class="num" style="background:${pl.club.home};color:${readable(pl.club.home)}">${pl.number}</span>
-        <span class="meta"><b>${esc(pl.name)}</b><small>${s.role} · ${esc(pl.club.name)}${st ? ` · ${st.appearances} apps` : ''}</small></span>
-        <span class="rating">${pl.rating}</span>
-      </div>
-      <small style="display:block;padding:6px 2px">${esc(line)}</small>
-      <button class="btn ghost sm" id="rr">Reroll (${s.rerolls} left)</button>
-    </div>`);
-    const rr = card.querySelector('#rr');
-    if (!s.rerolls) { rr.disabled = true; rr.textContent = 'No rerolls left'; }
-    rr.onclick = () => {
-      if (!s.rerolls) return;
-      const np = draw(i, pl.club); if (!np) return toast('Nobody else to try.');
-      usedPlayers.delete(s.player.id);
-      s.rerolls--; s.player = np; usedPlayers.add(np.id);
-      paint(); renderPick(i);
-      pitch.querySelectorAll('.slot')[i].classList.add('pulse');
-    };
-    picker.replaceChildren(card);
-
-    slotIdx = -1;
-    club = null;                       // one club, one shirt — spin again for the next
-    v.querySelector('#clubname').textContent = pl.club.name + ' — done';
-    act.classList.remove('hide');
-    if (filled() === 11) {
-      hint.textContent = 'Eleven shirts, eleven clubs. Reroll this one or take it as it is.';
-      act.textContent = 'Confirm this XI';
-      act.onclick = () => { picker.replaceChildren(); nextAfterBuild(); };
+  function renderChoices() {
+    picker.replaceChildren();
+    const groups = openGroups();
+    let any = false;
+    groups.forEach(g => {
+      const taken = usedPlayers;
+      const cands = club.squad
+        .filter(pl => ELIGIBLE[g].includes(pl.position) && !taken.has(pl.id))
+        .map(pl => ({ ...pl, rating: getRating(pl, g) }))
+        .sort((a, b) => b.rating - a.rating);
+      if (!cands.length) return;
+      any = true;
+      const section = el(`<div style="margin-bottom:10px"><h3 style="margin:0 0 6px">${groupLabel(g)}</h3></div>`);
+      cands.forEach(pl => {
+        const row = el(`<div class="plyr" style="margin-bottom:6px;cursor:pointer">
+          <span class="num" style="background:${club.home};color:${readable(club.home)}">${pl.number}</span>
+          <span class="meta"><b>${esc(pl.name)}</b><small>${esc(pl.position)}</small></span>
+          <span class="rating">${pl.rating}</span>
+        </div>`);
+        row.onclick = () => choose(g, pl);
+        section.appendChild(row);
+      });
+      picker.appendChild(section);
+    });
+    if (!any) {
+      picker.appendChild(el(`<p><small>No eligible players from ${esc(club.name)} for your remaining shirts — spin again.</small></p>`));
+      hint.textContent = 'Nobody there fits what you still need.';
+      act.classList.remove('hide'); act.textContent = 'Spin for the next club'; act.onclick = spin;
+      club = null; paint();
     } else {
-      hint.textContent = `${11 - filled()} to go. Spinning again keeps this pick.`;
+      hint.textContent = `Pick a player from ${club.name} — they'll take the matching shirt.`;
+    }
+  }
+
+  function choose(group, pl) {
+    if (busy) return;
+    const slot = p.xi.find(s => !s.player && GROUP[s.role] === group);
+    if (!slot) return; // shouldn't happen, group only offered if an open shirt exists
+    slot.player = { ...pl, club };
+    usedPlayers.add(pl.id);
+    club = null;
+    picker.replaceChildren();
+    paint();
+    if (filled() === 11) {
+      hint.textContent = 'Eleven shirts, eleven clubs.';
+      act.classList.remove('hide');
+      act.textContent = 'Confirm this XI';
+      act.onclick = () => nextAfterBuild();
+    } else {
+      hint.textContent = `${11 - filled()} to go.`;
+      act.classList.remove('hide');
       act.textContent = 'Spin for the next club';
       act.onclick = spin;
     }
   }
+
+  rr.onclick = () => {
+    if (!club || p.rerollsLeft <= 0) return;
+    p.rerollsLeft--;
+    club = null;
+    picker.replaceChildren();
+    hint.textContent = `${11 - filled()} to go. Spin for another club.`;
+    act.classList.remove('hide'); act.textContent = 'Spin for the next club'; act.onclick = spin;
+    paint();
+  };
 
   act.onclick = spin;
   setCrumb(`${p.label} · ${p.formation}`);
