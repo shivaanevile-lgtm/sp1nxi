@@ -338,12 +338,31 @@ async function getSquad(leagueKey, club) {
   if (leagueKey === 'PL') {
     const curatedPL = await loadCurated('PL');
     const curatedSquad = curatedPL && curatedPL[club.name];
+    let confirmed = null;
     if (curatedSquad && curatedSquad.length) {
       const idx = await loadPLNameIndex();
-      const confirmed = idx.size
+      confirmed = idx.size
         ? curatedSquad.filter(p => idx.get(norm(p.name)) === club.name)
         : curatedSquad; // live feed unreachable — trust the curated file as-is
-      if (confirmed.length >= 10) squad = confirmed;
+    }
+    // A squad can clear the total-count bar while still missing an entire
+    // position group (e.g. both curated goalkeepers filtered out) — check
+    // coverage per group, not just the total, and top up from the live
+    // squad for whichever groups actually came up short.
+    if (confirmed && confirmed.length >= 8) {
+      const need = { GK: 1, DEF: 3, MID: 3, FWD: 2 };
+      const have = g => confirmed.filter(p => ELIGIBLE[g].includes(p.position)).length;
+      const short = Object.keys(need).filter(g => have(g) < need[g]);
+      if (short.length) {
+        const live = await loadLivePL();
+        const pool = live && live.squads[club.name] || [];
+        const known = new Set(confirmed.map(p => norm(p.name)));
+        short.forEach(g => {
+          pool.filter(p => ELIGIBLE[g].includes(p.position) && !known.has(norm(p.name)))
+            .forEach(p => { confirmed.push(p); known.add(norm(p.name)); });
+        });
+      }
+      squad = confirmed;
     }
     if (!squad) {
       const live = await loadLivePL();
@@ -634,12 +653,16 @@ function reel(box, items, targetIdx, render) {
   track.style.transition = 'none'; track.style.transform = 'translateY(0)';
   track.replaceChildren();
   for (let l = 0; l <= loops; l++) items.forEach(it => track.appendChild(el(`<div class="reel-item">${render(it)}</div>`)));
+  // Item height is set in CSS (96px normally, 76px under the small-screen
+  // media query) — read it from the actual rendered element instead of
+  // hardcoding a number, so the stop position lines up on every screen size.
+  const itemHeight = track.firstElementChild.getBoundingClientRect().height;
   const stopAt = loops * n + targetIdx;
   box.classList.add('spinning');
   return new Promise(res => {
     requestAnimationFrame(() => {
       track.style.transition = '';
-      track.style.transform = `translateY(-${stopAt * 96}px)`;
+      track.style.transform = `translateY(-${stopAt * itemHeight}px)`;
       setTimeout(() => { box.classList.remove('spinning'); res(); }, 2500);
     });
   });
