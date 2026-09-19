@@ -39,30 +39,7 @@ const LEAGUES = {
     ['Viking FK','#000000','#FFFFFF',5]
   ] },
   WC: { id: 1, name: 'World Cup', country: 'World', tint: '#0B3D2E', clubs: [
-    ['Argentina','#75AADB','#FFFFFF',1],['France','#002654','#ED2939',1],
-    ['Brazil','#FFDF00','#009C3B',1],['England','#FFFFFF','#CF081F',1],
-    ['Spain','#C60B1E','#FFC400',1],['Portugal','#FF0000','#006600',1],
-    ['Germany','#000000','#DD0000',1],['Netherlands','#FF6600','#154D8A',1],
-    ['Belgium','#000000','#FDDA24',2],['Croatia','#FF0000','#FFFFFF',2],
-    ['Uruguay','#5FA8D3','#FFFFFF',2],['Morocco','#C1272D','#006233',2],
-    ['Colombia','#FCD116','#003893',2],['Japan','#000080','#FFFFFF',2],
-    ['USA','#B22234','#3C3B6E',2],['Mexico','#006847','#CE1126',2],
-    ['Switzerland','#FF0000','#FFFFFF',3],['Senegal','#00853F','#FDEF42',3],
-    ['Ecuador','#FFD100','#034EA2','3'],['Canada','#FF0000','#FFFFFF',3],
-    ['Austria','#ED2939','#FFFFFF',3],['Norway','#BA0C2F','#00205B',3],
-    ['Ivory Coast','#F77F00','#009E60',3],['Ghana','#CE1126','#006B3F',3],
-    ['Algeria','#006233','#FFFFFF',3],['Egypt','#CE1126','#000000',3],
-    ['South Korea','#CD2E3A','#0047A0',3],['Australia','#00843D','#FFCD00',4],
-    ['Paraguay','#DA121A','#0038A8',4],['Tunisia','#E70013','#FFFFFF',4],
-    ['Iran','#239F40','#DA0000',4],['Saudi Arabia','#006C35','#FFFFFF',4],
-    ['Qatar','#8A1538','#FFFFFF',4],['Scotland','#005EB8','#FFFFFF',4],
-    ['Turkiye','#E30A17','#FFFFFF',4],['Panama','#DA121A','#0033A0',4],
-    ['South Africa','#007A4D','#FFB81C',4],['Iraq','#CE1126','#FFFFFF',5],
-    ['Uzbekistan','#0099B5','#1EB53A',5],['Jordan','#CE1126','#000000',5],
-    ['DR Congo','#007FFF','#F7D618',5],['Cape Verde','#003893','#CF2027',5],
-    ['New Zealand','#000000','#FFFFFF',5],['Haiti','#00209F','#D21034',5],
-    ['Curaçao','#002B7F','#FFFFFF',5],['Bosnia and Herzegovina','#002395','#FECB00',5],
-    ['Czech Republic','#11457E','#D7141A',5],['Sweden','#005293','#FECC02',3]
+    ['Argentina','#75AADB','#FFFFFF',1],['France','#002654','#ED2939',1],['Brazil','#FFDF00','#009C3B',1],['England','#FFFFFF','#CF081F',1],['Spain','#C60B1E','#FFC400',1],['Portugal','#FF0000','#006600',1],['Germany','#000000','#DD0000',1],['Netherlands','#FF6600','#154D8A',1],['Belgium','#000000','#FDDA24',2],['Croatia','#FF0000','#FFFFFF',2],['Uruguay','#5FA8D3','#FFFFFF',2],['Morocco','#C1272D','#006233',2],['Colombia','#FCD116','#003893',2],['Japan','#000080','#FFFFFF',2],['USA','#B22234','#3C3B6E',2],['Mexico','#006847','#CE1126',2],['Switzerland','#FF0000','#FFFFFF',3],['Senegal','#00853F','#FDEF42',3],['Canada','#FF0000','#FFFFFF',3],['South Korea','#CD2E3A','#0047A0',3]
   ] },
 };
 
