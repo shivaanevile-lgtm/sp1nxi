@@ -139,6 +139,13 @@
 "number": 21,
 "position": "Attacker",
 "rating": 81
+},
+{
+"id": "PL-Arsenal-gyokeres",
+"name": "Viktor Gyokeres",
+"number": 14,
+"position": "Attacker",
+"rating": 87
 }
 ],
 "Aston Villa": [
@@ -462,13 +469,6 @@
 "rating": 78
 },
 {
-"id": "PL-Brentford-66",
-"name": "Bryan Mbeumo",
-"number": 7,
-"position": "Attacker",
-"rating": 89
-},
-{
 "id": "PL-Brentford-67",
 "name": "Yoane Wissa",
 "number": 8,
@@ -580,7 +580,7 @@
 "name": "Danny Welbeck",
 "number": 23,
 "position": "Attacker",
-"rating": 78
+"rating": 81
 },
 {
 "id": "PL-Brighton-83",
@@ -1607,6 +1607,13 @@
 "number": 17,
 "position": "Attacker",
 "rating": 78
+},
+{
+"id": "PL-ManU-mbeumo",
+"name": "Bryan Mbeumo",
+"number": 7,
+"position": "Attacker",
+"rating": 89
 }
 ],
 "Newcastle": [
