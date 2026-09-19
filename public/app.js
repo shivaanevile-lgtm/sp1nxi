@@ -458,18 +458,21 @@ function simulate(A, B) {
 async function predictTable(leagueKey, squads) {
   const rows = [];
   for (const club of S.leagueClubs) {
-    const sq = await getSquad(leagueKey, club);
-    const best = g => {
-      const cands = sq.filter(p => ELIGIBLE[g].includes(p.position))
-        .map(p => getRating(p, g)).sort((x, y) => y - x);
-      return cands.slice(0, g === 'GK' ? 1 : 4);
-    };
-    const avg = a => a.reduce((t, v) => t + v, 0) / Math.max(a.length, 1);
-    const strength = 0.34 * avg(best('FWD').concat(best('ATT_MID')))
-                   + 0.31 * avg(best('MID')) + 0.35 * avg(best('DEF').concat(best('GK')));
-    rows.push({ name: club.name, strength: Math.round(strength * 10) / 10, real: true });
+    try {
+      const sq = await getSquad(leagueKey, club);
+      const best = g => {
+        const cands = sq.filter(p => ELIGIBLE[g].includes(p.position))
+          .map(p => getRating(p, g)).sort((x, y) => y - x);
+        return cands.slice(0, g === 'GK' ? 1 : 4);
+      };
+      const avg = a => a.reduce((t, v) => t + v, 0) / Math.max(a.length, 1);
+      const strength = 0.34 * avg(best('FWD').concat(best('ATT_MID')))
+                     + 0.31 * avg(best('MID')) + 0.35 * avg(best('DEF').concat(best('GK')));
+      rows.push({ name: club.name, strength: Math.round(strength * 10) / 10, real: true });
+    } catch (e) { /* one club failing shouldn't blank the whole table — skip it */ }
   }
   squads.forEach(s => rows.push({ name: s.label, strength: s.strength.overall, mine: true }));
+  if (!rows.length) return rows;
   rows.sort((a, b) => b.strength - a.strength);
   const top = rows[0].strength, bot = rows[rows.length - 1].strength;
   rows.forEach((r, i) => {
@@ -1031,22 +1034,62 @@ async function screenMatchSim(A, B, m) {
   v.querySelector('#skip').onclick = () => { skipped = true; screenResult(A, B, m); };
   show(v);
 
-  for (const e of m.events) {
+  // A real 90 minutes compressed to ~30 seconds, played as a fixed number
+  // of short "chains" — a couple of passes ending in a shot, a tackle, or
+  // nothing much — rather than jumping straight to each scripted event.
+  // Real goals/cards get woven into the chain nearest their minute so the
+  // motion never just teleports to them.
+  const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
+  const events = m.events.slice().sort((a, b) => a.min - b.min);
+  const totalMin = 93, CHAINS = 22;
+  const used = new Set();
+  const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
+  const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
+
+  async function hop(x, y, caption, holdMs) {
     if (skipped) return;
-    clock.textContent = e.min + "'";
-    const team = e.side === 'home' ? A : B;
-    const isTop = e.side === 'away';
-    const slot = team.xi.find(sl => sl.player.name === e.player);
-    await sleep(500);
-    if (skipped) return;
-    if (slot) { ball.style.left = slot.x + '%'; ball.style.top = matchY(slot, isTop) + '%'; }
-    commentary.innerHTML = e.type === 'goal'
-      ? `⚽ <b>${esc(e.player)}</b> scores for ${esc(team.label)}!`
-      : `🟨 <b>${esc(e.player)}</b> booked`;
-    await sleep(900);
-    if (skipped) return;
-    ball.style.left = '50%'; ball.style.top = '50%';
+    ball.style.left = x + '%'; ball.style.top = y + '%';
+    await sleep(340);
+    if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 550); }
   }
+
+  for (let c = 0; c < CHAINS; c++) {
+    if (skipped) return;
+    const chainMin = Math.round((c / (CHAINS - 1)) * totalMin);
+    clock.textContent = chainMin + "'";
+    const tolMin = Math.ceil(totalMin / CHAINS / 2) + 1;
+    const ev = events.find(e => !used.has(e) && Math.abs(e.min - chainMin) <= tolMin);
+
+    if (ev) {
+      used.add(ev);
+      const side = ev.side, team = teams[side].team;
+      const slot = team.xi.find(sl => sl.player.name === ev.player) || pickDot(side);
+      const build = slotXY(side, pickDot(side));
+      await hop(build.x, build.y);
+      const p = slotXY(side, slot);
+      await hop(p.x, p.y);
+      if (ev.type === 'goal') {
+        const gy = teams[side].isTop ? 94 : 6;
+        await hop(40 + Math.random() * 20, gy, `⚽ <b>${esc(ev.player)}</b> scores for ${esc(team.label)}!`, 900);
+      } else {
+        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked`, 700);
+      }
+      await hop(50, 50);
+    } else {
+      const side = Math.random() < (m.xgA / (m.xgA + m.xgB || 1)) ? 'home' : 'away';
+      const hops = 2 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < hops; i++) {
+        const p = slotXY(side, pickDot(side));
+        await hop(p.x, p.y);
+      }
+      if (Math.random() < 0.18) {
+        const gy = teams[side].isTop ? 80 : 20;
+        await hop(40 + Math.random() * 20, gy, Math.random() < 0.5 ? '🧤 Comfortable save' : '🛡️ Tackled, cleared away', 550);
+        await hop(50, 50);
+      }
+    }
+  }
+
   if (skipped) return;
   clock.textContent = '90+';
   commentary.innerHTML = '<b>Full time.</b>';
@@ -1100,10 +1143,14 @@ function screenResult(A, B, m) {
     <button class="btn ghost" id="xi">See both line-ups</button>
     <button class="btn ghost" id="again">Play again</button>
   </section>`);
-  v.querySelector('#totable').onclick = () => screenTable(A, B);
-  v.querySelector('#xi').onclick = () => screenLineups(A, B);
-  v.querySelector('#again').onclick = () => { S.players = []; S.turn = 0; S.room = null; screenMode(); };
+  v.querySelector('#totable').onclick = () => { clearTimeout(autoT); screenTable(A, B); };
+  v.querySelector('#xi').onclick = () => { clearTimeout(autoT); screenLineups(A, B); };
+  v.querySelector('#again').onclick = () => { clearTimeout(autoT); S.players = []; S.turn = 0; S.room = null; screenMode(); };
   show(v);
+  // The table follows on its own after a few seconds of looking at the
+  // score — tapping any button above cancels this so it never yanks the
+  // screen away mid-read.
+  const autoT = setTimeout(() => screenTable(A, B), 7000);
 }
 
 /* --- the predicted table: a separate screen, rows reveal in turn --- */
@@ -1123,6 +1170,10 @@ async function screenTable(A, B) {
     { label: `${A.label}'s XI`, strength: A.strength },
     { label: `${B.label}'s XI`, strength: B.strength }
   ]);
+  if (!rows.length) {
+    tbl.insertAdjacentHTML('afterend', '<p><small>Could not reach the squad data for the table right now — try again from the scoresheet.</small></p>');
+    return;
+  }
   for (const r of rows) {
     const tr = el(`<tr class="${r.mine ? 'me' : ''}" style="opacity:0;transform:translateY(6px);
       transition:opacity .32s ease,transform .32s ease">
