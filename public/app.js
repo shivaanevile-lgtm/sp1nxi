@@ -120,18 +120,18 @@ async function getLeagueClubs(leagueKey) {
 // flat random pick would give them. Leagues not listed here spin flat.
 // Extend this as more leagues get curated data.
 const TOP_CLUBS = {
+  // The traditional "big 6" — weighted so this group comes up ~65% of the
+  // time across a 20-club pool (solve 6w/(6w+14)=0.65 → w≈4.33).
   PL: ['Arsenal', 'Liverpool', 'Manchester City', 'Chelsea', 'Manchester United', 'Tottenham'],
-  // Roughly UEFA's Pot 1/2 — clubs with genuine pedigree, typically the
-  // ones finishing top 3-5 in their domestic league. Debutant/lower-pot
-  // sides (AEK, Bodø/Glimt, LASK, Sabah, Slavia, Slovan, Viking, and the
-  // smaller Pot 3/4 clubs) are left unweighted, so they show up, just rarely.
-  UCL: ['Real Madrid', 'Manchester City', 'Bayern München', 'Paris Saint-Germain',
-    'Liverpool', 'Barcelona', 'Arsenal', 'Inter', 'Borussia Dortmund', 'Atlético Madrid',
-    'Napoli', 'Manchester United', 'RB Leipzig', 'Sporting CP', 'Porto',
-    'Villarreal', 'Aston Villa', 'Roma']
+  // Clubs in this season's 36-team field with 2+ European Cup/Champions
+  // League titles — weighted so this group comes up ~65% of the time
+  // (solve 7w/(7w+29)=0.65 → w≈7.69). Everyone else, debutants included,
+  // still shows up — just far less often, same as a real UCL night.
+  UCL: ['Real Madrid', 'Bayern München', 'Liverpool', 'Barcelona',
+    'Manchester United', 'Inter', 'Porto']
 };
 // weight: a top club is this many times more likely than a normal one
-const TOP_CLUB_WEIGHT = { PL: 3, UCL: 5 };
+const TOP_CLUB_WEIGHT = { PL: 4.33, UCL: 7.69 };
 function weightedClubIndex(clubs, leagueKey) {
   const top = new Set(TOP_CLUBS[leagueKey] || []);
   if (!top.size) return Math.floor(Math.random() * clubs.length);
@@ -506,6 +506,7 @@ function theme(club) {
   r.setProperty('--club-ink', readable(club.home));
 }
 const me = () => S.players[S.turn];
+const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 function setCrumb(txt) { crumb.textContent = txt || ''; }
 function setLeagueTheme(leagueKey) {
@@ -631,7 +632,7 @@ function nextAfterBuild() {
   if (S.mode === 'online') return publishSquad();
   if (S.mode === 'ai') {
     const ai = S.players[1];
-    if (!ai.xi) { buildAI(ai).then(() => screenResult()); return; }
+    if (!ai.xi) { screenAIBuild(() => screenResult()); return; }
   }
   if (S.turn === 0 && S.mode === 'pass') { S.turn = 1; return screenHandover(); }
   screenResult();
@@ -840,13 +841,14 @@ function screenBuild() {
 }
 
 /* --- the AI opponent ---------------------------------------------- */
-async function buildAI(ai) {
+async function buildAI(ai, onSlot) {
   const clubs = S.leagueClubs;
   ai.formation = FORMATION_NAMES[Math.floor(Math.random() * FORMATION_NAMES.length)];
   const pool = clubs.slice().sort(() => Math.random() - 0.5);
   const usedPlayers = new Set();
   ai.xi = [];
   const slots = FORMATIONS[ai.formation];
+  if (onSlot) await onSlot({ phase: 'formation', formation: ai.formation });
   for (let i = 0; i < slots.length; i++) {
     const s = slots[i], grp = GROUP[s.role];
     const club = pool[i % pool.length];
@@ -857,7 +859,9 @@ async function buildAI(ai) {
     // the AI gets rerolls too, so it lands on a good one rather than the best one
     const pick = cands[Math.min(cands.length - 1, Math.floor(Math.random() * 3))];
     usedPlayers.add(pick.id);
-    ai.xi.push({ ...s, player: pick, rerolls: 0 });
+    const slot = { ...s, player: pick, rerolls: 0 };
+    ai.xi.push(slot);
+    if (onSlot) await onSlot({ phase: 'slot', index: i, total: slots.length, slot });
   }
   ai.strength = rateSquad(ai.xi);
   ai.badge = badgeOf(ai);
@@ -869,8 +873,41 @@ function badgeOf(p) {
   return best.player.club;
 }
 
+/* --- watching the AI build, shirt by shirt -------------------------- */
+function screenAIBuild(done) {
+  theme(null);
+  setCrumb('The AI · building');
+  const v = el(`<section>
+    <h2>The AI is building its XI</h2>
+    <p id="aihint">Spinning up a squad…</p>
+    <div class="pitch" id="aipitch"><div class="markings">
+      <div style="left:20%;right:20%;top:-1px;height:12%;border-top:none"></div>
+      <div style="left:20%;right:20%;bottom:-1px;height:12%;border-bottom:none"></div>
+      <div style="left:-1px;right:-1px;top:50%;height:0"></div>
+      <div style="left:35%;right:35%;top:43.5%;height:13%;border-radius:50%"></div>
+    </div></div>
+  </section>`);
+  const pitch = v.querySelector('#aipitch'), hint = v.querySelector('#aihint');
+  show(v);
 
-/* --- result -------------------------------------------------------- */
+  const ai = S.players[1];
+  buildAI(ai, async ({ phase, formation, slot, index, total }) => {
+    if (phase === 'formation') { hint.textContent = `Formation: ${formation}`; await sleep(450); return; }
+    const c = slot.player.club;
+    const n = el(`<div class="slot filled pulse" style="left:${slot.x}%;top:${slot.y}%;
+      background:linear-gradient(150deg,${c.home},${c.away === '#FFFFFF' ? '#241F19' : c.away});
+      border-color:${c.home};color:${readable(c.home)}">
+      <span class="role">${slot.role}</span>
+      <span class="nm">${esc(slot.player.name.split(' ').slice(-1)[0])}</span>
+      <span class="rt">${slot.player.rating}</span>
+    </div>`);
+    pitch.appendChild(n);
+    hint.textContent = `${index + 1} of ${total} picked — ${esc(c.name)}`;
+    await sleep(260);
+  }).then(() => { hint.textContent = 'Squad locked in.'; setTimeout(done, 500); });
+}
+
+/* --- result: match sheet first, table is a separate reveal --------- */
 function screenResult() {
   stopPoll();
   const [A, B] = S.players;
@@ -914,38 +951,82 @@ function screenResult() {
         <small>Attack ${Math.round(p.strength.att)} · Midfield ${Math.round(p.strength.mid)} · Defence ${Math.round(p.strength.def)}</small>
       </div>`).join('')}
     </div>
-    <div class="card" id="tablecard"><h3>Where they'd finish</h3>
-      <p><small>Both XIs ranked against every squad in ${esc(LEAGUES[S.leagueKey].name)}.</small></p>
-      <div class="bar"><i style="width:30%"></i></div></div>
-    <button class="btn primary" id="again">Play again</button>
+    <button class="btn primary" id="totable">See the predicted table</button>
     <button class="btn ghost" id="xi">See both line-ups</button>
+    <button class="btn ghost" id="again">Play again</button>
   </section>`);
-  v.querySelector('#again').onclick = () => { S.players = []; S.turn = 0; S.room = null; screenMode(); };
+  v.querySelector('#totable').onclick = () => screenTable(A, B);
   v.querySelector('#xi').onclick = () => screenLineups(A, B);
+  v.querySelector('#again').onclick = () => { S.players = []; S.turn = 0; S.room = null; screenMode(); };
   show(v);
-
-  predictTable(S.leagueKey, [
-    { label: `${A.label}'s XI`, strength: A.strength },
-    { label: `${B.label}'s XI`, strength: B.strength }
-  ]).then(rows => {
-    const t = el(`<table class="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr>
-      ${rows.map(r => `<tr class="${r.mine ? 'me' : ''}"><td>${r.pos}</td><td>${esc(r.name)}</td><td>${r.strength}</td><td>${r.pts}</td></tr>`).join('')}
-    </table>`);
-    const card = v.querySelector('#tablecard');
-    card.querySelector('.bar').remove();
-    card.appendChild(t);
-  });
 }
 
-function screenLineups(A, B) {
-  const list = p => `<div class="card"><h3>${esc(p.label)} · ${esc(p.formation)}</h3>
-    ${p.xi.map(s => `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)">
-      <span><b style="color:${s.player.club.home}">${s.role}</b> ${esc(s.player.name)}
-      <small style="display:block">${esc(s.player.club.name)}</small></span><b>${s.player.rating}</b></div>`).join('')}</div>`;
-  const v = el(`<section><h2>Line-ups</h2>${list(A)}${list(B)}
-    <button class="btn ghost" id="back">Back to the scoresheet</button></section>`);
+/* --- the predicted table: a separate screen, rows reveal in turn --- */
+async function screenTable(A, B) {
+  setCrumb('Predicted table');
+  const v = el(`<section>
+    <h2>Where they'd finish</h2>
+    <p><small>Both XIs ranked against every squad in ${esc(LEAGUES[S.leagueKey].name)}.</small></p>
+    <table class="tbl" id="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table>
+    <button class="btn ghost" id="back">Back to the scoresheet</button>
+  </section>`);
   v.querySelector('#back').onclick = () => screenResult();
   show(v);
+
+  const tbl = v.querySelector('#tbl');
+  const rows = await predictTable(S.leagueKey, [
+    { label: `${A.label}'s XI`, strength: A.strength },
+    { label: `${B.label}'s XI`, strength: B.strength }
+  ]);
+  for (const r of rows) {
+    const tr = el(`<tr class="${r.mine ? 'me' : ''}" style="opacity:0;transform:translateY(6px);
+      transition:opacity .32s ease,transform .32s ease">
+      <td>${r.pos}</td><td>${esc(r.name)}</td><td>${r.strength}</td><td>${r.pts}</td></tr>`);
+    tbl.appendChild(tr);
+    requestAnimationFrame(() => { tr.style.opacity = 1; tr.style.transform = 'translateY(0)'; });
+    await sleep(65);
+  }
+}
+
+/* --- line-ups: a real pitch, one team at a time -------------------- */
+function screenLineups(A, B) {
+  setCrumb('Line-ups');
+  let active = A;
+  const v = el(`<section>
+    <h2>Line-ups</h2>
+    <div class="row">
+      <button class="btn sm ghost" id="tabA" style="flex:1">${esc(A.label)}</button>
+      <button class="btn sm ghost" id="tabB" style="flex:1">${esc(B.label)}</button>
+    </div>
+    <div class="pitch" id="lupitch"><div class="markings">
+      <div style="left:20%;right:20%;top:-1px;height:12%;border-top:none"></div>
+      <div style="left:20%;right:20%;bottom:-1px;height:12%;border-bottom:none"></div>
+      <div style="left:-1px;right:-1px;top:50%;height:0"></div>
+      <div style="left:35%;right:35%;top:43.5%;height:13%;border-radius:50%"></div>
+    </div></div>
+    <button class="btn ghost" id="back">Back to the scoresheet</button>
+  </section>`);
+  const pitch = v.querySelector('#lupitch');
+  function paint() {
+    pitch.querySelectorAll('.slot').forEach(n => n.remove());
+    active.xi.forEach(s => {
+      const c = s.player.club;
+      const n = el(`<div class="slot filled" style="left:${s.x}%;top:${s.y}%;
+        background:linear-gradient(150deg,${c.home},${c.away === '#FFFFFF' ? '#241F19' : c.away});
+        border-color:${c.home};color:${readable(c.home)}">
+        <span class="role">${s.role}</span>
+        <span class="nm">${esc(s.player.name.split(' ').slice(-1)[0])}</span>
+        <span class="rt">${s.player.rating}</span>
+      </div>`);
+      pitch.appendChild(n);
+    });
+    v.querySelector('#tabA').className = 'btn sm ' + (active === A ? 'primary' : 'ghost');
+    v.querySelector('#tabB').className = 'btn sm ' + (active === B ? 'primary' : 'ghost');
+  }
+  v.querySelector('#tabA').onclick = () => { active = A; paint(); };
+  v.querySelector('#tabB').onclick = () => { active = B; paint(); };
+  v.querySelector('#back').onclick = () => screenResult();
+  show(v); paint();
 }
 
 /* ------------------------------------------------------------------ *
