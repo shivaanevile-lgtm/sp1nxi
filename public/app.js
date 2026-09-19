@@ -1180,6 +1180,69 @@ function screenResult(A, B, m) {
 }
 
 /* --- the predicted table: a separate screen, rows reveal in turn --- */
+/* --- UCL only: knockout bracket from the league-phase table --------
+ * Top 16 by rating seed into the Round of 16 (1v16, 2v15, ...), and
+ * winners advance through quarters, semis, and the final. Both built
+ * XIs are guaranteed a place in the field even if their rating didn't
+ * technically crack the top 16, since the point is seeing how far YOUR
+ * team goes, not a strict simulation of the other 34 clubs. */
+function knockoutOutcome(sa, sb) {
+  const pa = 1 / (1 + Math.pow(10, -(sa - sb) / 12));
+  return Math.random() < pa; // true = side A wins
+}
+
+async function screenKnockout(A, B, tableRows) {
+  setCrumb('Knockout stage');
+  let field = tableRows.slice(0, 16).map(r => ({ name: r.name, strength: r.strength, mine: !!r.mine }));
+  tableRows.filter(r => r.mine).forEach(mr => {
+    if (!field.find(f => f.name === mr.name)) {
+      field.sort((a, b) => a.strength - b.strength);
+      field[0] = { name: mr.name, strength: mr.strength, mine: true };
+    }
+  });
+  field.sort((a, b) => b.strength - a.strength);
+
+  const v = el(`<section>
+    <h2>Knockout stage</h2>
+    <p><small>Seeded from the table — 1 plays 16, 2 plays 15, and so on.</small></p>
+    <div id="rounds"></div>
+    <button class="btn ghost" id="back">Back to the table</button>
+  </section>`);
+  v.querySelector('#back').onclick = () => screenTable(A, B);
+  show(v);
+  const roundsEl = v.querySelector('#rounds');
+
+  let current = field;
+  const roundNames = ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'];
+  for (const roundName of roundNames) {
+    const card = el(`<div class="card"><h3>${roundName}</h3></div>`);
+    roundsEl.appendChild(card);
+    await sleep(200);
+    const pairs = [];
+    for (let i = 0; i < current.length / 2; i++) pairs.push([current[i], current[current.length - 1 - i]]);
+    const winners = [];
+    for (const [x, y] of pairs) {
+      const xWins = knockoutOutcome(x.strength, y.strength);
+      const winner = xWins ? x : y;
+      winners.push(winner);
+      const notable = x.mine || y.mine;
+      const row = el(`<p style="margin:7px 0;opacity:0;transition:opacity .3s ease;${notable ? 'font-weight:700' : ''}">
+        ${notable ? '🔶 ' : ''}${esc(x.name)} vs ${esc(y.name)} → <b>${esc(winner.name)}</b></p>`);
+      card.appendChild(row);
+      requestAnimationFrame(() => { row.style.opacity = 1; });
+      await sleep(320);
+    }
+    current = winners;
+  }
+  const champ = current[0];
+  const champCard = el(`<div class="card" style="text-align:center;opacity:0;transition:opacity .4s ease">
+    <h3>Champions</h3>
+    <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
+  </div>`);
+  roundsEl.appendChild(champCard);
+  requestAnimationFrame(() => { champCard.style.opacity = 1; });
+}
+
 async function screenTable(A, B) {
   setCrumb('Predicted table');
   const v = el(`<section>
@@ -1192,10 +1255,16 @@ async function screenTable(A, B) {
   show(v);
 
   const tbl = v.querySelector('#tbl');
-  const rows = await predictTable(S.leagueKey, [
-    { label: `${A.label}'s XI`, strength: A.strength },
-    { label: `${B.label}'s XI`, strength: B.strength }
-  ]);
+  let rows;
+  try {
+    rows = await predictTable(S.leagueKey, [
+      { label: `${A.label}'s XI`, strength: A.strength },
+      { label: `${B.label}'s XI`, strength: B.strength }
+    ]);
+  } catch (e) {
+    tbl.insertAdjacentHTML('afterend', `<p><small>Table failed to build: ${esc(e.message || String(e))}</small></p>`);
+    return;
+  }
   if (!rows.length) {
     tbl.insertAdjacentHTML('afterend', '<p><small>Could not reach the squad data for the table right now — try again from the scoresheet.</small></p>');
     return;
@@ -1207,6 +1276,10 @@ async function screenTable(A, B) {
     tbl.appendChild(tr);
     requestAnimationFrame(() => { tr.style.opacity = 1; tr.style.transform = 'translateY(0)'; });
     await sleep(65);
+  }
+  if (S.leagueKey === 'UCL') {
+    v.insertAdjacentHTML('beforeend', '<button class="btn primary" id="toko" style="margin-top:14px">See the knockout bracket</button>');
+    v.querySelector('#toko').onclick = () => screenKnockout(A, B, rows);
   }
 }
 
