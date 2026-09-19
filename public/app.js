@@ -38,6 +38,32 @@ const LEAGUES = {
     ['Slavia Praha','#B90000','#FFFFFF',5],['Slovan Bratislava','#00539B','#FFFFFF',5],
     ['Viking FK','#000000','#FFFFFF',5]
   ] },
+  WC: { id: 1, name: 'World Cup', country: 'World', tint: '#0B3D2E', clubs: [
+    ['Argentina','#75AADB','#FFFFFF',1],['France','#002654','#ED2939',1],
+    ['Brazil','#FFDF00','#009C3B',1],['England','#FFFFFF','#CF081F',1],
+    ['Spain','#C60B1E','#FFC400',1],['Portugal','#FF0000','#006600',1],
+    ['Germany','#000000','#DD0000',1],['Netherlands','#FF6600','#154D8A',1],
+    ['Belgium','#000000','#FDDA24',2],['Croatia','#FF0000','#FFFFFF',2],
+    ['Uruguay','#5FA8D3','#FFFFFF',2],['Morocco','#C1272D','#006233',2],
+    ['Colombia','#FCD116','#003893',2],['Japan','#000080','#FFFFFF',2],
+    ['USA','#B22234','#3C3B6E',2],['Mexico','#006847','#CE1126',2],
+    ['Switzerland','#FF0000','#FFFFFF',3],['Senegal','#00853F','#FDEF42',3],
+    ['Ecuador','#FFD100','#034EA2','3'],['Canada','#FF0000','#FFFFFF',3],
+    ['Austria','#ED2939','#FFFFFF',3],['Norway','#BA0C2F','#00205B',3],
+    ['Ivory Coast','#F77F00','#009E60',3],['Ghana','#CE1126','#006B3F',3],
+    ['Algeria','#006233','#FFFFFF',3],['Egypt','#CE1126','#000000',3],
+    ['South Korea','#CD2E3A','#0047A0',3],['Australia','#00843D','#FFCD00',4],
+    ['Paraguay','#DA121A','#0038A8',4],['Tunisia','#E70013','#FFFFFF',4],
+    ['Iran','#239F40','#DA0000',4],['Saudi Arabia','#006C35','#FFFFFF',4],
+    ['Qatar','#8A1538','#FFFFFF',4],['Scotland','#005EB8','#FFFFFF',4],
+    ['Turkiye','#E30A17','#FFFFFF',4],['Panama','#DA121A','#0033A0',4],
+    ['South Africa','#007A4D','#FFB81C',4],['Iraq','#CE1126','#FFFFFF',5],
+    ['Uzbekistan','#0099B5','#1EB53A',5],['Jordan','#CE1126','#000000',5],
+    ['DR Congo','#007FFF','#F7D618',5],['Cape Verde','#003893','#CF2027',5],
+    ['New Zealand','#000000','#FFFFFF',5],['Haiti','#00209F','#D21034',5],
+    ['Curaçao','#002B7F','#FFFFFF',5],['Bosnia and Herzegovina','#002395','#FECB00',5],
+    ['Czech Republic','#11457E','#D7141A',5],['Sweden','#005293','#FECC02',3]
+  ] },
 };
 
 // Kit colours for clubs that can show up via live data (promotions,
@@ -299,7 +325,7 @@ function demoSquad(clubName, tier) {
 // Curated real rosters — hand-set ratings, no API, no stats crunching.
 // Only leagues listed here have a file; others fall through to the
 // KV/API path and finally to the demo generator.
-const CURATED_LEAGUES = { PL: '/data/pl.json', UCL: '/data/ucl.json' };
+const CURATED_LEAGUES = { PL: '/data/pl.json', UCL: '/data/ucl.json', WC: '/data/wc.json' };
 const curatedCache = new Map();
 async function loadCurated(leagueKey) {
   if (!CURATED_LEAGUES[leagueKey]) return null;
@@ -373,7 +399,7 @@ async function getSquad(leagueKey, club) {
   }
 
   const curated = squad ? null : await loadCurated(leagueKey);
-  if (!squad && curated && curated[club.name] && curated[club.name].length >= 10) {
+  if (!squad && curated && curated[club.name] && curated[club.name].length >= 8) {
     squad = curated[club.name];
   }
   if (!squad) {
@@ -481,7 +507,7 @@ async function predictTable(leagueKey, squads) {
   // UCL's league phase is 8 games per club, not a full 38-game season —
   // points need to scale to whichever the actual competition plays, or a
   // UCL table would show Premier-League-sized numbers for an 8-game phase.
-  const games = leagueKey === 'UCL' ? 8 : 38;
+  const games = leagueKey === 'UCL' ? 8 : leagueKey === 'WC' ? 3 : 38;
   const ppgMin = 0.4, ppgMax = 2.5; // realistic worst/best points-per-game
   rows.forEach((r, i) => {
     const t = (r.strength - bot) / Math.max(top - bot, 0.01);
@@ -535,7 +561,7 @@ function screenMode() {
   theme(null); setCrumb(''); setLeagueTheme(null);
   const v = el(`<section>
     <h1>Spin it. Build it. Play it.</h1>
-    <p>Premier League or Champions League night. Spin a formation, then eleven times over spin a club and fill a shirt — two rerolls a slot — then watch the match.</p>
+    <p>Premier League, Champions League night, or the World Cup. Spin a formation, then spin your way through eleven shirts — five rerolls for the whole XI — then watch the match.</p>
     <button class="btn primary" data-m="ai">Play the AI<span class="sub">Instant opponent, builds its own XI</span></button>
     <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
     <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
@@ -796,8 +822,8 @@ function screenBuild() {
     <div class="picker" id="picker"></div>
     <div class="actionbar" id="actbar">
       <div class="row">
-        <button class="btn primary" id="act" style="flex:1">Spin for a club</button>
-        <button class="btn ghost sm" id="rr" style="flex:0 0 auto">Reroll club (5)</button>
+        <button class="btn primary" id="act" style="flex:1;width:auto">Spin for a club</button>
+        <button class="btn ghost sm" id="rr" style="flex:0 0 auto;width:auto;white-space:nowrap">Reroll club (5)</button>
       </div>
     </div>
   </section>`);
@@ -1039,7 +1065,7 @@ async function screenMatchSim(A, B, m) {
     <div class="pitch" id="matchpitch" style="margin-top:10px">${PITCH_HALF_MARKINGS}
       <div id="ball" style="position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;
         background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%);
-        transition:left 1.05s linear,top 1.05s linear;z-index:5"></div>
+        transition:left .78s cubic-bezier(.3,.5,.3,1),top .78s cubic-bezier(.3,.5,.3,1);z-index:5"></div>
     </div>
     <p id="commentary" style="min-height:1.4em;text-align:center;margin-top:10px"><small>Kicking off…</small></p>
     <button class="btn ghost" id="skip">Skip to full time</button>
@@ -1057,7 +1083,7 @@ async function screenMatchSim(A, B, m) {
       const dot = el(`<div style="position:absolute;left:${bx}%;top:${by}%;
         width:15px;height:15px;border-radius:50%;transform:translate(-50%,-50%);
         background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5);
-        transition:left .8s linear,top .8s linear"></div>`);
+        transition:left .85s cubic-bezier(.3,.5,.3,1),top .85s cubic-bezier(.3,.5,.3,1)"></div>`);
       dot.dataset.bx = bx; dot.dataset.by = by;
       pitch.appendChild(dot);
       dotEls[side][s.player.name] = dot;
@@ -1068,19 +1094,28 @@ async function screenMatchSim(A, B, m) {
   v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); clearInterval(clockT); screenResult(A, B, m); };
   show(v);
 
-  // Constant, continuous drift for every player — ticks often enough with
-  // a transition that matches the tick interval that there's no pause
-  // between moves, so it reads as flowing movement rather than a snap to
-  // a new spot and a hold, which is what made it feel "fixed" before.
-  // Always computed fresh from the formation spot (never cumulative), so
-  // a dot that just got pulled onto the ball drifts back within a beat.
+  // Movement reads as purposeful rather than random: everyone drifts
+  // toward wherever the ball currently is, strongest for whoever's side
+  // is on it (support runs) and a bit weaker for the other side (closing
+  // it down), fading out with distance so only nearby players actually
+  // move much — someone on the opposite flank barely shifts. Always
+  // computed fresh from the formation spot, never cumulative, so nobody
+  // wanders off their own position for good.
+  let ballAtX = 50, ballAtY = 50, ballSide = null;
   const wobbleT = setInterval(() => {
-    Object.values(dotEls).forEach(team => Object.values(team).forEach(dot => {
+    Object.entries(dotEls).forEach(([side, team]) => Object.values(team).forEach(dot => {
       const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
-      dot.style.left = Math.max(4, Math.min(96, bx + (Math.random() * 6 - 3))) + '%';
-      dot.style.top = Math.max(3, Math.min(97, by + (Math.random() * 5 - 2.5))) + '%';
+      const dx = ballAtX - bx, dy = ballAtY - by;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const strength = side === ballSide ? 15 : 9;
+      const pull = Math.max(0, 1 - dist / 48) * strength;
+      const jitter = 2.5;
+      const tx = bx + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
+      const ty = by + (dy / dist) * pull * 0.7 + (Math.random() * jitter - jitter / 2);
+      dot.style.left = Math.max(4, Math.min(96, tx)) + '%';
+      dot.style.top = Math.max(3, Math.min(97, ty)) + '%';
     }));
-  }, 750);
+  }, 850);
 
   // A real 90 minutes compressed to ~30 seconds, played as a fixed number
   // of short "chains" — a passing move ending in a shot, a tackle, or
@@ -1089,7 +1124,7 @@ async function screenMatchSim(A, B, m) {
   // motion never just teleports to them.
   const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
   const events = m.events.slice().sort((a, b) => a.min - b.min);
-  const totalMin = 93, CHAINS = 22, TOTAL_MS = 29000;
+  const totalMin = 93, CHAINS = 18, TOTAL_MS = 29000;
   const used = new Set();
   const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
@@ -1106,8 +1141,9 @@ async function screenMatchSim(A, B, m) {
   async function hop(x, y, caption, holdMs, mover) {
     if (skipped) return;
     ball.style.left = x + '%'; ball.style.top = y + '%';
+    ballAtX = x; ballAtY = y; if (mover) ballSide = mover.side;
     if (mover) { const dot = dotEls[mover.side][mover.name]; if (dot) { dot.style.left = x + '%'; dot.style.top = y + '%'; } }
-    await sleep(680);
+    await sleep(820);
     if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
   }
 
@@ -1174,6 +1210,121 @@ async function screenMatchSim(A, B, m) {
   if (!skipped) screenResult(A, B, m);
 }
 
+/* --- shareable result card — drawn on a canvas, shared or downloaded
+ * as an image so a result can leave the app. */
+async function shareResultCard(A, B, m) {
+  toast('Building your card…');
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+
+  const W = 1080, H = 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const rr = (x, y, w, h, r) => {
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+    else { ctx.beginPath(); ctx.rect(x, y, w, h); }
+  };
+
+  // base
+  ctx.fillStyle = '#F6EFE2'; ctx.fillRect(0, 0, W, H);
+
+  // header band — diagonal club-colour split, like the in-app scoresheet
+  const bandH = 430;
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, A.badge.home); grad.addColorStop(0.48, A.badge.home);
+  grad.addColorStop(0.52, B.badge.home === '#FFFFFF' ? '#241F19' : B.badge.home);
+  grad.addColorStop(1, B.badge.home === '#FFFFFF' ? '#241F19' : B.badge.home);
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, bandH);
+
+  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.font = "800 40px 'Bricolage Grotesque', sans-serif";
+  ctx.textAlign = 'left';
+  ctx.fillText('Sp1n', 56, 84);
+  ctx.fillStyle = '#E4762B';
+  ctx.fillText('XI', 56 + ctx.measureText('Sp1n').width, 84);
+
+  ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+  ctx.font = "700 34px Archivo, sans-serif";
+  wrapText(ctx, A.label, W * 0.27, 190, 380, 38);
+  wrapText(ctx, B.label, W * 0.73, 190, 380, 38);
+  ctx.font = "500 22px Archivo, sans-serif"; ctx.globalAlpha = .85;
+  ctx.fillText(A.formation, W * 0.27, 230);
+  ctx.fillText(B.formation, W * 0.73, 230);
+  ctx.globalAlpha = 1;
+
+  ctx.font = "800 130px 'Bricolage Grotesque', sans-serif";
+  ctx.fillText(`${m.gA} – ${m.gB}`, W / 2, 350);
+
+  ctx.font = "600 24px Archivo, sans-serif"; ctx.globalAlpha = .8;
+  ctx.fillText(esc_(LEAGUES[S.leagueKey].name), W / 2, 400);
+  ctx.globalAlpha = 1;
+
+  // scorers
+  let y = bandH + 70;
+  ctx.textAlign = 'left'; ctx.fillStyle = '#241F19';
+  ctx.font = "800 30px 'Bricolage Grotesque', sans-serif";
+  ctx.fillText('Scorers', 56, y);
+  y += 46;
+  const goals = m.events.filter(e => e.type === 'goal');
+  ctx.font = "500 26px Archivo, sans-serif";
+  if (!goals.length) { ctx.fillStyle = '#6B6055'; ctx.fillText('Goalless.', 56, y); y += 40; }
+  goals.forEach(g => {
+    ctx.fillStyle = '#241F19';
+    const line = `⚽ ${g.player} ${g.min}' — ${g.side === 'home' ? A.label : B.label}`;
+    ctx.fillText(line, 56, y);
+    y += 42;
+  });
+
+  // squad strength
+  y += 30;
+  ctx.font = "800 30px 'Bricolage Grotesque', sans-serif";
+  ctx.fillText('Squad strength', 56, y);
+  y += 20;
+  [A, B].forEach(p => {
+    y += 46;
+    ctx.font = "700 26px Archivo, sans-serif"; ctx.fillStyle = '#241F19';
+    ctx.fillText(`${p.label} — ${p.strength.overall}`, 56, y);
+    y += 16;
+    ctx.fillStyle = '#DCCFB8'; rr(56, y, W - 112, 18, 9); ctx.fill();
+    ctx.fillStyle = p.badge.home; rr(56, y, (W - 112) * (p.strength.overall / 100), 18, 9); ctx.fill();
+    y += 40;
+    ctx.font = "400 20px Archivo, sans-serif"; ctx.fillStyle = '#6B6055';
+    ctx.fillText(`Attack ${Math.round(p.strength.att)} · Midfield ${Math.round(p.strength.mid)} · Defence ${Math.round(p.strength.def)}`, 56, y);
+  });
+
+  ctx.textAlign = 'center'; ctx.font = "500 22px Archivo, sans-serif"; ctx.fillStyle = '#6B6055';
+  ctx.fillText('Built with Sp1nXI', W / 2, H - 40);
+
+  canvas.toBlob(async blob => {
+    if (!blob) { toast('Could not build the image.'); return; }
+    const file = new File([blob], 'sp1nxi-result.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Sp1nXI result', text: `${A.label} ${m.gA}-${m.gB} ${B.label}` });
+        return;
+      } catch (e) { /* user cancelled or share failed — fall through to download */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sp1nxi-result.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Image saved.');
+  }, 'image/png');
+}
+function wrapText(ctx, text, x, y, maxW, lh) {
+  const words = text.split(' ');
+  let line = '', lines = [];
+  words.forEach(w => {
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  });
+  lines.push(line);
+  const startY = y - (lines.length - 1) * lh / 2;
+  lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lh));
+}
+const esc_ = s => String(s); // canvas text needs no HTML escaping
+
 function screenResult(A, B, m) {
   stopPoll();
   S.lastMatch = { A, B, m };
@@ -1218,10 +1369,12 @@ function screenResult(A, B, m) {
     </div>
     <button class="btn primary" id="totable">See the predicted table</button>
     <button class="btn ghost" id="xi">See both line-ups</button>
+    <button class="btn ghost" id="share">Share this result</button>
     <button class="btn ghost" id="again">Play again</button>
   </section>`);
   v.querySelector('#totable').onclick = () => { clearTimeout(autoT); screenTable(A, B); };
   v.querySelector('#xi').onclick = () => { clearTimeout(autoT); screenLineups(A, B); };
+  v.querySelector('#share').onclick = () => { clearTimeout(autoT); shareResultCard(A, B, m); };
   v.querySelector('#again').onclick = () => { clearTimeout(autoT); S.players = []; S.turn = 0; S.room = null; screenMode(); };
   show(v);
   // The table follows on its own after a few seconds of looking at the
