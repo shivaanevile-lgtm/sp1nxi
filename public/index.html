@@ -160,13 +160,73 @@ tr.me td{background:#fff;font-weight:600}
   padding:10px 16px;border-radius:99px;font-size:.86rem;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.2)}
 :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .foot{color:var(--ink-soft);font-size:.74rem;padding:18px 0 4px;text-align:center}
-</style>  
+
+/* Champions League night — floodlit, starball motif, replaces cream/orange
+   whenever a UCL game is active (body.ucl-mode) */
+body.ucl-mode{
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(255,255,255,.14), transparent 55%),
+    radial-gradient(ellipse at 12% 10%, rgba(120,160,255,.16), transparent 42%),
+    radial-gradient(ellipse at 88% 20%, rgba(120,160,255,.14), transparent 42%),
+    linear-gradient(155deg,#132C8C 0%,#0E2178 35%,#0A1968 65%,#081353 100%);
+  color:#EDEFFA;
+}
+body.ucl-mode .top{background:transparent}
+body.ucl-mode .brand{color:#fff}
+body.ucl-mode .brand i{color:#B9A052}
+body.ucl-mode h1,body.ucl-mode h2,body.ucl-mode h3{color:#fff}
+body.ucl-mode p,body.ucl-mode .crumb{color:#A8AFCB}
+body.ucl-mode small{color:#8890B5}
+body.ucl-mode .card{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);
+  backdrop-filter:blur(6px)}
+body.ucl-mode .btn{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.16)}
+body.ucl-mode .btn.primary{background:linear-gradient(135deg,#B9A052,#7C6A2E);border-color:#B9A052;color:#0A0F24;font-weight:800}
+body.ucl-mode .btn.ghost{background:transparent;color:#EDEFFA;border-color:rgba(255,255,255,.2)}
+body.ucl-mode .reel{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)}
+body.ucl-mode .reel::after{background:linear-gradient(#0D1230,rgba(13,18,48,0) 28%,rgba(13,18,48,0) 72%,#0D1230)}
+body.ucl-mode .pitch{border-color:rgba(255,255,255,.14)}
+body.ucl-mode .slot{color:#fff}
+body.ucl-mode .sheet{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)}
+body.ucl-mode .sheet .score{background:linear-gradient(100deg,var(--club-a) 0%,var(--club-a) 48%,var(--club-b2,#0A0F24) 52%)}
+body.ucl-mode .events{border-color:rgba(255,255,255,.1)}
+body.ucl-mode table.tbl td,body.ucl-mode table.tbl th{border-color:rgba(255,255,255,.1)}
+body.ucl-mode tr.me td{background:rgba(255,255,255,.06)}
+body.ucl-mode .bar{background:rgba(255,255,255,.12)}
+body.ucl-mode .bar i{background:linear-gradient(90deg,#7C6A2E,#B9A052)}
+body.ucl-mode .anthem-stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+body.ucl-mode .anthem-stars::before{
+  /* faint diagonal light-trail network, echoing the UCL starball mood */
+  content:"";position:absolute;inset:-20%;opacity:.16;
+  background-image:
+    repeating-linear-gradient(115deg, transparent 0 38px, rgba(180,200,255,.9) 38px 39px, transparent 39px 130px),
+    repeating-linear-gradient(65deg, transparent 0 60px, rgba(180,200,255,.7) 60px 61px, transparent 61px 170px),
+    repeating-linear-gradient(25deg, transparent 0 90px, rgba(180,200,255,.5) 90px 91px, transparent 91px 220px);
+  mask-image:radial-gradient(ellipse at 50% 20%, #000 0%, rgba(0,0,0,.5) 55%, transparent 80%);
+}
+body.ucl-mode .anthem-stars::after{
+  content:"";position:absolute;inset:0;opacity:.55;
+  background-image:
+    radial-gradient(1.6px 1.6px at 20% 30%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 70% 15%, #fff, transparent),
+    radial-gradient(1.1px 1.1px at 40% 60%, #fff, transparent),
+    radial-gradient(1.1px 1.1px at 85% 55%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 55% 80%, #fff, transparent),
+    radial-gradient(1.1px 1.1px at 10% 75%, #fff, transparent),
+    radial-gradient(1.3px 1.3px at 30% 90%, #fff, transparent),
+    radial-gradient(1.3px 1.3px at 92% 78%, #fff, transparent);
+}
+body.ucl-mode .brand i{color:#8FA6FF}
+body.ucl-mode .btn.primary{background:linear-gradient(135deg,#3C5CE0,#1B2E8C);border-color:#3C5CE0;color:#fff;font-weight:800}
+body.ucl-mode .bar i{background:linear-gradient(90deg,#1B2E8C,#5C7CFF)}
+body.ucl-mode main{position:relative;z-index:1}
+</style>
 </head>
 <body>
 <header class="top">
   <div class="brand">Sp1n<i>XI</i></div>
   <div class="crumb" id="crumb"></div>
 </header>
+<div class="anthem-stars" id="anthemStars" style="display:none"></div>
 <main id="app"></main>
 <div class="foot">Squad data cached from API-Football · demo squads until a key is set</div>
 <script src="/app.js"></script>
