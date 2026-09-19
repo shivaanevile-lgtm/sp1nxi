@@ -17,49 +17,109 @@ const LEAGUES = {
     ['Newcastle','#241F20','#41B6E6',2],['Nottingham Forest','#DD0000','#000000',4],
     ['Southampton','#D71920','#130C0E',5],['Tottenham','#132257','#FFFFFF',2],
     ['West Ham','#7A263A','#1BB1E7',4],['Wolves','#FDB913','#231F20',4]] },
-  LL: { id: 140, name: 'La Liga', country: 'Spain', tint: '#EE8707', clubs: [
-    ['Alavés','#0761AF','#FFFFFF',4],['Athletic Club','#EE2523','#FFFFFF',2],
-    ['Atlético Madrid','#CB3524','#262E62',1],['Barcelona','#A50044','#004D98',1],
-    ['Celta Vigo','#8AC3EE','#E5254E',4],['Espanyol','#0072BC','#FFFFFF',5],
-    ['Getafe','#005999','#FFFFFF',4],['Girona','#D8232A','#FFFFFF',3],
-    ['Las Palmas','#FEDD00','#005CA9',5],['Leganés','#005BAC','#FFFFFF',5],
-    ['Mallorca','#E20613','#000000',4],['Osasuna','#D91A21','#0A346F',4],
-    ['Rayo Vallecano','#E53027','#FFFFFF',4],['Real Betis','#00954C','#FFFFFF',3],
-    ['Real Madrid','#FEBE10','#00529F',1],['Real Sociedad','#0067B1','#FFFFFF',3],
-    ['Sevilla','#D80027','#FFFFFF',3],['Valencia','#FF7F00','#000000',4],
-    ['Valladolid','#5B1F68','#FFFFFF',5],['Villarreal','#FFE667','#005187',3]] },
-  BL: { id: 78, name: 'Bundesliga', country: 'Germany', tint: '#D20515', clubs: [
-    ['Augsburg','#BA3733','#46714D',4],['Bayer Leverkusen','#E32219','#000000',1],
-    ['Bayern München','#DC052D','#0066B2',1],['Bochum','#005CA9','#FFFFFF',5],
-    ['Borussia Dortmund','#FDE100','#000000',2],['Mönchengladbach','#000000','#00A650',4],
-    ['Eintracht Frankfurt','#E1000F','#000000',3],['Freiburg','#000000','#E1000F',3],
-    ['Heidenheim','#E1001A','#003F87',5],['Hoffenheim','#1C63B7','#FFFFFF',4],
-    ['Holstein Kiel','#003C7D','#FFFFFF',5],['Mainz 05','#ED1C24','#FFFFFF',4],
-    ['RB Leipzig','#DD0741','#001F47',2],['St. Pauli','#5A3826','#FFFFFF',5],
-    ['Stuttgart','#E32219','#FFFFFF',3],['Union Berlin','#EB1923','#FFED02',4],
-    ['Werder Bremen','#1D9053','#FFFFFF',4],['Wolfsburg','#65B32E','#FFFFFF',4]] },
-  SA: { id: 135, name: 'Serie A', country: 'Italy', tint: '#0067B1', clubs: [
-    ['Atalanta','#1D71B8','#000000',2],['Bologna','#A21C25','#1A2F4B',3],
-    ['Cagliari','#AF1E2D','#002E5F',5],['Como','#005EB8','#FFFFFF',5],
-    ['Empoli','#00579C','#FFFFFF',5],['Fiorentina','#642C8F','#FFFFFF',3],
-    ['Genoa','#B61F23','#0E2B5C',4],['Hellas Verona','#F8E71C','#0B3D91',5],
-    ['Inter','#0068A8','#000000',1],['Juventus','#000000','#FFFFFF',2],
-    ['Lazio','#87D8F7','#0B2D5C',3],['Lecce','#FFE500','#D2232A',5],
-    ['Milan','#FB090B','#000000',2],['Monza','#E30613','#FFFFFF',5],
-    ['Napoli','#12A0D7','#003D7C',1],['Parma','#FFD200','#005BAA',5],
-    ['Roma','#8E1F2F','#F0BC42',2],['Torino','#881600','#FFFFFF',4],
-    ['Udinese','#000000','#FFFFFF',4],['Venezia','#000000','#F36F21',5]] },
-  L1: { id: 61, name: 'Ligue 1', country: 'France', tint: '#091C3E', clubs: [
-    ['Angers','#000000','#FFFFFF',5],['Auxerre','#005BAC','#FFFFFF',5],
-    ['Brest','#D6001C','#FFFFFF',4],['Le Havre','#00A3E0','#001489',5],
-    ['Lens','#FFED00','#D6001C','3'],['Lille','#D6001C','#003A70',2],
-    ['Lyon','#003C7D','#DA291C',2],['Marseille','#2FAEE0','#FFFFFF',2],
-    ['Monaco','#CE1126','#FFFFFF',2],['Montpellier','#F37021','#003A70',5],
-    ['Nantes','#FDD100','#009639',4],['Nice','#D6001C','#000000',3],
-    ['Paris Saint-Germain','#004170','#DA291C',1],['Reims','#D6001C','#FFFFFF',4],
-    ['Rennes','#D6001C','#000000',3],['Saint-Étienne','#009639','#FFFFFF',5],
-    ['Strasbourg','#0066B3','#FFFFFF',4],['Toulouse','#5F259F','#FFFFFF',4]] }
+  UCL: { id: 2, name: 'Champions League', country: 'Europe', tint: '#0A0F24', clubs: [
+    ['Real Madrid','#FEBE10','#00529F',1],['Manchester City','#6CABDD','#1C2C5B',1],
+    ['Bayern München','#DC052D','#0066B2',1],['Paris Saint-Germain','#004170','#DA291C',1],
+    ['Liverpool','#C8102E','#00B2A9',1],['Barcelona','#A50044','#004D98',1],
+    ['Arsenal','#EF0107','#023474',1],['Inter','#0068A8','#000000',1],
+    ['Borussia Dortmund','#FDE100','#000000',2],['Atlético Madrid','#CB3524','#262E62',2],
+    ['Napoli','#12A0D7','#003D7C',2],['Manchester United','#DA291C','#000000',2],
+    ['Villarreal','#FFE667','#005187',2],['RB Leipzig','#DD0741','#001F47',2],
+    ['Sporting CP','#00693E','#FFFFFF',2],['Porto','#003C7D','#FFFFFF',2],
+    ['Club Brugge','#0069B4','#000000',3],['Galatasaray','#FFA500','#A90432',3],
+    ['PSV Eindhoven','#ED1C24','#FFFFFF',3],['Shakhtar Donetsk','#FF6600','#000000',3],
+    ['Aston Villa','#95BFE5','#670E36',3],['Roma','#8E1F2F','#F0BC42',3],
+    ['Real Betis','#00954C','#FFFFFF',3],['Feyenoord','#ED1C24','#00693E',3],
+    ['Stuttgart','#E32219','#FFFFFF',4],['Lille','#D6001C','#003A70',4],
+    ['Lens','#FFED00','#D6001C',4],['Como','#0066B3','#003087',4],
+    ['Fenerbahçe','#FFED00','#00205B',4],
+    ['AEK Athens','#FFD700','#000000',5],['Bodø/Glimt','#FFD700','#111111',5],
+    ['LASK','#000000','#FFFFFF',5],['Sabah','#003876','#FFD700',5],
+    ['Slavia Praha','#B90000','#FFFFFF',5],['Slovan Bratislava','#00539B','#FFFFFF',5],
+    ['Viking FK','#000000','#FFFFFF',5]
+  ] },
 };
+
+// Kit colours for clubs that can show up via live data (promotions,
+// newly arrived sides) but weren't in a hardcoded list — plus whatever's
+// already known from the static LEAGUES table below. A club with no entry
+// anywhere gets DEFAULT_KIT so nothing breaks visually.
+const DEFAULT_KIT = ['#5B6B7A', '#1B222B'];
+const EXTRA_KITS = {
+  'Coventry City': ['#78C4E0', '#211D1B'],
+  'Hull City': ['#F18A00', '#0B0B0B'],
+  'Leeds United': ['#FFFFFF', '#1D428A'],
+  'Sunderland': ['#EB172B', '#211E1F'],
+  'Burnley': ['#6C1D45', '#99D6EA'],
+  'Leicester City': ['#003090', '#FDBE11'],
+  'Southampton': ['#D71920', '#130C0E'],
+  'West Ham': ['#7A263A', '#1BB1E7'],
+  'Wolves': ['#FDB913', '#231F20'],
+  'Ipswich Town': ['#3A64A3', '#DE2C37']
+};
+function kitFor(name) {
+  const pl = LEAGUES.PL.clubs.find(c => c[0] === name);
+  if (pl) return [pl[1], pl[2]];
+  if (EXTRA_KITS[name]) return EXTRA_KITS[name];
+  return DEFAULT_KIT;
+}
+
+// Live club data (Premier League only, via FPL) is fetched once per
+// session and cached here — clubs list, squads, and the correct current
+// top-flight membership all come from one call, no manual maintenance.
+let livePLCache = null;
+async function loadLivePL() {
+  if (livePLCache) return livePLCache;
+  try {
+    const r = await fetch('/api/fpl');
+    if (r.ok) {
+      const j = await r.json();
+      if (j.clubs && j.squads) { livePLCache = j; return j; }
+    }
+  } catch (e) { /* fall through to static/demo below */ }
+  return null;
+}
+
+// Resolves a league's club list — live for PL, static for everything else.
+// Every club comes back in the same {name, home, away, tier} shape the
+// rest of the game already expects.
+async function getLeagueClubs(leagueKey) {
+  if (leagueKey === 'PL') {
+    const live = await loadLivePL();
+    if (live) return live.clubs.map(c => {
+      const [home, away] = kitFor(c.name);
+      return { name: c.name, home, away, tier: c.tier };
+    });
+  }
+  return LEAGUES[leagueKey].clubs.map(c => ({ name: c[0], home: c[1], away: c[2], tier: c[3] }));
+}
+
+// The traditional "big" clubs per league — spun for more often than a
+// flat random pick would give them. Leagues not listed here spin flat.
+// Extend this as more leagues get curated data.
+const TOP_CLUBS = {
+  PL: ['Arsenal', 'Liverpool', 'Manchester City', 'Chelsea', 'Manchester United', 'Tottenham'],
+  // Roughly UEFA's Pot 1/2 — clubs with genuine pedigree, typically the
+  // ones finishing top 3-5 in their domestic league. Debutant/lower-pot
+  // sides (AEK, Bodø/Glimt, LASK, Sabah, Slavia, Slovan, Viking, and the
+  // smaller Pot 3/4 clubs) are left unweighted, so they show up, just rarely.
+  UCL: ['Real Madrid', 'Manchester City', 'Bayern München', 'Paris Saint-Germain',
+    'Liverpool', 'Barcelona', 'Arsenal', 'Inter', 'Borussia Dortmund', 'Atlético Madrid',
+    'Napoli', 'Manchester United', 'RB Leipzig', 'Sporting CP', 'Porto',
+    'Villarreal', 'Aston Villa', 'Roma']
+};
+// weight: a top club is this many times more likely than a normal one
+const TOP_CLUB_WEIGHT = { PL: 3, UCL: 5 };
+function weightedClubIndex(clubs, leagueKey) {
+  const top = new Set(TOP_CLUBS[leagueKey] || []);
+  if (!top.size) return Math.floor(Math.random() * clubs.length);
+  const w = TOP_CLUB_WEIGHT[leagueKey] || 3;
+  const weights = clubs.map(c => top.has(c.name) ? w : 1);
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < clubs.length; i++) { r -= weights[i]; if (r <= 0) return i; }
+  return clubs.length - 1;
+}
 
 /* ------------------------------------------------------------------ *
  * 2. FORMATIONS — every slot carries a role, a rating group and a
@@ -214,15 +274,55 @@ function demoSquad(clubName, tier) {
   return squad;
 }
 
+// Curated real rosters — hand-set ratings, no API, no stats crunching.
+// Only leagues listed here have a file; others fall through to the
+// KV/API path and finally to the demo generator.
+const CURATED_LEAGUES = { PL: '/data/pl.json', UCL: '/data/ucl.json' };
+const curatedCache = new Map();
+async function loadCurated(leagueKey) {
+  if (!CURATED_LEAGUES[leagueKey]) return null;
+  if (curatedCache.has(leagueKey)) return curatedCache.get(leagueKey);
+  let data = null;
+  // Self-contained preview builds inline the JSON as window.__CURATED_DATA__
+  // since a single-file artifact can't fetch a sibling /data/*.json — the
+  // real deployment never sets this global, so it always takes the fetch path.
+  if (typeof window !== 'undefined' && window.__CURATED_DATA__ && window.__CURATED_DATA__[leagueKey]) {
+    data = window.__CURATED_DATA__[leagueKey];
+  } else {
+    try {
+      const r = await fetch(CURATED_LEAGUES[leagueKey]);
+      if (r.ok) data = await r.json();
+    } catch (e) { /* fall through */ }
+  }
+  curatedCache.set(leagueKey, data);
+  return data;
+}
+// A curated player already carries a hand-set rating; a stats-based one
+// (API/demo) needs it computed. Everywhere a player is rated, go through this.
+const getRating = (player, grp) =>
+  typeof player.rating === 'number' ? player.rating : ratePlayer(player, grp);
+
 const cache = new Map();
 async function getSquad(leagueKey, club) {
   const key = leagueKey + '|' + club.name;
   if (cache.has(key)) return cache.get(key);
   let squad = null;
-  try {
-    const r = await fetch(`/api/data?league=${leagueKey}&club=${encodeURIComponent(club.name)}`);
-    if (r.ok) { const j = await r.json(); if (j.squad && j.squad.length >= 14) squad = j.squad; }
-  } catch (e) { /* offline or no key yet — demo squads below */ }
+  if (leagueKey === 'PL') {
+    const live = await loadLivePL();
+    if (live && live.squads[club.name] && live.squads[club.name].length >= 10) {
+      squad = live.squads[club.name];
+    }
+  }
+  const curated = squad ? null : await loadCurated(leagueKey);
+  if (!squad && curated && curated[club.name] && curated[club.name].length >= 10) {
+    squad = curated[club.name];
+  }
+  if (!squad) {
+    try {
+      const r = await fetch(`/api/data?league=${leagueKey}&club=${encodeURIComponent(club.name)}`);
+      if (r.ok) { const j = await r.json(); if (j.squad && j.squad.length >= 14) squad = j.squad; }
+    } catch (e) { /* offline or no key yet */ }
+  }
   if (!squad) squad = demoSquad(club.name, club.tier);
   cache.set(key, squad);
   return squad;
@@ -297,14 +397,12 @@ function simulate(A, B) {
 /* League prediction: rank the built XI against every club in the
    league, using each club's own best available XI in that formation. */
 async function predictTable(leagueKey, squads) {
-  const L = LEAGUES[leagueKey];
   const rows = [];
-  for (const c of L.clubs) {
-    const club = { name: c[0], home: c[1], away: c[2], tier: c[3] };
+  for (const club of S.leagueClubs) {
     const sq = await getSquad(leagueKey, club);
     const best = g => {
       const cands = sq.filter(p => ELIGIBLE[g].includes(p.position))
-        .map(p => ratePlayer(p, g)).sort((x, y) => y - x);
+        .map(p => getRating(p, g)).sort((x, y) => y - x);
       return cands.slice(0, g === 'GK' ? 1 : 4);
     };
     const avg = a => a.reduce((t, v) => t + v, 0) / Math.max(a.length, 1);
@@ -351,16 +449,22 @@ function theme(club) {
 const me = () => S.players[S.turn];
 
 function setCrumb(txt) { crumb.textContent = txt || ''; }
+function setLeagueTheme(leagueKey) {
+  const on = leagueKey === 'UCL';
+  document.body.classList.toggle('ucl-mode', on);
+  const stars = document.getElementById('anthemStars');
+  if (stars) stars.style.display = on ? 'block' : 'none';
+}
 function show(node) { app.replaceChildren(node); window.scrollTo({ top: 0 }); }
 
 /* ------------------------------------------------------------------ *
  * 7. SCREENS
  * ------------------------------------------------------------------ */
 function screenMode() {
-  theme(null); setCrumb('');
+  theme(null); setCrumb(''); setLeagueTheme(null);
   const v = el(`<section>
     <h1>Spin it. Build it. Play it.</h1>
-    <p>You get a formation and a club at random. Fill all eleven shirts from that squad — two rerolls a slot — then watch the match.</p>
+    <p>Premier League or Champions League night. Spin a formation, then eleven times over spin a club and fill a shirt — two rerolls a slot — then watch the match.</p>
     <button class="btn primary" data-m="ai">Play the AI<span class="sub">Instant opponent, builds its own XI</span></button>
     <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
     <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
@@ -391,8 +495,10 @@ function screenJoin() {
     const r = await api({ action:'join', code });
     if (!r || !r.ok) return toast('No room with that code.');
     S.mode = 'online'; S.room = { code, seat: 1 }; S.leagueKey = r.state.league;
-    if (!S.leagueKey) { S.mode='online'; return screenWait('Waiting for the host to pick a league.', st => {
-        if (st.league) { S.leagueKey = st.league; startTurns(); } }); }
+    if (S.leagueKey) setLeagueTheme(S.leagueKey);
+    if (!S.leagueKey) { S.mode='online'; return screenWait('Waiting for the host to pick a league.', async st => {
+        if (st.league) { S.leagueKey = st.league; setLeagueTheme(st.league); S.leagueClubs = await getLeagueClubs(st.league); startTurns(); } }); }
+    S.leagueClubs = await getLeagueClubs(S.leagueKey);
     startTurns();
   };
   show(v);
@@ -411,6 +517,8 @@ function screenLeague() {
       <span><b>${esc(L.name)}</b><small>${esc(L.country)} · ${L.clubs.length} clubs</small></span></button>`);
     b.onclick = async () => {
       S.leagueKey = k;
+      setLeagueTheme(k);
+      S.leagueClubs = await getLeagueClubs(k);
       if (S.mode === 'host') {
         const r = await api({ action:'create', league:k });
         if (!r || !r.ok) return toast('Could not open a room. Check your connection.');
@@ -528,7 +636,7 @@ function screenBuild() {
   theme(null);
   p.xi = FORMATIONS[p.formation].map(s => ({ ...s, player:null, rerolls:2 }));
 
-  const clubs = LEAGUES[S.leagueKey].clubs.map(c => ({ name:c[0], home:c[1], away:c[2], tier:c[3] }));
+  const clubs = S.leagueClubs;
   const usedClubs = new Set(), usedPlayers = new Set();
   let club = null, slotIdx = -1, busy = false;
 
@@ -584,7 +692,7 @@ function screenBuild() {
     busy = true; act.disabled = true; act.textContent = 'Spinning…';
     picker.replaceChildren();
     const pool = clubs.filter(c => !usedClubs.has(c.name));
-    const idx = Math.floor(Math.random() * pool.length);
+    const idx = weightedClubIndex(pool, S.leagueKey);
     await reel(box, pool, idx, c =>
       `<span class="swatch" style="background:${c.home};box-shadow:inset 0 0 0 3px ${c.away}"></span>${esc(c.name)}`);
     club = pool[idx];
@@ -605,7 +713,7 @@ function screenBuild() {
     const pool = c.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !taken.has(pl.id));
     if (!pool.length) return null;
     const pick = pool[Math.floor(Math.random() * pool.length)];
-    return { ...pick, rating: ratePlayer(pick, grp), club: c };
+    return { ...pick, rating: getRating(pick, grp), club: c };
   }
 
   function pickSlot(i) {
@@ -622,14 +730,15 @@ function screenBuild() {
 
   function renderPick(i) {
     const s = p.xi[i], pl = s.player, st = pl.stats, grp = GROUP[s.role];
-    const line = grp === 'GK' ? `${st.saves} saves · ${st.cleanSheets} clean sheets`
+    const line = !st ? `${pl.position} · rated ${pl.rating}`
+      : grp === 'GK' ? `${st.saves} saves · ${st.cleanSheets} clean sheets`
       : grp === 'DEF' ? `${st.cleanSheets} clean sheets · ${st.tackles + st.interceptions + st.blocks} defensive actions`
       : grp === 'MID' ? `${st.passes} passes · ${st.passAccuracy}% accuracy`
       : `${st.goals} goals · ${st.assists} assists${grp === 'ATT_MID' ? ` · ${st.dribbles} dribbles` : ''}`;
     const card = el(`<div>
       <div class="plyr">
         <span class="num" style="background:${pl.club.home};color:${readable(pl.club.home)}">${pl.number}</span>
-        <span class="meta"><b>${esc(pl.name)}</b><small>${s.role} · ${esc(pl.club.name)} · ${st.appearances} apps</small></span>
+        <span class="meta"><b>${esc(pl.name)}</b><small>${s.role} · ${esc(pl.club.name)}${st ? ` · ${st.appearances} apps` : ''}</small></span>
         <span class="rating">${pl.rating}</span>
       </div>
       <small style="display:block;padding:6px 2px">${esc(line)}</small>
@@ -669,7 +778,7 @@ function screenBuild() {
 
 /* --- the AI opponent ---------------------------------------------- */
 async function buildAI(ai) {
-  const clubs = LEAGUES[S.leagueKey].clubs.map(c => ({ name:c[0], home:c[1], away:c[2], tier:c[3] }));
+  const clubs = S.leagueClubs;
   ai.formation = FORMATION_NAMES[Math.floor(Math.random() * FORMATION_NAMES.length)];
   const pool = clubs.slice().sort(() => Math.random() - 0.5);
   const usedPlayers = new Set();
@@ -680,7 +789,7 @@ async function buildAI(ai) {
     const club = pool[i % pool.length];
     club.squad = club.squad || await getSquad(S.leagueKey, club);
     const cands = club.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !usedPlayers.has(pl.id))
-      .map(pl => ({ ...pl, rating: ratePlayer(pl, grp), club }))
+      .map(pl => ({ ...pl, rating: getRating(pl, grp), club }))
       .sort((a, b) => b.rating - a.rating);
     // the AI gets rerolls too, so it lands on a good one rather than the best one
     const pick = cands[Math.min(cands.length - 1, Math.floor(Math.random() * 3))];
