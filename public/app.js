@@ -1248,6 +1248,7 @@ async function screenTable(A, B) {
   const v = el(`<section>
     <h2>Where they'd finish</h2>
     <p><small>Both XIs ranked against every squad in ${esc(LEAGUES[S.leagueKey].name)}.</small></p>
+    <p id="diag"><small>Building table…</small></p>
     <table class="tbl" id="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table>
     <button class="btn ghost" id="back">Back to the scoresheet</button>
   </section>`);
@@ -1255,31 +1256,35 @@ async function screenTable(A, B) {
   show(v);
 
   const tbl = v.querySelector('#tbl');
-  let rows;
+  const diag = v.querySelector('#diag');
   try {
-    rows = await predictTable(S.leagueKey, [
+    const rows = await predictTable(S.leagueKey, [
       { label: `${A.label}'s XI`, strength: A.strength },
       { label: `${B.label}'s XI`, strength: B.strength }
     ]);
+    diag.innerHTML = `<small>Found ${rows.length} rows.</small>`;
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      if (r.mine) tr.className = 'me';
+      tr.style.opacity = '0'; tr.style.transform = 'translateY(6px)';
+      tr.style.transition = 'opacity .32s ease,transform .32s ease';
+      const cells = [r.pos, r.name, r.strength, r.pts];
+      cells.forEach((val, i) => {
+        const td = document.createElement('td');
+        td.textContent = val === undefined ? '' : String(val);
+        tr.appendChild(td);
+      });
+      tbl.appendChild(tr);
+      requestAnimationFrame(() => { tr.style.opacity = '1'; tr.style.transform = 'translateY(0)'; });
+      await sleep(65);
+    }
+    diag.remove();
+    if (rows.length && S.leagueKey === 'UCL') {
+      v.insertAdjacentHTML('beforeend', '<button class="btn primary" id="toko" style="margin-top:14px">See the knockout bracket</button>');
+      v.querySelector('#toko').onclick = () => screenKnockout(A, B, rows);
+    }
   } catch (e) {
-    tbl.insertAdjacentHTML('afterend', `<p><small>Table failed to build: ${esc(e.message || String(e))}</small></p>`);
-    return;
-  }
-  if (!rows.length) {
-    tbl.insertAdjacentHTML('afterend', '<p><small>Could not reach the squad data for the table right now — try again from the scoresheet.</small></p>');
-    return;
-  }
-  for (const r of rows) {
-    const tr = el(`<tr class="${r.mine ? 'me' : ''}" style="opacity:0;transform:translateY(6px);
-      transition:opacity .32s ease,transform .32s ease">
-      <td>${r.pos}</td><td>${esc(r.name)}</td><td>${r.strength}</td><td>${r.pts}</td></tr>`);
-    tbl.appendChild(tr);
-    requestAnimationFrame(() => { tr.style.opacity = 1; tr.style.transform = 'translateY(0)'; });
-    await sleep(65);
-  }
-  if (S.leagueKey === 'UCL') {
-    v.insertAdjacentHTML('beforeend', '<button class="btn primary" id="toko" style="margin-top:14px">See the knockout bracket</button>');
-    v.querySelector('#toko').onclick = () => screenKnockout(A, B, rows);
+    diag.innerHTML = `<small>Table error: ${esc(String(e && e.stack || e))}</small>`;
   }
 }
 
