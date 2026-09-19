@@ -485,7 +485,7 @@ async function predictTable(leagueKey, squads) {
  * ------------------------------------------------------------------ */
 const app = document.getElementById('app');
 const crumb = document.getElementById('crumb');
-const S = { mode:null, leagueKey:null, players:[], turn:0, room:null, poll:null };
+const S = { mode:null, leagueKey:null, players:[], turn:0, room:null, poll:null, lastMatch:null };
 
 const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
@@ -529,12 +529,74 @@ function screenMode() {
     <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
     <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
     <button class="btn ghost" data-m="join">Join with a code</button>
+    <button class="btn ghost" id="howto">How to play</button>
   </section>`);
   v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
     S.mode = b.dataset.m;
     if (b.dataset.m === 'join') return screenJoin();
     screenLeague();
   });
+  v.querySelector('#howto').onclick = screenTutorial;
+  show(v);
+}
+
+/* --- how to play ----------------------------------------------------
+ * A walk-through rather than a wall of text — the same pitch and slot
+ * styling the real build screen uses, so it looks like the game rather
+ * than a manual bolted on top of it. */
+function screenTutorial() {
+  theme(null); setCrumb('How to play');
+  const v = el(`<section>
+    <h1>How Sp1nXI works</h1>
+
+    <div class="card">
+      <h3>1 · Spin a formation</h3>
+      <p>Whatever lands is what you play — 4-4-2 through 5-4-1. It decides
+      which shirts you need to fill: how many defenders, how many strikers.</p>
+    </div>
+
+    <div class="card">
+      <h3>2 · One shirt, one club</h3>
+      <p>Tap an empty shirt, then spin for a club. You're handed a random
+      player from that club who fits the position — reroll up to twice if
+      you don't like who you got, or take it and move to the next shirt.</p>
+      <div class="pitch" style="aspect-ratio:68/40;margin-top:10px">
+        <div class="markings"><div style="left:35%;right:35%;top:38%;height:24%;border-radius:50%"></div></div>
+        <div class="slot filled" style="left:30%;top:50%;background:linear-gradient(150deg,#E4762B,#241F19)">
+          <span class="role">ST</span><span class="nm">Haaland</span><span class="rt">96</span>
+        </div>
+        <div class="slot" style="left:70%;top:50%"><span class="role">ST</span></div>
+      </div>
+      <p style="margin-top:10px"><small>Eleven shirts, up to eleven different clubs — your XI ends up a
+      patchwork, not one squad.</small></p>
+    </div>
+
+    <div class="card">
+      <h3>3 · Some clubs come up more</h3>
+      <p>The spin leans toward pedigree — the Premier League's big six, or
+      in the Champions League, clubs who've actually won it more than once —
+      about 65% of the time. Everyone else still shows up, just less often.</p>
+    </div>
+
+    <div class="card">
+      <h3>4 · Kick-off</h3>
+      <p>Once both XIs are built, the match plays out from squad strength —
+      attack, midfield and defence — into a scoreline, scorers and a
+      FotMob-style sheet. Then see where both squads would finish if they
+      played a full season in that league.</p>
+    </div>
+
+    <div class="card">
+      <h3>Three ways to play</h3>
+      <p><b>Play the AI</b> — it builds its own XI right in front of you, shirt
+      by shirt, same as you do.<br>
+      <b>Pass and play</b> — hand the phone over between builds, no peeking.<br>
+      <b>Online room</b> — share a four-letter code, build separately, same match.</p>
+    </div>
+
+    <button class="btn primary" id="done">Let's play</button>
+  </section>`);
+  v.querySelector('#done').onclick = screenMode;
   show(v);
 }
 
@@ -632,10 +694,10 @@ function nextAfterBuild() {
   if (S.mode === 'online') return publishSquad();
   if (S.mode === 'ai') {
     const ai = S.players[1];
-    if (!ai.xi) { screenAIBuild(() => screenResult()); return; }
+    if (!ai.xi) { screenAIBuild(() => startMatch(S.players[0], S.players[1])); return; }
   }
   if (S.turn === 0 && S.mode === 'pass') { S.turn = 1; return screenHandover(); }
-  screenResult();
+  startMatch(S.players[0], S.players[1]);
 }
 
 function screenHandover() {
@@ -908,10 +970,93 @@ function screenAIBuild(done) {
 }
 
 /* --- result: match sheet first, table is a separate reveal --------- */
-function screenResult() {
-  stopPoll();
-  const [A, B] = S.players;
+/* --- kick-off: simulate once, then watch it play out on a tactics
+ * board before the scoresheet — ball wandering, events highlighted on
+ * the actual player who caused them, both XIs shown as a real formation
+ * shape rather than a flat list. */
+function startMatch(A, B) {
   const m = simulate(A, B);
+  screenMatchSim(A, B, m);
+}
+
+const PITCH_HALF_MARKINGS = `<div class="markings">
+  <div style="left:20%;right:20%;top:-1px;height:9%;border-top:none"></div>
+  <div style="left:20%;right:20%;bottom:-1px;height:9%;border-bottom:none"></div>
+  <div style="left:-1px;right:-1px;top:50%;height:0"></div>
+  <div style="left:32%;right:32%;top:44%;height:12%;border-radius:50%"></div>
+</div>`;
+
+// Both teams' own build coordinates put the GK near y=90 and the front
+// line near y=17 — fine for one team alone. For a full two-team pitch,
+// compress each team into its own half: A keeps that order stretched
+// into the bottom half, B gets the same shape mirrored into the top.
+function matchY(s, isTop) {
+  const t = (s.y - 17) / (90 - 17); // 0 at front line, 1 at GK
+  return isTop ? 48 - t * 44 : 52 + t * 44;
+}
+
+async function screenMatchSim(A, B, m) {
+  theme(null);
+  document.documentElement.style.setProperty('--club-a', A.badge.home);
+  document.documentElement.style.setProperty('--club-b2', B.badge.home);
+  setCrumb('Kick-off');
+
+  const v = el(`<section>
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <b>${esc(A.label)}</b>
+      <span id="clock" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.3rem">0'</span>
+      <b>${esc(B.label)}</b>
+    </div>
+    <div class="pitch" id="matchpitch" style="margin-top:10px">${PITCH_HALF_MARKINGS}
+      <div id="ball" style="position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;
+        background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%);
+        transition:left .55s ease,top .55s ease;z-index:5"></div>
+    </div>
+    <p id="commentary" style="min-height:1.4em;text-align:center;margin-top:10px"><small>Kicking off…</small></p>
+    <button class="btn ghost" id="skip">Skip to full time</button>
+  </section>`);
+  const pitch = v.querySelector('#matchpitch'), ball = v.querySelector('#ball');
+  const clock = v.querySelector('#clock'), commentary = v.querySelector('#commentary');
+
+  [[A, false], [B, true]].forEach(([team, isTop]) => {
+    team.xi.forEach(s => {
+      const dot = el(`<div style="position:absolute;left:${s.x}%;top:${matchY(s, isTop)}%;
+        width:15px;height:15px;border-radius:50%;transform:translate(-50%,-50%);
+        background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5)"></div>`);
+      pitch.appendChild(dot);
+    });
+  });
+
+  let skipped = false;
+  v.querySelector('#skip').onclick = () => { skipped = true; screenResult(A, B, m); };
+  show(v);
+
+  for (const e of m.events) {
+    if (skipped) return;
+    clock.textContent = e.min + "'";
+    const team = e.side === 'home' ? A : B;
+    const isTop = e.side === 'away';
+    const slot = team.xi.find(sl => sl.player.name === e.player);
+    await sleep(500);
+    if (skipped) return;
+    if (slot) { ball.style.left = slot.x + '%'; ball.style.top = matchY(slot, isTop) + '%'; }
+    commentary.innerHTML = e.type === 'goal'
+      ? `⚽ <b>${esc(e.player)}</b> scores for ${esc(team.label)}!`
+      : `🟨 <b>${esc(e.player)}</b> booked`;
+    await sleep(900);
+    if (skipped) return;
+    ball.style.left = '50%'; ball.style.top = '50%';
+  }
+  if (skipped) return;
+  clock.textContent = '90+';
+  commentary.innerHTML = '<b>Full time.</b>';
+  await sleep(600);
+  if (!skipped) screenResult(A, B, m);
+}
+
+function screenResult(A, B, m) {
+  stopPoll();
+  S.lastMatch = { A, B, m };
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
@@ -970,7 +1115,7 @@ async function screenTable(A, B) {
     <table class="tbl" id="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table>
     <button class="btn ghost" id="back">Back to the scoresheet</button>
   </section>`);
-  v.querySelector('#back').onclick = () => screenResult();
+  v.querySelector('#back').onclick = () => screenResult(A, B, S.lastMatch.m);
   show(v);
 
   const tbl = v.querySelector('#tbl');
@@ -1025,7 +1170,7 @@ function screenLineups(A, B) {
   }
   v.querySelector('#tabA').onclick = () => { active = A; paint(); };
   v.querySelector('#tabB').onclick = () => { active = B; paint(); };
-  v.querySelector('#back').onclick = () => screenResult();
+  v.querySelector('#back').onclick = () => screenResult(A, B, S.lastMatch.m);
   show(v); paint();
 }
 
@@ -1061,7 +1206,7 @@ async function publishSquad() {
     stopPoll();
     const opp = S.players[S.room.seat === 0 ? 1 : 0];
     Object.assign(opp, other);
-    screenResult();
+    startMatch(S.players[0], S.players[1]);
   });
 }
 
