@@ -399,6 +399,19 @@ function poisson(lambda, rnd) {
   return k - 1;
 }
 
+const GOAL_CORNERS = ['top right corner', 'top left corner', 'bottom right corner', 'bottom left corner', 'straight down the middle'];
+// How a goal happened — most are open play, a smaller share are penalties
+// or direct free-kicks — and a FotMob-style description of the finish.
+function describeGoal() {
+  const r = Math.random();
+  const method = r < 0.11 ? 'penalty' : r < 0.19 ? 'freekick' : 'open';
+  const corner = GOAL_CORNERS[Math.floor(Math.random() * GOAL_CORNERS.length)];
+  if (method === 'penalty') return { method, desc: 'scores from the penalty spot' };
+  if (method === 'freekick') return { method, desc: `scores, ${corner}, direct free-kick from outside the box` };
+  const origin = Math.random() < 0.32 ? 'from outside the box' : 'from inside the box';
+  return { method, desc: `scores, ${corner}, ${origin}` };
+}
+
 function simulate(A, B) {
   const rnd = Math.random;
   const xgA = Math.max(0.18, 1.34 * Math.pow(A.strength.att / B.strength.def, 2.1));
@@ -424,7 +437,9 @@ function simulate(A, B) {
   const push = (side, squad, n, type) => {
     for (let i = 0; i < n; i++) {
       const s = scorerFor(squad);
-      events.push({ side, min: nextMin(), type, player: s.player.name });
+      const ev = { side, min: nextMin(), type, player: s.player.name };
+      if (type === 'goal') Object.assign(ev, describeGoal());
+      events.push(ev);
     }
   };
   push('home', A, gA, 'goal');
@@ -551,10 +566,10 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 function setCrumb(txt) { crumb.textContent = txt || ''; }
 function setLeagueTheme(leagueKey) {
-  const on = leagueKey === 'UCL';
-  document.body.classList.toggle('ucl-mode', on);
+  document.body.classList.toggle('ucl-mode', leagueKey === 'UCL');
+  document.body.classList.toggle('pl-mode', leagueKey === 'PL');
   const stars = document.getElementById('anthemStars');
-  if (stars) stars.style.display = on ? 'block' : 'none';
+  if (stars) stars.style.display = leagueKey === 'UCL' ? 'block' : 'none';
 }
 function show(node) { app.replaceChildren(node); window.scrollTo({ top: 0 }); }
 
@@ -1095,7 +1110,7 @@ async function screenMatchSim(A, B, m) {
   });
 
   let skipped = false;
-  v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); clearInterval(clockT); screenResult(A, B, m); };
+  v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); screenResult(A, B, m); };
   show(v);
 
   // Movement reads as purposeful rather than random: everyone drifts
@@ -1104,10 +1119,14 @@ async function screenMatchSim(A, B, m) {
   // it down), fading out with distance so only nearby players actually
   // move much — someone on the opposite flank barely shifts. Always
   // computed fresh from the formation spot, never cumulative, so nobody
-  // wanders off their own position for good.
-  let ballAtX = 50, ballAtY = 50, ballSide = null;
+  // wanders off their own position for good. The one exception: whoever
+  // hop() is currently moving deliberately (the ball-carrier in a
+  // scripted sequence) is skipped here entirely, so a run to goal can't
+  // get yanked back into their own half mid-sequence by this same drift.
+  let ballAtX = 50, ballAtY = 50, ballSide = null, scriptedKey = null;
   const wobbleT = setInterval(() => {
-    Object.entries(dotEls).forEach(([side, team]) => Object.values(team).forEach(dot => {
+    Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
+      if (side + '|' + name === scriptedKey) return;
       const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
       const dx = ballAtX - bx, dy = ballAtY - by;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -1128,24 +1147,18 @@ async function screenMatchSim(A, B, m) {
   // motion never just teleports to them.
   const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
   const events = m.events.slice().sort((a, b) => a.min - b.min);
-  const totalMin = 93, CHAINS = 18, TOTAL_MS = 29000;
+  const totalMin = 90, CHAINS = 18;
   const used = new Set();
   const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
   const lerp = (a, b, t) => a + (b - a) * t;
 
-  // The clock ticks continuously on its own timer rather than jumping in
-  // big steps once per chain, so it visibly counts up the whole time.
-  const startTime = Date.now();
-  const clockT = setInterval(() => {
-    const frac = Math.min(1, (Date.now() - startTime) / TOTAL_MS);
-    clock.textContent = Math.min(90, Math.round(frac * totalMin)) + "'";
-  }, 250);
-
   async function hop(x, y, caption, holdMs, mover) {
     if (skipped) return;
     ball.style.left = x + '%'; ball.style.top = y + '%';
-    ballAtX = x; ballAtY = y; if (mover) ballSide = mover.side;
+    ballAtX = x; ballAtY = y;
+    if (mover) { ballSide = mover.side; scriptedKey = mover.side + '|' + mover.name; }
+    else scriptedKey = null;
     if (mover) { const dot = dotEls[mover.side][mover.name]; if (dot) { dot.style.left = x + '%'; dot.style.top = y + '%'; } }
     await sleep(820);
     if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
@@ -1153,7 +1166,14 @@ async function screenMatchSim(A, B, m) {
 
   for (let c = 0; c < CHAINS; c++) {
     if (skipped) return;
+    // The clock is driven directly by loop progress, not an independent
+    // timer — so it can never sit still while the match keeps playing.
+    // The last chain shows real stoppage time instead of just freezing
+    // at 90'.
     const chainMin = Math.round((c / (CHAINS - 1)) * totalMin);
+    const isStoppage = c === CHAINS - 1;
+    const stoppageMin = isStoppage ? 90 + 1 + Math.floor(Math.random() * 5) : null;
+    clock.textContent = (isStoppage ? `90+${stoppageMin - 90}` : chainMin) + "'";
     const tolMin = Math.ceil(totalMin / CHAINS / 2) + 1;
     const ev = events.find(e => !used.has(e) && Math.abs(e.min - chainMin) <= tolMin);
 
@@ -1164,22 +1184,37 @@ async function screenMatchSim(A, B, m) {
       const scorerSlot = team.xi.find(sl => sl.player.name === ev.player) || pickDot(side);
 
       if (ev.type === 'goal') {
-        // A real move: two build-up passes among teammates, then the
-        // scorer dribbles forward in two small steps rather than
-        // snapping straight there, then the shot.
-        commentary.innerHTML = `${esc(team.label)} build an attack…`;
-        for (let i = 0; i < 2; i++) {
-          const passer = pickDot(side);
-          const pp = slotXY(side, passer);
-          await hop(pp.x, pp.y, null, null, { side, name: passer.player.name });
-        }
-        const start = slotXY(side, scorerSlot);
-        await hop(start.x, start.y, `${esc(ev.player)} takes it on…`, 500, { side, name: scorerSlot.player.name });
         const shotX = 40 + Math.random() * 20;
-        for (const t of [0.45, 0.8]) {
-          await hop(lerp(start.x, shotX, t), lerp(start.y, gy, t), null, null, { side, name: scorerSlot.player.name });
+        if (ev.method === 'penalty') {
+          // Straight to the spot — no build-up, it's a dead-ball restart.
+          commentary.innerHTML = `Penalty to ${esc(team.label)}!`;
+          const spot = { x: 50, y: teams[side].isTop ? 14 : 86 };
+          await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
+          await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
+        } else if (ev.method === 'freekick') {
+          // Also a dead ball — ball sits still at the foul spot, then
+          // curls straight in, no passing move beforehand.
+          commentary.innerHTML = `Free-kick, dangerous position…`;
+          const spot = slotXY(side, scorerSlot);
+          await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
+          await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
+        } else {
+          // Open play: two build-up passes, then the scorer dribbles
+          // forward in two small steps rather than snapping straight
+          // there, then the shot.
+          commentary.innerHTML = `${esc(team.label)} build an attack…`;
+          for (let i = 0; i < 2; i++) {
+            const passer = pickDot(side);
+            const pp = slotXY(side, passer);
+            await hop(pp.x, pp.y, null, null, { side, name: passer.player.name });
+          }
+          const start = slotXY(side, scorerSlot);
+          await hop(start.x, start.y, `${esc(ev.player)} takes it on…`, 500, { side, name: scorerSlot.player.name });
+          for (const t of [0.45, 0.8]) {
+            await hop(lerp(start.x, shotX, t), lerp(start.y, gy, t), null, null, { side, name: scorerSlot.player.name });
+          }
+          await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
         }
-        await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> scores for ${esc(team.label)}!`, 1000, { side, name: scorerSlot.player.name });
         if (side === 'home') scoreA++; else scoreB++;
         scoreEl.textContent = `${scoreA} – ${scoreB}`;
       } else {
@@ -1187,7 +1222,7 @@ async function screenMatchSim(A, B, m) {
         const build = slotXY(side, builder);
         await hop(build.x, build.y, null, null, { side, name: builder.player.name });
         const p = slotXY(side, scorerSlot);
-        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked`, 750, { side, name: scorerSlot.player.name });
+        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 750, { side, name: scorerSlot.player.name });
       }
       await hop(50, 50);
     } else {
@@ -1207,8 +1242,8 @@ async function screenMatchSim(A, B, m) {
   }
 
   if (skipped) return;
-  clearInterval(wobbleT); clearInterval(clockT);
-  clock.textContent = '90+';
+  clearInterval(wobbleT);
+  clock.textContent = 'FT';
   commentary.innerHTML = '<b>Full time.</b>';
   await sleep(600);
   if (!skipped) screenResult(A, B, m);
@@ -1336,10 +1371,15 @@ function screenResult(A, B, m) {
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
 
-  const evRows = m.events.map(e => e.side === 'home'
-    ? `<div class="ev"><span class="min">${e.min}'</span><span>${e.type === 'goal' ? '⚽' : '🟨'} ${esc(e.player)}</span></div>`
-    : `<div class="ev away"><span>${esc(e.player)} ${e.type === 'goal' ? '⚽' : '🟨'}</span><span class="min">${e.min}'</span></div>`
-  ).join('') || '<small>Nothing much happened. It was that kind of game.</small>';
+  const evRows = m.events.map(e => {
+    const icon = e.type === 'goal' ? '⚽' : '🟨';
+    const label = e.type === 'goal'
+      ? `${esc(e.player)} ${esc(e.desc)}`
+      : esc(e.player);
+    return e.side === 'home'
+      ? `<div class="ev"><span class="min">${e.min}'</span><span>${icon} ${label}</span></div>`
+      : `<div class="ev away"><span>${label} ${icon}</span><span class="min">${e.min}'</span></div>`;
+  }).join('') || '<small>Nothing much happened. It was that kind of game.</small>';
 
   const statRows = m.stats.map(s => {
     const t = s.wa + s.wb || 1;
@@ -1401,13 +1441,12 @@ function knockoutOutcome(sa, sb) {
 
 async function screenKnockout(A, B, tableRows) {
   setCrumb('Knockout stage');
-  let field = tableRows.slice(0, 16).map(r => ({ name: r.name, strength: r.strength, mine: !!r.mine }));
-  tableRows.filter(r => r.mine).forEach(mr => {
-    if (!field.find(f => f.name === mr.name)) {
-      field.sort((a, b) => a.strength - b.strength);
-      field[0] = { name: mr.name, strength: mr.strength, mine: true };
-    }
-  });
+  const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
+  const field = sorted.slice(0, 16).map(r => ({ name: r.name, strength: r.strength, mine: !!r.mine }));
+  // Strictly rank-based — no exceptions for your own XI. If it didn't
+  // finish top 16, it isn't in the bracket, same as it wouldn't be in
+  // a real tournament; the missed-out note below says so plainly.
+  const missed = sorted.slice(16).filter(r => r.mine);
   field.sort((a, b) => b.strength - a.strength);
 
   // Simulate the whole bracket up front — a real visual bracket needs
@@ -1435,6 +1474,7 @@ async function screenKnockout(A, B, tableRows) {
   const v = el(`<section>
     <h2>Knockout stage</h2>
     <p><small>Seeded from the table — 1 plays 16, 2 plays 15, and so on.</small></p>
+    ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} finished outside the top 16 in the table — didn't qualify for the knockout stage.</small></p>`).join('')}
     <div style="overflow-x:auto;margin:0 -16px;padding:4px 16px">
       <div class="bracket" id="bracket" style="position:relative;display:flex;gap:30px;min-height:340px"></div>
     </div>
