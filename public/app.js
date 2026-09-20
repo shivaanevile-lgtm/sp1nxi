@@ -987,8 +987,13 @@ async function buildAI(ai, onSlot) {
     const cands = club.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !usedPlayers.has(pl.id))
       .map(pl => ({ ...pl, rating: getRating(pl, grp), club }))
       .sort((a, b) => b.rating - a.rating);
-    // the AI gets rerolls too, so it lands on a good one rather than the best one
-    const pick = cands[Math.min(cands.length - 1, Math.floor(Math.random() * 3))];
+    // Weighted toward the best available rather than a flat random pick
+    // among the top 3 — a human naturally gravitates to the highest
+    // rating in the list, so a uniform pick here made the AI
+    // systematically weaker than what a person would draft.
+    const r = Math.random();
+    const idx = r < 0.65 ? 0 : r < 0.9 ? 1 : 2;
+    const pick = cands[Math.min(idx, cands.length - 1)];
     usedPlayers.add(pick.id);
     const slot = { ...s, player: pick, rerolls: 0 };
     ai.xi.push(slot);
@@ -1149,6 +1154,12 @@ async function screenMatchSim(A, B, m) {
   const events = m.events.slice().sort((a, b) => a.min - b.min);
   const totalMin = 90, CHAINS = 18;
   const used = new Set();
+  // Own goal line -> opponent's goal line, 0 = deep in your own box,
+  // 1 = right up against the opponent's — this is what lets a chain
+  // genuinely cross the halfway line as it develops, instead of every
+  // hop staying pinned to a player's static formation spot.
+  const advanceY = (side, progress) => teams[side].isTop ? 4 + progress * 92 : 96 - progress * 92;
+  const jitterX = x => Math.max(6, Math.min(94, x + (Math.random() * 16 - 8)));
   const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -1163,6 +1174,8 @@ async function screenMatchSim(A, B, m) {
     await sleep(820);
     if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
   }
+
+  commentary.innerHTML = 'Kick-off.';
 
   for (let c = 0; c < CHAINS; c++) {
     if (skipped) return;
@@ -1192,23 +1205,23 @@ async function screenMatchSim(A, B, m) {
           await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
           await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
         } else if (ev.method === 'freekick') {
-          // Also a dead ball — ball sits still at the foul spot, then
-          // curls straight in, no passing move beforehand.
+          // Also a dead ball, taken from a dangerous attacking position —
+          // not wherever the scorer's own formation slot happens to be.
           commentary.innerHTML = `Free-kick, dangerous position…`;
-          const spot = slotXY(side, scorerSlot);
+          const spot = { x: jitterX(scorerSlot.x), y: advanceY(side, 0.78) };
           await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
           await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
         } else {
-          // Open play: two build-up passes, then the scorer dribbles
-          // forward in two small steps rather than snapping straight
-          // there, then the shot.
+          // Open play: build-up passes genuinely advance up the pitch —
+          // each one further forward than the last — then the scorer
+          // dribbles the last stretch in rather than snapping to goal.
           commentary.innerHTML = `${esc(team.label)} build an attack…`;
           for (let i = 0; i < 2; i++) {
             const passer = pickDot(side);
-            const pp = slotXY(side, passer);
-            await hop(pp.x, pp.y, null, null, { side, name: passer.player.name });
+            const progress = 0.18 + i * 0.24;
+            await hop(jitterX(passer.x), advanceY(side, progress), null, null, { side, name: passer.player.name });
           }
-          const start = slotXY(side, scorerSlot);
+          const start = { x: jitterX(scorerSlot.x), y: advanceY(side, 0.62) };
           await hop(start.x, start.y, `${esc(ev.player)} takes it on…`, 500, { side, name: scorerSlot.player.name });
           for (const t of [0.45, 0.8]) {
             await hop(lerp(start.x, shotX, t), lerp(start.y, gy, t), null, null, { side, name: scorerSlot.player.name });
@@ -1217,25 +1230,43 @@ async function screenMatchSim(A, B, m) {
         }
         if (side === 'home') scoreA++; else scoreB++;
         scoreEl.textContent = `${scoreA} – ${scoreB}`;
+        await hop(50, 50, `Kick-off, ${esc(side === 'home' ? B.label : A.label)} to restart.`, 500);
       } else {
         const builder = pickDot(side);
-        const build = slotXY(side, builder);
-        await hop(build.x, build.y, null, null, { side, name: builder.player.name });
-        const p = slotXY(side, scorerSlot);
-        await hop(p.x, p.y, `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 750, { side, name: scorerSlot.player.name });
+        await hop(jitterX(builder.x), advanceY(side, 0.42), null, null, { side, name: builder.player.name });
+        const foulSpot = { x: jitterX(scorerSlot.x), y: advanceY(side, 0.6) };
+        await hop(foulSpot.x, foulSpot.y, `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 750, { side, name: scorerSlot.player.name });
+        await hop(50, 50);
       }
-      await hop(50, 50);
     } else {
       const side = Math.random() < (m.xgA / (m.xgA + m.xgB || 1)) ? 'home' : 'away';
       const hops = 2 + Math.floor(Math.random() * 2);
       for (let i = 0; i < hops; i++) {
         const d = pickDot(side);
-        const p = slotXY(side, d);
-        await hop(p.x, p.y, null, null, { side, name: d.player.name });
+        const progress = 0.15 + (i / Math.max(hops - 1, 1)) * 0.65;
+        await hop(jitterX(d.x), advanceY(side, progress), null, null, { side, name: d.player.name });
       }
-      if (Math.random() < 0.18) {
-        const gy = teams[side].isTop ? 80 : 20;
-        await hop(40 + Math.random() * 20, gy, Math.random() < 0.5 ? '🧤 Comfortable save' : '🛡️ Tackled, cleared away', 600);
+      // How the move breaks down: a shot (save, or wide for a goal kick),
+      // a tackle out for a corner, or just possession changing hands.
+      const outcome = Math.random();
+      if (outcome < 0.11) {
+        const gy2 = advanceY(side, 0.92);
+        await hop(jitterX(40 + Math.random() * 20), gy2, '🧤 Comfortable save', 550);
+        await hop(50, 50);
+      } else if (outcome < 0.19) {
+        const gy2 = advanceY(side, 0.97);
+        await hop(jitterX(40 + Math.random() * 20), gy2, '🥅 Off target — goal kick', 550);
+        const gkY = teams[side].isTop ? 92 : 8; // the defending keeper's own goal
+        await hop(50, gkY, null, null);
+        await hop(50, 50);
+      } else if (outcome < 0.28) {
+        const cornerX = Math.random() < 0.5 ? 4 : 96;
+        const cornerY = advanceY(side, 0.98);
+        await hop(cornerX, cornerY, '🚩 Corner', 500);
+        await hop(jitterX(50), advanceY(side, 0.9), 'Swung into the box…', 500);
+        await hop(50, 50);
+      } else if (outcome < 0.34) {
+        await hop(jitterX(40 + Math.random() * 20), advanceY(side, 0.85), '🛡️ Tackled, cleared away', 500);
         await hop(50, 50);
       }
     }
@@ -1760,5 +1791,7 @@ async function publishSquad() {
   });
 }
 
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *//
+
+
 screenMode();
