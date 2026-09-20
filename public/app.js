@@ -1062,11 +1062,18 @@ const PITCH_HALF_MARKINGS = `<div class="markings">
 
 // Both teams' own build coordinates put the GK near y=90 and the front
 // line near y=17 — fine for one team alone. For a full two-team pitch,
-// compress each team into its own half: A keeps that order stretched
-// into the bottom half, B gets the same shape mirrored into the top.
-function matchY(s, isTop) {
-  const t = (s.y - 17) / (90 - 17); // 0 at front line, 1 at GK
-  return isTop ? 48 - t * 44 : 52 + t * 44;
+// both teams' shapes are built around a SHARED "engagement line" (a
+// single Y value both sides react to) instead of being locked into their
+// own half — a defending team genuinely pushes up past halfway to press
+// when the game is being played in the attacking third, the same way a
+// real team's block does, rather than staying pinned deep the whole
+// match. engagement runs 4 (deep in the isTop side's own box) to 96
+// (deep in the non-isTop side's own box), same scale as pitch Y.
+function formationY(slot, isTop, engagement) {
+  const roleAdvance = (90 - slot.y) / (90 - 17); // 0 = GK, 1 = most advanced, for this player's own team
+  const dir = isTop ? 1 : -1;
+  const span = 30; // how far the XI spreads out from the engagement line
+  return Math.max(4, Math.min(96, engagement + dir * (roleAdvance - 0.5) * span * 2));
 }
 
 async function screenMatchSim(A, B, m) {
@@ -1098,12 +1105,15 @@ async function screenMatchSim(A, B, m) {
   const clock = v.querySelector('#clock'), commentary = v.querySelector('#commentary'), scoreEl = v.querySelector('#score');
   let scoreA = 0, scoreB = 0;
 
-  // Every player is a real dot at their formation position, tagged with
-  // its base spot so it can be nudged around and always drift back home.
+  const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
+  let engagement = 50; // shared line of play — both teams' shapes are built around this
+
+  // Every player is a real dot, tagged with its current base spot so the
+  // ambient drift can always pull back toward it.
   const dotEls = { home: {}, away: {} };
   [['home', A, false], ['away', B, true]].forEach(([side, team, isTop]) => {
     team.xi.forEach(s => {
-      const bx = s.x, by = matchY(s, isTop);
+      const bx = s.x, by = formationY(s, isTop, engagement);
       const dot = el(`<div style="position:absolute;left:${bx}%;top:${by}%;
         width:15px;height:15px;border-radius:50%;transform:translate(-50%,-50%);
         background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5);
@@ -1118,23 +1128,42 @@ async function screenMatchSim(A, B, m) {
   v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); screenResult(A, B, m); };
   show(v);
 
+  let ballAtX = 50, ballAtY = 50, ballSide = null, scriptedKey = null;
+
+  // Recomputes every player's base spot from the current engagement line
+  // and moves them there — this is what lets a defending side's whole
+  // back line push up past halfway to press, since their base position
+  // is no longer locked to their own half at all.
+  function updateFormationBases() {
+    Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
+      const slot = teams[side].team.xi.find(sl => sl.player.name === name);
+      if (!slot) return;
+      const by = formationY(slot, teams[side].isTop, engagement);
+      dot.dataset.bx = slot.x; dot.dataset.by = by;
+      if (side + '|' + name !== scriptedKey) { dot.style.left = slot.x + '%'; dot.style.top = by + '%'; }
+    }));
+  }
+  // Push engagement toward whichever goal `side` is attacking, by some
+  // fraction of the remaining distance — called as a move develops so
+  // both teams' shapes advance together, not just the ball-carrier.
+  function pushEngagement(side, amount) {
+    const target = teams[side].isTop ? 94 : 6;
+    engagement += (target - engagement) * amount;
+    updateFormationBases();
+  }
+  function recoilEngagement(amount) {
+    engagement += (50 - engagement) * amount;
+    updateFormationBases();
+  }
+
   // Movement reads as purposeful rather than random: everyone drifts
   // toward wherever the ball currently is, strongest for whoever's side
   // is on it (support runs) and a bit weaker for the other side (closing
   // it down), fading out with distance so only nearby players actually
-  // move much — someone on the opposite flank barely shifts. Always
-  // computed fresh from the formation spot, never cumulative, so nobody
-  // wanders off their own position for good. The one exception: whoever
-  // hop() is currently moving deliberately (the ball-carrier in a
-  // scripted sequence) is skipped here entirely, so a run to goal can't
-  // get yanked back into their own half mid-sequence by this same drift.
-  let ballAtX = 50, ballAtY = 50, ballSide = null, scriptedKey = null;
-  // Two effects, on top of the base pull-toward-ball: the whole block
-  // drifts a little toward whichever side of the pitch the ball is
-  // currently on (so the weak side tucks in and stays compact, rather
-  // than every player just individually chasing the ball), and applyDrift
-  // is called both on its own timer AND immediately whenever the ball
-  // moves — so support runs start with the pass, not up to 850ms late.
+  // move much. Always computed relative to the CURRENT base (which now
+  // itself tracks engagement), never cumulative. The one exception:
+  // whoever hop() is currently moving deliberately is skipped here, so a
+  // run can't get yanked back mid-sequence by this same drift.
   function applyDrift() {
     const blockShiftX = (ballAtX - 50) * 0.14;
     Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
@@ -1158,17 +1187,10 @@ async function screenMatchSim(A, B, m) {
   // nothing much — rather than jumping straight to each scripted event.
   // Real goals/cards get woven into the chain nearest their minute so the
   // motion never just teleports to them.
-  const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
   const events = m.events.slice().sort((a, b) => a.min - b.min);
   const totalMin = 90, CHAINS = 18;
   const used = new Set();
-  // Own goal line -> opponent's goal line, 0 = deep in your own box,
-  // 1 = right up against the opponent's — this is what lets a chain
-  // genuinely cross the halfway line as it develops, instead of every
-  // hop staying pinned to a player's static formation spot.
-  const advanceY = (side, progress) => teams[side].isTop ? 4 + progress * 92 : 96 - progress * 92;
   const jitterX = x => Math.max(6, Math.min(94, x + (Math.random() * 16 - 8)));
-  const slotXY = (side, slot) => ({ x: slot.x, y: matchY(slot, teams[side].isTop) });
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
   const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -1209,75 +1231,88 @@ async function screenMatchSim(A, B, m) {
       if (ev.type === 'goal') {
         const shotX = 40 + Math.random() * 20;
         if (ev.method === 'penalty') {
-          // Straight to the spot — no build-up, it's a dead-ball restart.
           commentary.innerHTML = `Penalty to ${esc(team.label)}!`;
+          pushEngagement(side, 0.85);
           const spot = { x: 50, y: teams[side].isTop ? 14 : 86 };
           await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
           await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
         } else if (ev.method === 'freekick') {
-          // Also a dead ball, taken from a dangerous attacking position —
-          // not wherever the scorer's own formation slot happens to be.
           commentary.innerHTML = `Free-kick, dangerous position…`;
-          const spot = { x: jitterX(scorerSlot.x), y: advanceY(side, 0.78) };
+          pushEngagement(side, 0.8);
+          const spot = { x: jitterX(scorerSlot.x), y: engagement };
           await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
           await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
         } else {
-          // Open play: build-up passes genuinely advance up the pitch —
-          // each one further forward than the last — then the scorer
-          // dribbles the last stretch in rather than snapping to goal.
+          // Open play: build-up passes genuinely advance the whole team's
+          // shape up the pitch — the defending side's block is pulled
+          // forward with them, pressing rather than sitting deep — then
+          // the scorer dribbles the last stretch in.
           commentary.innerHTML = `${esc(team.label)} build an attack…`;
           for (let i = 0; i < 2; i++) {
             const passer = pickDot(side);
-            const progress = 0.18 + i * 0.24;
-            await hop(jitterX(passer.x), advanceY(side, progress), null, null, { side, name: passer.player.name });
+            pushEngagement(side, 0.32);
+            await hop(jitterX(passer.x), engagement + (Math.random() * 6 - 3), null, null, { side, name: passer.player.name });
           }
-          const start = { x: jitterX(scorerSlot.x), y: advanceY(side, 0.62) };
+          pushEngagement(side, 0.45);
+          const start = { x: jitterX(scorerSlot.x), y: engagement };
           await hop(start.x, start.y, `${esc(ev.player)} takes it on…`, 500, { side, name: scorerSlot.player.name });
-          for (const t of [0.45, 0.8]) {
+          for (const t of [0.5, 1]) {
             await hop(lerp(start.x, shotX, t), lerp(start.y, gy, t), null, null, { side, name: scorerSlot.player.name });
           }
           await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
         }
         if (side === 'home') scoreA++; else scoreB++;
         scoreEl.textContent = `${scoreA} – ${scoreB}`;
+        engagement = 50; updateFormationBases();
         await hop(50, 50, `Kick-off, ${esc(side === 'home' ? B.label : A.label)} to restart.`, 500);
       } else {
         const builder = pickDot(side);
-        await hop(jitterX(builder.x), advanceY(side, 0.42), null, null, { side, name: builder.player.name });
-        const foulSpot = { x: jitterX(scorerSlot.x), y: advanceY(side, 0.6) };
+        pushEngagement(side, 0.3);
+        await hop(jitterX(builder.x), engagement, null, null, { side, name: builder.player.name });
+        pushEngagement(side, 0.25);
+        const foulSpot = { x: jitterX(scorerSlot.x), y: engagement };
         await hop(foulSpot.x, foulSpot.y, `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 750, { side, name: scorerSlot.player.name });
         await hop(50, 50);
+        recoilEngagement(0.4);
       }
     } else {
       const side = Math.random() < (m.xgA / (m.xgA + m.xgB || 1)) ? 'home' : 'away';
       const hops = 2 + Math.floor(Math.random() * 2);
       for (let i = 0; i < hops; i++) {
         const d = pickDot(side);
-        const progress = 0.15 + (i / Math.max(hops - 1, 1)) * 0.65;
-        await hop(jitterX(d.x), advanceY(side, progress), null, null, { side, name: d.player.name });
+        pushEngagement(side, 0.22 + Math.random() * 0.1);
+        await hop(jitterX(d.x), engagement + (Math.random() * 6 - 3), null, null, { side, name: d.player.name });
       }
       // How the move breaks down: a shot (save, or wide for a goal kick),
-      // a tackle out for a corner, or just possession changing hands.
+      // a tackle out for a corner, or just possession changing hands —
+      // and engagement recoils back toward the middle afterward, since
+      // the game doesn't just stay pinned at one extreme.
       const outcome = Math.random();
       if (outcome < 0.11) {
-        const gy2 = advanceY(side, 0.92);
-        await hop(jitterX(40 + Math.random() * 20), gy2, '🧤 Comfortable save', 550);
+        pushEngagement(side, 0.5);
+        await hop(jitterX(40 + Math.random() * 20), engagement, '🧤 Comfortable save', 550);
         await hop(50, 50);
+        recoilEngagement(0.55);
       } else if (outcome < 0.19) {
-        const gy2 = advanceY(side, 0.97);
-        await hop(jitterX(40 + Math.random() * 20), gy2, '🥅 Off target — goal kick', 550);
-        const gkY = teams[side].isTop ? 92 : 8; // the defending keeper's own goal
+        pushEngagement(side, 0.55);
+        await hop(jitterX(40 + Math.random() * 20), engagement, '🥅 Off target — goal kick', 550);
+        const gkY = teams[side].isTop ? 8 : 92; // the DEFENDING side's own keeper restarts
+        recoilEngagement(0.7);
         await hop(50, gkY, null, null);
         await hop(50, 50);
       } else if (outcome < 0.28) {
+        pushEngagement(side, 0.5);
         const cornerX = Math.random() < 0.5 ? 4 : 96;
-        const cornerY = advanceY(side, 0.98);
-        await hop(cornerX, cornerY, '🚩 Corner', 500);
-        await hop(jitterX(50), advanceY(side, 0.9), 'Swung into the box…', 500);
+        await hop(cornerX, engagement, '🚩 Corner', 500);
+        await hop(jitterX(50), engagement - (teams[side].isTop ? -6 : 6), 'Swung into the box…', 500);
         await hop(50, 50);
+        recoilEngagement(0.5);
       } else if (outcome < 0.34) {
-        await hop(jitterX(40 + Math.random() * 20), advanceY(side, 0.85), '🛡️ Tackled, cleared away', 500);
+        await hop(jitterX(40 + Math.random() * 20), engagement, '🛡️ Tackled, cleared away', 500);
         await hop(50, 50);
+        recoilEngagement(0.6);
+      } else {
+        recoilEngagement(0.35);
       }
     }
   }
