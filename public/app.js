@@ -1129,7 +1129,14 @@ async function screenMatchSim(A, B, m) {
   // scripted sequence) is skipped here entirely, so a run to goal can't
   // get yanked back into their own half mid-sequence by this same drift.
   let ballAtX = 50, ballAtY = 50, ballSide = null, scriptedKey = null;
-  const wobbleT = setInterval(() => {
+  // Two effects, on top of the base pull-toward-ball: the whole block
+  // drifts a little toward whichever side of the pitch the ball is
+  // currently on (so the weak side tucks in and stays compact, rather
+  // than every player just individually chasing the ball), and applyDrift
+  // is called both on its own timer AND immediately whenever the ball
+  // moves — so support runs start with the pass, not up to 850ms late.
+  function applyDrift() {
+    const blockShiftX = (ballAtX - 50) * 0.14;
     Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
       if (side + '|' + name === scriptedKey) return;
       const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
@@ -1138,12 +1145,13 @@ async function screenMatchSim(A, B, m) {
       const strength = side === ballSide ? 15 : 9;
       const pull = Math.max(0, 1 - dist / 48) * strength;
       const jitter = 2.5;
-      const tx = bx + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
+      const tx = bx + blockShiftX + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
       const ty = by + (dy / dist) * pull * 0.7 + (Math.random() * jitter - jitter / 2);
       dot.style.left = Math.max(4, Math.min(96, tx)) + '%';
       dot.style.top = Math.max(3, Math.min(97, ty)) + '%';
     }));
-  }, 850);
+  }
+  const wobbleT = setInterval(applyDrift, 850);
 
   // A real 90 minutes compressed to ~30 seconds, played as a fixed number
   // of short "chains" — a passing move ending in a shot, a tackle, or
@@ -1171,7 +1179,9 @@ async function screenMatchSim(A, B, m) {
     if (mover) { ballSide = mover.side; scriptedKey = mover.side + '|' + mover.name; }
     else scriptedKey = null;
     if (mover) { const dot = dotEls[mover.side][mover.name]; if (dot) { dot.style.left = x + '%'; dot.style.top = y + '%'; } }
+    applyDrift(); // teammates start shifting the instant the ball moves, not up to 850ms later
     await sleep(820);
+    await sleep(90 + Math.random() * 110); // a beat on arrival — a touch, a look up — before the next move
     if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
   }
 
