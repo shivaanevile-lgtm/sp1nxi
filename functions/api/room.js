@@ -1,63 +1,106 @@
-// POST /api/room — online room state, held in KV.
-// Bindings: ROOMS (KV namespace)
+// POST /api/room — online room state.
 //
-// Rooms are tiny and short-lived, so KV + 2s polling is enough and keeps
-// this a pure Pages project. If you later want live presence (a "they're
-// building" ticker, chat), move this to a Durable Object in a separate
-// aajsjsn Worker and bind it here — the client contract below stays the same.
+// Storage: D1 (binding "DB") if it's connected — reads always see the
+// latest write, so both phones stay in step. Otherwise falls back to KV
+// (binding "ROOMS"), which works but can serve an old copy for a while.
+//
+// Each player's squad is stored separately, so two players locking in at
+// the same moment can never overwrite each other. When the second squad
+// arrives the server sets one shared kick-off time a few seconds ahead,
+// and both phones count down to it.
 
-const TTL = 60 * 60 * 6;                 // rooms expire after six hours
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I or O
+const TTL = 60 * 60 * 6;                        // rooms expire after six hours
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';    // no I or O
+const KICKOFF_DELAY = 4000;                     // ms from "both in" to kick-off
 
 const json = (obj, status = 200) =>
-  new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify({ ...obj, now: Date.now() }), { status, headers: { 'content-type': 'application/json' } });
+const newCode = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+const parse = s => { try { return s ? JSON.parse(s) : null; } catch { return null; } };
 
-const newCode = () =>
-  Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+/* ---- D1 ---- */
+let tableReady = false;
+function d1Store(db) {
+  const ensure = async () => {
+    if (tableReady) return;
+    await db.prepare(`CREATE TABLE IF NOT EXISTS rooms (
+      code TEXT PRIMARY KEY, league TEXT, players INTEGER, s0 TEXT, s1 TEXT, kickoff INTEGER, created INTEGER)`).run();
+    tableReady = true;
+  };
+  return {
+    async read(code) {
+      await ensure();
+      const r = await db.prepare('SELECT * FROM rooms WHERE code = ?').bind(code).first();
+      if (!r) return null;
+      return { league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], kickoff: r.kickoff || null, created: r.created };
+    },
+    async create(code, league) {
+      await ensure();
+      await db.prepare('DELETE FROM rooms WHERE created < ?').bind(Date.now() - TTL * 1000).run();
+      await db.prepare('INSERT INTO rooms (code, league, players, created) VALUES (?, ?, 1, ?)').bind(code, league, Date.now()).run();
+    },
+    join: code => db.prepare('UPDATE rooms SET players = 2 WHERE code = ?').bind(code).run(),
+    setLeague: (code, league) => db.prepare('UPDATE rooms SET league = ? WHERE code = ?').bind(league, code).run(),
+    setSquad: (code, seat, squad) => db.prepare(`UPDATE rooms SET s${seat} = ? WHERE code = ?`).bind(JSON.stringify(squad), code).run(),
+    // only the first caller's time sticks, so both phones get the same one
+    setKickoff: (code, t) => db.prepare('UPDATE rooms SET kickoff = ? WHERE code = ? AND kickoff IS NULL').bind(t, code).run()
+  };
+}
+
+/* ---- KV fallback ---- */
+function kvStore(kv) {
+  const get = k => kv.get(k, { cacheTtl: 30 }).then(parse);
+  const put = (k, v) => kv.put(k, JSON.stringify(v), { expirationTtl: TTL });
+  return {
+    async read(code) {
+      const meta = await get('room:' + code);
+      if (!meta) return null;
+      const [s0, s1] = await Promise.all([get(`room:${code}:s0`), get(`room:${code}:s1`)]);
+      // older rooms kept squads inside the main record
+      const old = meta.squads || [null, null];
+      return { league: meta.league, players: meta.players, squads: [s0 || old[0], s1 || old[1]], kickoff: meta.kickoff || null, created: meta.created };
+    },
+    create: (code, league) => put('room:' + code, { league, players: 1, created: Date.now() }),
+    async join(code) { const m = await get('room:' + code); if (m && m.players < 2) { m.players = 2; await put('room:' + code, m); } },
+    async setLeague(code, league) { const m = await get('room:' + code); if (m) { m.league = league; await put('room:' + code, m); } },
+    setSquad: (code, seat, squad) => put(`room:${code}:s${seat}`, squad),
+    async setKickoff(code, t) { const m = await get('room:' + code); if (m && !m.kickoff) { m.kickoff = t; await put('room:' + code, m); } }
+  };
+}
 
 export async function onRequestPost({ request, env }) {
-  if (!env.ROOMS) return json({ ok: false, error: 'no-kv' }, 500);
+  const store = env.DB ? d1Store(env.DB) : env.ROOMS ? kvStore(env.ROOMS) : null;
+  if (!store) return json({ ok: false, error: 'no-storage' }, 500);
 
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400); }
   const { action, code } = body;
 
-  const read = async c => {
-    const raw = await env.ROOMS.get('room:' + c);
-    return raw ? JSON.parse(raw) : null;
-  };
-  const write = (c, state) =>
-    env.ROOMS.put('room:' + c, JSON.stringify(state), { expirationTtl: TTL });
-
   if (action === 'create') {
     let c;
-    for (let i = 0; i < 6; i++) { c = newCode(); if (!(await read(c))) break; }
-    const state = { league: body.league || null, players: 1, squads: [null, null], created: Date.now() };
-    await write(c, state);
-    return json({ ok: true, code: c, state });
+    for (let i = 0; i < 6; i++) { c = newCode(); if (!(await store.read(c))) break; }
+    await store.create(c, body.league || null);
+    return json({ ok: true, code: c, state: await store.read(c), store: env.DB ? 'd1' : 'kv' });
   }
 
   if (!code) return json({ ok: false, error: 'no-code' }, 400);
-  const state = await read(code);
+  let state = await store.read(code);
   if (!state) return json({ ok: false, error: 'not-found' }, 404);
 
   if (action === 'state') return json({ ok: true, state });
-
-  if (action === 'join') {
-    if (state.players < 2) { state.players = 2; await write(code, state); }
-    return json({ ok: true, state });
-  }
-
-  if (action === 'league') {           // host picks the league after opening the room
-    state.league = body.league;
-    await write(code, state);
-    return json({ ok: true, state });
-  }
+  if (action === 'join') { if (state.players < 2) await store.join(code); return json({ ok: true, state: await store.read(code) }); }
+  if (action === 'league') { await store.setLeague(code, body.league); return json({ ok: true, state: await store.read(code) }); }
 
   if (action === 'submit') {
     const seat = body.seat === 1 ? 1 : 0;
-    state.squads[seat] = body.squad;
-    await write(code, state);
+    await store.setSquad(code, seat, body.squad);
+    state = await store.read(code);
+    state.squads[seat] = body.squad;          // we know what we just wrote
+    if (state.squads[0] && state.squads[1] && !state.kickoff) {
+      await store.setKickoff(code, Date.now() + KICKOFF_DELAY);
+      const fresh = await store.read(code);
+      state.kickoff = (fresh && fresh.kickoff) || Date.now() + KICKOFF_DELAY;
+    }
     return json({ ok: true, state });
   }
 
