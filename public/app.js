@@ -413,18 +413,32 @@ function poisson(lambda, rnd) {
 const GOAL_CORNERS = ['top right corner', 'top left corner', 'bottom right corner', 'bottom left corner', 'straight down the middle'];
 // How a goal happened — most are open play, a smaller share are penalties
 // or direct free-kicks — and a FotMob-style description of the finish.
-function describeGoal() {
-  const r = Math.random();
+// Same seed → same sequence on every device, so an online match plays out
+// identically on both phones.
+function seededRng(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+  let a = h >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function describeGoal(rand = Math.random) {
+  const r = rand();
   const method = r < 0.11 ? 'penalty' : r < 0.19 ? 'freekick' : 'open';
-  const corner = GOAL_CORNERS[Math.floor(Math.random() * GOAL_CORNERS.length)];
+  const corner = GOAL_CORNERS[Math.floor(rand() * GOAL_CORNERS.length)];
   if (method === 'penalty') return { method, desc: 'scores from the penalty spot' };
   if (method === 'freekick') return { method, desc: `scores, ${corner}, direct free-kick from outside the box` };
-  const origin = Math.random() < 0.32 ? 'from outside the box' : 'from inside the box';
+  const origin = rand() < 0.32 ? 'from outside the box' : 'from inside the box';
   return { method, desc: `scores, ${corner}, ${origin}` };
 }
 
-function simulate(A, B) {
-  const rnd = Math.random;
+function simulate(A, B, seed) {
+  const rnd = seed ? seededRng(seed) : Math.random;
   const xgA = Math.max(0.18, 1.34 * Math.pow(A.strength.att / B.strength.def, 2.1));
   const xgB = Math.max(0.18, 1.18 * Math.pow(B.strength.att / A.strength.def, 2.1));
   const gA = Math.min(7, poisson(xgA, rnd)), gB = Math.min(7, poisson(xgB, rnd));
@@ -449,7 +463,7 @@ function simulate(A, B) {
     for (let i = 0; i < n; i++) {
       const s = scorerFor(squad);
       const ev = { side, min: nextMin(), type, player: s.player.name };
-      if (type === 'goal') Object.assign(ev, describeGoal());
+      if (type === 'goal') Object.assign(ev, describeGoal(rnd));
       events.push(ev);
     }
   };
@@ -479,7 +493,7 @@ function simulate(A, B) {
     return { label: row[0], a: row[1], b: row[2], wa: a, wb: b };
   });
 
-  return { gA, gB, events, stats, xgA, xgB };
+  return { gA, gB, events, stats, xgA, xgB, seed: seed || null };
 }
 
 /* League prediction: rank the built XI against every club in the
@@ -1129,8 +1143,8 @@ function screenAIBuild(done) {
  * board before the scoresheet — ball wandering, events highlighted on
  * the actual player who caused them, both XIs shown as a real formation
  * shape rather than a flat list. */
-function startMatch(A, B) {
-  const m = simulate(A, B);
+function startMatch(A, B, seed) {
+  const m = simulate(A, B, seed);
   screenMatchSim(A, B, m);
 }
 
@@ -2271,36 +2285,42 @@ async function publishSquad() {
   const submitRes = await api({ action:'submit', code:S.room.code, seat:S.room.seat, squad:payload });
   if (!submitRes || !submitRes.ok) { toast('Submit failed — check your connection.'); return; }
 
-  function tryAdvance(st) {
-    if (!st || !st.squads) return false;
-    const otherSeat = S.room.seat === 0 ? 1 : 0;
-    const other = st.squads[otherSeat];
-    if (!other || !other.xi || !other.xi.length) return false;
+  // Rebuild a squad exactly as the server holds it. BOTH sides go through
+  // this (your own too), so the two phones simulate identical inputs.
+  const hydrate = (sq, fallback) => ({
+    label: sq.label || fallback.label, formation: sq.formation, strength: sq.strength,
+    badge: sq.badge || { home:'#888', away:'#fff', name:'' },
+    xi: sq.xi.map(s => ({ ...s, player: { ...s.player, club: s.player.club || { name:'', home:'#888', away:'#fff' } } }))
+  });
+
+  let started = false;
+  function tryAdvance(r) {
+    const st = r && r.state;
+    if (started || !st || !st.squads || !st.squads[0] || !st.squads[1]) return;
+    started = true;
     stopPoll();
-    const opp = S.players[otherSeat];
-    opp.label     = other.label     || opp.label;
-    opp.formation = other.formation;
-    opp.badge     = other.badge     || { home:'#888', away:'#fff', name:'' };
-    opp.strength  = other.strength;
-    opp.xi        = other.xi.map(s => ({
-      ...s, player: { ...s.player,
-        club: s.player.club || { name:'', home:'#888', away:'#fff' }
-      }
-    }));
-    // Always match: seat-0 as home (players[0]) vs seat-1 as away (players[1])
-    startMatch(S.players[0], S.players[1]);
-    return true;
+    const A = hydrate(st.squads[0], S.players[0]), B = hydrate(st.squads[1], S.players[1]);
+    S.players[0] = { ...S.players[0], ...A }; S.players[1] = { ...S.players[1], ...B };
+    const seed = `${S.room.code}|${st.kickoff || 0}`;
+    // Server time → this phone's clock, so both count down to the same moment.
+    const offset = (r.now || Date.now()) - Date.now();
+    const kickAt = st.kickoff ? st.kickoff - offset : Date.now();
+    const v = el(`<section><h2>Both squads are in</h2>
+      <p>${esc(A.label)} v ${esc(B.label)}</p>
+      <div class="card" style="text-align:center"><div class="code" id="count">…</div><small>Kick-off</small></div></section>`);
+    show(v);
+    const tick = () => {
+      const left = Math.ceil((kickAt - Date.now()) / 1000);
+      if (left <= 0) return startMatch(A, B, seed);
+      v.querySelector('#count').textContent = left;
+      setTimeout(tick, 200);
+    };
+    tick();
   }
 
-  // If the opponent already submitted before we did, their squad is
-  // already in the response — no need to poll at all.
-  if (tryAdvance(submitRes.state)) return;
-
-  // Otherwise poll every 1.5s until their squad arrives.
-  S.poll = setInterval(async () => {
-    const r = await api({ action:'state', code:S.room.code });
-    if (r && r.ok) tryAdvance(r.state);
-  }, 1500);
+  tryAdvance(submitRes);
+  if (started) return;
+  S.poll = setInterval(async () => { tryAdvance(await api({ action:'state', code:S.room.code })); }, 1000);
 }
 
 /* ------------------------------------------------------------------ *
@@ -2407,12 +2427,13 @@ const SFX = (() => {
 function playerRatings(A, B, m) {
   if (m.ratings) return m.ratings;
   const out = {};
+  const rand = m.seed ? seededRng(m.seed + '|ratings') : Math.random;
   [['home', A, m.gA, m.gB], ['away', B, m.gB, m.gA]].forEach(([side, t, gf, ga]) => {
     out[side] = t.xi.map(s => {
       const grp = GROUP[s.role], nm = s.player.name;
       const goals = m.events.filter(e => e.side === side && e.type === 'goal' && e.player === nm).length;
       const cards = m.events.filter(e => e.side === side && e.type === 'card' && e.player === nm).length;
-      let r = 6.3 + ((s.player.rating || 75) - 80) * 0.03 + (gf > ga ? 0.45 : gf < ga ? -0.35 : 0.05) + (Math.random() * 0.8 - 0.4);
+      let r = 6.3 + ((s.player.rating || 75) - 80) * 0.03 + (gf > ga ? 0.45 : gf < ga ? -0.35 : 0.05) + (rand() * 0.8 - 0.4);
       r += goals * 1.1 - cards * 0.4;
       if (grp === 'GK' || grp === 'DEF') r += ga === 0 ? (grp === 'GK' ? 0.9 : 0.6) : -0.18 * ga;
       if (grp === 'MID') r += 0.1 * gf;
