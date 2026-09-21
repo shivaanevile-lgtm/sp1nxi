@@ -1141,265 +1141,289 @@ async function screenMatchSim(A, B, m) {
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
   setCrumb('Kick-off');
 
-  const v = el(`<section>
+  // Coordinates used throughout: L = along the pitch (0 = home goal on the
+  // left, 100 = away goal on the right), W = across it (0 = top touchline).
+  // Home attacks left→right, away right→left, like a broadcast/EA sim view.
+  const isGK = s => s.role === 'GK';
+  const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 0);
+  const captainOf = team => team.xi.slice().sort((a, b) => rating(b) - rating(a))[0];
+  const capA = captainOf(A), capB = captainOf(B);
+  const shirt = (s, i) => (s.player.number != null ? s.player.number : i + 1);
+
+  const listHTML = (team, side, cap) => team.xi.map((s, i) => `
+    <div class="ms-row" data-side="${side}" data-name="${esc(s.player.name)}">
+      <span class="ms-num">${esc(String(shirt(s, i)))}</span>
+      <span class="ms-name">${esc(s.player.name)}${s === cap ? ' <span class="ms-cap">C</span>' : ''}<span class="ms-tag"></span></span>
+      <span class="ms-fit"><i></i></span>
+    </div>`).join('');
+
+  const v = el(`<section class="ms">
+    <style>
+      .ms .ms-board{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+      .ms .ms-lists{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      @media (min-width:760px){
+        .ms .ms-board{grid-template-columns:190px 1fr 190px;align-items:start}
+        .ms .ms-lists{display:contents}
+        .ms .ms-listA{order:-1}
+      }
+      .ms .hpitch{position:relative;width:100%;aspect-ratio:105/68;border-radius:12px;overflow:hidden;
+        background:repeating-linear-gradient(90deg,rgba(255,255,255,.045) 0 5%,rgba(0,0,0,.05) 5% 10%),
+                   linear-gradient(160deg,#2E2822,#15120F);border:1px solid rgba(255,255,255,.12)}
+      body.ucl-mode .ms .hpitch{background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 5%,rgba(0,0,0,.06) 5% 10%),linear-gradient(160deg,#123A8C,#0A1F55)}
+      body.pl-mode .ms .hpitch{background:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 5%,rgba(0,0,0,.06) 5% 10%),linear-gradient(160deg,#3D1454,#1E0A2B)}
+      .ms .hm{position:absolute;border:1.5px solid rgba(255,255,255,.3)}
+      .ms .dot{position:absolute;width:19px;height:19px;border-radius:50%;transform:translate(-50%,-50%);
+        display:flex;align-items:center;justify-content:center;font:700 9px/1 system-ui,sans-serif;
+        box-shadow:0 0 0 1.5px rgba(255,255,255,.55),0 1px 3px rgba(0,0,0,.4);
+        transition:left .6s ease-out,top .6s ease-out;z-index:3}
+      .ms #ball{position:absolute;width:9px;height:9px;border-radius:50%;background:#fff;z-index:6;
+        transform:translate(-50%,-50%);box-shadow:0 0 6px rgba(255,255,255,.8);transition:left .8s ease-out,top .8s ease-out}
+      .ms .ms-list{background:rgba(0,0,0,.18);border-radius:12px;padding:8px 10px}
+      .ms .ms-list h4{margin:0 0 6px;font-size:.78rem;opacity:.8}
+      .ms .ms-row{display:grid;grid-template-columns:22px 1fr 34px;align-items:center;gap:6px;font-size:.78rem;padding:2px 0}
+      .ms .ms-num{font-weight:800;text-align:right;opacity:.85}
+      .ms .ms-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ms .ms-cap{display:inline-block;font-size:.6rem;font-weight:800;padding:0 3px;border-radius:3px;background:#fff;color:#111;margin-left:2px}
+      .ms .ms-fit{height:4px;border-radius:2px;background:rgba(255,255,255,.15);overflow:hidden}
+      .ms .ms-fit i{display:block;height:100%;width:100%;background:#22D3EE;transition:width 1s linear}
+    </style>
     <div class="sheet" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
-      background:linear-gradient(100deg,var(--club-a) 0%,var(--club-a) 48%,var(--club-b2,#241F19) 52%);
-      border-radius:14px">
+      background:linear-gradient(100deg,var(--club-a) 0%,var(--club-a) 48%,var(--club-b2,#241F19) 52%);border-radius:14px">
       <b style="flex:1;color:${readable(A.badge.home)}">${esc(A.label)}</b>
       <div style="text-align:center;background:rgba(0,0,0,.32);border-radius:10px;padding:4px 12px">
         <div id="score" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.6rem;color:#fff">0 – 0</div>
-        <div id="clock" style="font-size:.8rem;opacity:.9;color:#fff">0'</div>
+        <div id="clock" style="font-size:.85rem;opacity:.95;color:#fff;font-variant-numeric:tabular-nums">00:00</div>
       </div>
       <b style="flex:1;text-align:right;color:${readable(B.badge.home)}">${esc(B.label)}</b>
     </div>
-    <div class="pitch" id="matchpitch" style="margin-top:10px">${PITCH_HALF_MARKINGS}
-      <div id="ball" style="position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;
-        background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);transform:translate(-50%,-50%);
-        transition:left .78s cubic-bezier(.3,.5,.3,1),top .78s cubic-bezier(.3,.5,.3,1);z-index:5"></div>
+    <div class="ms-board">
+      <div class="hpitch" id="matchpitch">
+        <div class="hm" style="left:50%;top:-2px;bottom:-2px;width:0"></div>
+        <div class="hm" style="left:50%;top:50%;width:17%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%)"></div>
+        <div class="hm" style="left:-2px;top:21%;width:16%;height:58%"></div>
+        <div class="hm" style="right:-2px;top:21%;width:16%;height:58%"></div>
+        <div class="hm" style="left:-2px;top:37%;width:5.5%;height:26%"></div>
+        <div class="hm" style="right:-2px;top:37%;width:5.5%;height:26%"></div>
+        <div id="ball" style="left:50%;top:50%"></div>
+      </div>
+      <div class="ms-lists">
+        <div class="ms-list ms-listA"><h4>${esc(A.label)} · Starting XI</h4>${listHTML(A, 'home', capA)}</div>
+        <div class="ms-list"><h4>${esc(B.label)} · Starting XI</h4>${listHTML(B, 'away', capB)}</div>
+      </div>
     </div>
     <p id="commentary" style="min-height:1.4em;text-align:center;margin-top:10px"><small>Kicking off…</small></p>
     <button class="btn ghost" id="skip">Skip to full time</button>
   </section>`);
+
   const pitch = v.querySelector('#matchpitch'), ball = v.querySelector('#ball');
   const clock = v.querySelector('#clock'), commentary = v.querySelector('#commentary'), scoreEl = v.querySelector('#score');
   let scoreA = 0, scoreB = 0;
+  const teams = { home: A, away: B };
 
-  const teams = { home: { team: A, isTop: false }, away: { team: B, isTop: true } };
-  let engagement = 50; // shared line of play — both teams' shapes are built around this
-
-  // Every player is a real dot, tagged with its current base spot so the
-  // ambient drift can always pull back toward it.
-  const dotEls = { home: {}, away: {} };
-  [['home', A, false], ['away', B, true]].forEach(([side, team, isTop]) => {
-    team.xi.forEach(s => {
-      const bx = s.x, by = formationY(s, isTop, engagement);
-      const dot = el(`<div style="position:absolute;left:${bx}%;top:${by}%;
-        width:15px;height:15px;border-radius:50%;transform:translate(-50%,-50%);
-        background:${team.badge.home};box-shadow:0 0 0 2px rgba(255,255,255,.5);
-        transition:left .85s cubic-bezier(.3,.5,.3,1),top .85s cubic-bezier(.3,.5,.3,1)"></div>`);
-      dot.dataset.bx = bx; dot.dataset.by = by;
+  // One entry per player: the slot, the dot, a lane across the pitch, how
+  // advanced their role is, a random wander phase, and how fast they tire.
+  const players = [];
+  [['home', A], ['away', B]].forEach(([side, team]) => {
+    team.xi.forEach((s, i) => {
+      const gk = isGK(s);
+      const fill = gk ? (team.badge.away && team.badge.away !== team.badge.home ? team.badge.away : '#F472B6') : team.badge.home;
+      const dot = el(`<div class="dot" style="background:${fill};color:${readable(fill)}">${esc(String(shirt(s, i)))}</div>`);
       pitch.appendChild(dot);
-      dotEls[side][s.player.name] = dot;
+      const lane = side === 'home' ? s.x : 100 - s.x;
+      const adv = Math.max(0, Math.min(1, (90 - s.y) / (90 - 17)));
+      const row = v.querySelector(`.ms-row[data-side="${side}"][data-name="${CSS.escape(s.player.name)}"]`);
+      players.push({ side, slot: s, gk, dot, lane, adv, ph: Math.random() * 6.28, ph2: Math.random() * 6.28,
+        drain: gk ? 6 + Math.random() * 6 : 18 + Math.random() * 20, row });
     });
   });
+  const key = p => p.side + '|' + p.slot.player.name;
+  const place = (elm, L, W) => { elm.style.left = L + '%'; elm.style.top = W + '%'; };
 
+  let bL = 50, bW = 50, poss = null, carrier = null;
   let skipped = false;
-  v.querySelector('#skip').onclick = () => { skipped = true; clearInterval(wobbleT); screenResult(A, B, m); };
+
+  // The heart of it: both teams as one compact block around the ball.
+  // The side in possession stretches up to ~36% of the pitch; the side
+  // without it sits tighter, just goal-side of the ball. Keepers stay home.
+  function targetFor(p) {
+    const t = performance.now();
+    if (p.gk) {
+      const L = p.side === 'home' ? 4.5 : 95.5;
+      return [L, 50 + (bW - 50) * 0.18 + Math.sin(t / 1900 + p.ph) * 1.2];
+    }
+    const home = p.side === 'home';
+    const hasBall = poss === p.side, neutral = poss === null;
+    const behind = neutral ? 20 : hasBall ? 28 : 14;
+    const depth = hasBall ? 36 : 32;
+    let back = home ? bL - behind : bL + behind;
+    back = home ? Math.max(12, Math.min(62, back)) : Math.max(38, Math.min(88, back));
+    let L = home ? back + p.adv * depth : back - p.adv * depth;
+    let W = 50 + (p.lane - 50) * 0.8 + (bW - 50) * 0.25;
+    // small, constant shuffle — never still, never a big lurch
+    L += Math.sin(t / 1300 + p.ph) * 1.8;
+    W += Math.cos(t / 1550 + p.ph2) * 2.2;
+    return [Math.max(3, Math.min(97, L)), Math.max(4, Math.min(96, W))];
+  }
+  function tick() {
+    players.forEach(p => {
+      if (carrier && key(p) === carrier) { place(p.dot, bL, bW); return; }
+      const [L, W] = targetFor(p);
+      place(p.dot, L, W);
+    });
+  }
+  tick();
+  const moveT = setInterval(tick, 380);
+
+  // Real time → match clock. The whole 90 plays in about a minute, and
+  // the clock ticks every frame as mm:ss so it never sits still or jumps.
+  const REAL_MS = 60000;
+  const t0 = performance.now();
+  let stoppage = 1 + Math.floor(Math.random() * 5), finished = false;
+  const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  function clockTick() {
+    if (skipped || finished) return;
+    const frac = (performance.now() - t0) / REAL_MS;
+    const secs = Math.min(frac, 1) * 90 * 60;
+    clock.textContent = frac < 1 ? fmt(secs) : `90:00 +${stoppage}`;
+    players.forEach(p => { if (p.row) p.row.querySelector('.ms-fit i').style.width = Math.max(30, 100 - p.drain * Math.min(frac, 1)) + '%'; });
+    requestAnimationFrame(clockTick);
+  }
+  requestAnimationFrame(clockTick);
+
+  const stop = () => { clearInterval(moveT); };
+  v.querySelector('#skip').onclick = () => { skipped = true; stop(); screenResult(A, B, m); };
   show(v);
 
-  let ballAtX = 50, ballAtY = 50, ballSide = null, scriptedKey = null;
+  const pickDot = (side, withGK) => {
+    const pool = players.filter(p => p.side === side && (withGK || !p.gk));
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+  const byName = (side, name) => players.find(p => p.side === side && p.slot.player.name === name);
+  const goalL = side => side === 'home' ? 100 : 0;
+  const advanceTo = (side, amt) => bL + (goalL(side) - bL) * amt;
+  const clampW = w => Math.max(5, Math.min(95, w));
 
-  // Recomputes every player's base spot from the current engagement line
-  // and moves them there — this is what lets a defending side's whole
-  // back line push up past halfway to press, since their base position
-  // is no longer locked to their own half at all.
-  function updateFormationBases() {
-    Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
-      const slot = teams[side].team.xi.find(sl => sl.player.name === name);
-      if (!slot) return;
-      const by = formationY(slot, teams[side].isTop, engagement);
-      dot.dataset.bx = slot.x; dot.dataset.by = by;
-      if (side + '|' + name !== scriptedKey) { dot.style.left = slot.x + '%'; dot.style.top = by + '%'; }
-    }));
-  }
-  // Push engagement toward whichever goal `side` is attacking, by some
-  // fraction of the remaining distance — called as a move develops so
-  // both teams' shapes advance together, not just the ball-carrier.
-  function pushEngagement(side, amount) {
-    const target = teams[side].isTop ? 94 : 6;
-    engagement += (target - engagement) * amount;
-    updateFormationBases();
-  }
-  function recoilEngagement(amount) {
-    engagement += (50 - engagement) * amount;
-    updateFormationBases();
-  }
-
-  // Movement reads as purposeful rather than random: everyone drifts
-  // toward wherever the ball currently is, strongest for whoever's side
-  // is on it (support runs) and a bit weaker for the other side (closing
-  // it down), fading out with distance so only nearby players actually
-  // move much. Always computed relative to the CURRENT base (which now
-  // itself tracks engagement), never cumulative. The one exception:
-  // whoever hop() is currently moving deliberately is skipped here, so a
-  // run can't get yanked back mid-sequence by this same drift.
-  function applyDrift() {
-    const blockShiftX = (ballAtX - 50) * 0.14;
-    Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
-      if (side + '|' + name === scriptedKey) return;
-      // Staggered, not synchronized — each dot only has a chance of
-      // actually moving on any given tick, so 22 players don't all shift
-      // in the same instant like one robotic pulse.
-      if (Math.random() < 0.35) return;
-      const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
-      const dx = ballAtX - bx, dy = ballAtY - by;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const strength = side === ballSide ? 6 : 3.5;
-      const pull = Math.max(0, 1 - dist / 60) * strength;
-      const jitter = 1.8;
-      const rawTx = bx + blockShiftX + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
-      const rawTy = by + (dy / dist) * pull * 0.7 + (Math.random() * jitter - jitter / 2);
-      const tx = Math.max(bx - 8, Math.min(bx + 8, rawTx));
-      const ty = Math.max(by - 6, Math.min(by + 6, rawTy));
-      dot.style.transitionDuration = (1.1 + Math.random() * 0.8) + 's';
-      dot.style.left = Math.max(4, Math.min(96, tx)) + '%';
-      dot.style.top = Math.max(3, Math.min(97, ty)) + '%';
-    }));
-  }
-  const wobbleT = setInterval(applyDrift, 950);
-
-  // A real 90 minutes compressed to a bit under a minute, played as a
-  // fixed number of short "chains" — a passing move ending in a shot, a
-  // tackle, or nothing much — rather than jumping straight to each
-  // scripted event. Real goals/cards get woven into the chain nearest
-  // their minute so the motion never just teleports to them.
-  const events = m.events.slice().sort((a, b) => a.min - b.min);
-  const totalMin = 90, CHAINS = 14;
-  const used = new Set();
-  const jitterX = x => Math.max(6, Math.min(94, x + (Math.random() * 16 - 8)));
-  const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
-  const lerp = (a, b, t) => a + (b - a) * t;
-
-  async function hop(x, y, caption, holdMs, mover) {
+  // Move the ball; whoever receives it carries it. Travel time scales
+  // with distance, then a short beat for the touch before the next action.
+  async function ballTo(L, W, p, caption, hold) {
     if (skipped) return;
-    // A little random wander on every move rather than a dead-straight
-    // glide to the exact same spot every time — small enough it never
-    // looks like a mistake, big enough to break the mechanical feel.
-    const wx = Math.max(3, Math.min(97, x + (Math.random() * 6 - 3)));
-    const wy = Math.max(3, Math.min(97, y + (Math.random() * 6 - 3)));
-    const dur = (1.15 + Math.random() * 0.5) + 's';
-    ball.style.transitionDuration = dur;
-    ball.style.left = wx + '%'; ball.style.top = wy + '%';
-    ballAtX = wx; ballAtY = wy;
-    if (mover) { ballSide = mover.side; scriptedKey = mover.side + '|' + mover.name; }
-    else scriptedKey = null;
-    if (mover) {
-      const dot = dotEls[mover.side][mover.name];
-      if (dot) { dot.style.transitionDuration = dur; dot.style.left = wx + '%'; dot.style.top = wy + '%'; }
-    }
-    applyDrift(); // teammates start shifting the instant the ball moves, not up to 950ms later
-    await sleep(1150);
-    await sleep(120 + Math.random() * 160); // a beat on arrival — a touch, a look up — before the next move
-    if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
+    const d = Math.hypot(L - bL, W - bW);
+    const dur = Math.max(0.45, Math.min(1.2, d / 45));
+    ball.style.transitionDuration = dur + 's';
+    bL = L; bW = W;
+    if (p) { poss = p.side; carrier = key(p); p.dot.style.transitionDuration = dur + 's'; }
+    else carrier = null;
+    place(ball, L, W); tick();
+    await sleep(dur * 1000 + 180 + Math.random() * 220);
+    if (p) p.dot.style.transitionDuration = '';
+    if (caption) { commentary.innerHTML = caption; await sleep(hold || 700); }
   }
+  const tagRow = (p, txt) => { if (p && p.row) p.row.querySelector('.ms-tag').textContent += ' ' + txt; };
 
+  const events = m.events.slice().sort((a, b) => a.min - b.min);
+  const CHAINS = 14, used = new Set();
   commentary.innerHTML = 'Kick-off.';
+  await ballTo(50, 50, pickDot('home'), null);
 
   for (let c = 0; c < CHAINS; c++) {
     if (skipped) return;
-    // The clock is driven directly by loop progress, not an independent
-    // timer — so it can never sit still while the match keeps playing.
-    // The last chain shows real stoppage time instead of just freezing
-    // at 90'.
-    const chainMin = Math.round((c / (CHAINS - 1)) * totalMin);
-    const isStoppage = c === CHAINS - 1;
-    const stoppageMin = isStoppage ? 90 + 1 + Math.floor(Math.random() * 5) : null;
-    clock.textContent = (isStoppage ? `90+${stoppageMin - 90}` : chainMin) + "'";
-    const tolMin = Math.ceil(totalMin / CHAINS / 2) + 1;
-    const ev = events.find(e => !used.has(e) && Math.abs(e.min - chainMin) <= tolMin);
+    const slotEnd = t0 + REAL_MS * (c + 1) / CHAINS;
+    const chainMin = Math.round(((c + 0.5) / CHAINS) * 90);
+    const ev = events.find(e => !used.has(e) && e.min <= chainMin + 5); // overdue events still get played
 
     if (ev) {
       used.add(ev);
-      const side = ev.side, team = teams[side].team;
-      const gy = teams[side].isTop ? 94 : 6; // the goal this side is attacking
-      const scorerSlot = team.xi.find(sl => sl.player.name === ev.player) || pickDot(side);
-
+      const side = ev.side, team = teams[side];
+      const scorer = byName(side, ev.player) || pickDot(side);
+      const shotW = 44 + Math.random() * 12;
       if (ev.type === 'goal') {
-        const shotX = 40 + Math.random() * 20;
         if (ev.method === 'penalty') {
-          commentary.innerHTML = `Penalty to ${esc(team.label)}!`;
-          pushEngagement(side, 0.85);
-          const spot = { x: 50, y: teams[side].isTop ? 14 : 86 };
-          await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
-          await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
+          await ballTo(advanceTo(side, 0.6), clampW(30 + Math.random() * 40), pickDot(side));
+          await ballTo(side === 'home' ? 88.5 : 11.5, 50, scorer, `Penalty to ${esc(team.label)}!`, 900);
         } else if (ev.method === 'freekick') {
-          commentary.innerHTML = `Free-kick, dangerous position…`;
-          pushEngagement(side, 0.8);
-          const spot = { x: jitterX(scorerSlot.x), y: engagement };
-          await hop(spot.x, spot.y, null, null, { side, name: scorerSlot.player.name });
-          await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
+          await ballTo(advanceTo(side, 0.5), clampW(30 + Math.random() * 40), pickDot(side));
+          await ballTo(side === 'home' ? 76 : 24, clampW(35 + Math.random() * 30), scorer, 'Free-kick, dangerous position…', 800);
         } else {
-          // Open play: build-up passes genuinely advance the whole team's
-          // shape up the pitch — the defending side's block is pulled
-          // forward with them, pressing rather than sitting deep — then
-          // the scorer dribbles the last stretch in.
           commentary.innerHTML = `${esc(team.label)} build an attack…`;
-          for (let i = 0; i < 2; i++) {
-            const passer = pickDot(side);
-            pushEngagement(side, 0.32);
-            await hop(jitterX(passer.x), engagement + (Math.random() * 6 - 3), null, null, { side, name: passer.player.name });
-          }
-          pushEngagement(side, 0.45);
-          const start = { x: jitterX(scorerSlot.x), y: engagement };
-          await hop(start.x, start.y, `${esc(ev.player)} takes it on…`, 500, { side, name: scorerSlot.player.name });
-          for (const t of [0.5, 1]) {
-            await hop(lerp(start.x, shotX, t), lerp(start.y, gy, t), null, null, { side, name: scorerSlot.player.name });
-          }
-          await hop(shotX, gy, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1000, { side, name: scorerSlot.player.name });
+          for (let i = 0; i < 3; i++) await ballTo(advanceTo(side, 0.28), clampW(scorer.lane + (Math.random() * 40 - 20)), pickDot(side));
+          await ballTo(advanceTo(side, 0.45), clampW(40 + Math.random() * 20), scorer, `${esc(ev.player)} takes it on…`, 450);
         }
+        await ballTo(side === 'home' ? 99.5 : 0.5, shotW, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1300);
         if (side === 'home') scoreA++; else scoreB++;
         scoreEl.textContent = `${scoreA} – ${scoreB}`;
-        engagement = 50; updateFormationBases();
-        await hop(50, 50, `Kick-off, ${esc(side === 'home' ? B.label : A.label)} to restart.`, 500);
+        tagRow(scorer, '⚽');
+        poss = null;
+        const restart = side === 'home' ? 'away' : 'home';
+        await ballTo(50, 50, pickDot(restart), `Kick-off, ${esc(teams[restart].label)} to restart.`, 600);
       } else {
-        const builder = pickDot(side);
-        pushEngagement(side, 0.3);
-        await hop(jitterX(builder.x), engagement, null, null, { side, name: builder.player.name });
-        pushEngagement(side, 0.25);
-        const foulSpot = { x: jitterX(scorerSlot.x), y: engagement };
-        await hop(foulSpot.x, foulSpot.y, `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 750, { side, name: scorerSlot.player.name });
-        await hop(50, 50);
-        recoilEngagement(0.4);
+        const other = side === 'home' ? 'away' : 'home';
+        await ballTo(advanceTo(other, 0.3), clampW(20 + Math.random() * 60), pickDot(other));
+        await ballTo(bL + (Math.random() * 8 - 4), clampW(bW + (Math.random() * 16 - 8)), scorer,
+          `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 900);
+        tagRow(scorer, '🟨');
+        await ballTo(bL, bW, pickDot(other));
       }
     } else {
-      const side = Math.random() < (m.xgA / (m.xgA + m.xgB || 1)) ? 'home' : 'away';
-      const hops = 2 + Math.floor(Math.random() * 2);
-      for (let i = 0; i < hops; i++) {
-        const d = pickDot(side);
-        pushEngagement(side, 0.22 + Math.random() * 0.1);
-        await hop(jitterX(d.x), engagement + (Math.random() * 6 - 3), null, null, { side, name: d.player.name });
+      const side = Math.random() < (m.xgA / ((m.xgA + m.xgB) || 1)) ? 'home' : 'away';
+      const other = side === 'home' ? 'away' : 'home';
+      const passes = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < passes; i++) {
+        const p = pickDot(side);
+        const fwd = Math.random() < 0.25 ? -0.12 : 0.12 + Math.random() * 0.14; // not every pass goes forward
+        await ballTo(Math.max(6, Math.min(94, advanceTo(side, fwd))), clampW(p.lane + (Math.random() * 24 - 12)), p);
       }
-      // How the move breaks down: a shot (save, or wide for a goal kick),
-      // a tackle out for a corner, or just possession changing hands —
-      // and engagement recoils back toward the middle afterward, since
-      // the game doesn't just stay pinned at one extreme.
-      const outcome = Math.random();
-      if (outcome < 0.11) {
-        pushEngagement(side, 0.5);
-        await hop(jitterX(40 + Math.random() * 20), engagement, '🧤 Comfortable save', 550);
-        await hop(50, 50);
-        recoilEngagement(0.55);
-      } else if (outcome < 0.19) {
-        pushEngagement(side, 0.55);
-        await hop(jitterX(40 + Math.random() * 20), engagement, '🥅 Off target — goal kick', 550);
-        const gkY = teams[side].isTop ? 8 : 92; // the DEFENDING side's own keeper restarts
-        recoilEngagement(0.7);
-        await hop(50, gkY, null, null);
-        await hop(50, 50);
-      } else if (outcome < 0.28) {
-        pushEngagement(side, 0.5);
-        const cornerX = Math.random() < 0.5 ? 4 : 96;
-        await hop(cornerX, engagement, '🚩 Corner', 500);
-        await hop(jitterX(50), engagement - (teams[side].isTop ? -6 : 6), 'Swung into the box…', 500);
-        await hop(50, 50);
-        recoilEngagement(0.5);
-      } else if (outcome < 0.34) {
-        await hop(jitterX(40 + Math.random() * 20), engagement, '🛡️ Tackled, cleared away', 500);
-        await hop(50, 50);
-        recoilEngagement(0.6);
+      const o = Math.random();
+      if (o < 0.13) {
+        await ballTo(side === 'home' ? 99 : 1, 44 + Math.random() * 12, null, '🧤 Saved by the keeper', 600);
+        const gk = players.find(p => p.side === other && p.gk);
+        await ballTo(side === 'home' ? 95 : 5, 50, gk);
+        await ballTo(50 + (Math.random() * 20 - 10), clampW(20 + Math.random() * 60), pickDot(other));
+      } else if (o < 0.22) {
+        await ballTo(side === 'home' ? 100 : 0, Math.random() < 0.5 ? 36 : 64, null, '🥅 Off target — goal kick', 600);
+        const gk = players.find(p => p.side === other && p.gk);
+        await ballTo(side === 'home' ? 94 : 6, 50, gk);
+        await ballTo(50, clampW(25 + Math.random() * 50), pickDot(other));
+      } else if (o < 0.32) {
+        const cw = Math.random() < 0.5 ? 1 : 99;
+        await ballTo(side === 'home' ? 99.5 : 0.5, cw, pickDot(side), '🚩 Corner', 550);
+        await ballTo(side === 'home' ? 91 : 9, clampW(40 + Math.random() * 20), null, 'Swung into the box…', 500);
+        await ballTo(side === 'home' ? 75 : 25, clampW(30 + Math.random() * 40), pickDot(other), 'Headed clear.', 450);
+      } else if (o < 0.45) {
+        await ballTo(bL + (side === 'home' ? -3 : 3), bW, pickDot(other), '🛡️ Won back in midfield', 450);
       } else {
-        recoilEngagement(0.35);
+        await ballTo(bL, clampW(bW + (Math.random() * 30 - 15)), pickDot(other)); // loose pass, possession turns over
       }
     }
+    // Keep the play in step with the clock: if this spell finished early,
+    // keep the ball moving around at the back until its slot is up.
+    while (!skipped && performance.now() < slotEnd - 900) {
+      const p = pickDot(poss || 'home');
+      await ballTo(Math.max(8, Math.min(92, bL + (Math.random() * 16 - 8))), clampW(p.lane + (Math.random() * 20 - 10)), p);
+    }
+    if (performance.now() < slotEnd) await sleep(slotEnd - performance.now());
   }
 
   if (skipped) return;
-  clearInterval(wobbleT);
+  // Any goal that never found a spell (several close together) still
+  // goes in before the whistle, so the board always matches the result.
+  for (const ev of events.filter(e => !used.has(e) && e.type === 'goal')) {
+    if (skipped) return;
+    const scorer = byName(ev.side, ev.player) || pickDot(ev.side);
+    await ballTo(advanceTo(ev.side, 0.6), clampW(35 + Math.random() * 30), scorer);
+    await ballTo(ev.side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1200);
+    if (ev.side === 'home') scoreA++; else scoreB++;
+    scoreEl.textContent = `${scoreA} – ${scoreB}`;
+    tagRow(scorer, '⚽');
+  }
+  // stoppage time plays out on the clock before the whistle
+  await sleep(1500);
+  finished = true; stop();
   clock.textContent = 'FT';
   commentary.innerHTML = '<b>Full time.</b>';
-  await sleep(600);
+  await sleep(900);
   if (!skipped) screenResult(A, B, m);
 }
+
 
 /* --- shareable result card — drawn on a canvas, shared or downloaded
  * as an image so a result can leave the app. */
@@ -1609,7 +1633,12 @@ function knockoutOutcome(sa, sb) {
 
 async function screenKnockout(A, B, tableRows) {
   setCrumb('Knockout stage');
-  if (S.lastMatch && S.lastMatch.bracket) return renderKnockout(A, B, S.lastMatch.bracket);
+  // Reuse the saved draw so revisits show the same bracket — but only if
+  // it's in the shape this league needs; otherwise draw it fresh.
+  const cached = S.lastMatch && S.lastMatch.bracket;
+  if (cached && (cached.isUCL ? cached.mainRounds : cached.rounds)) {
+    return renderKnockout(A, B, cached).catch(e => knockoutError(A, B, e));
+  }
 
   const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
   const isUCL = S.leagueKey === 'UCL';
@@ -1660,7 +1689,18 @@ async function screenKnockout(A, B, tableRows) {
   }
 
   if (S.lastMatch) S.lastMatch.bracket = data;
-  return renderKnockout(A, B, data);
+  return renderKnockout(A, B, data).catch(e => knockoutError(A, B, e));
+}
+
+// If anything goes wrong drawing the bracket, say so on screen instead
+// of leaving a blank page.
+function knockoutError(A, B, e) {
+  if (S.lastMatch) S.lastMatch.bracket = null;
+  const v = el(`<section><h2>Knockout stage</h2>
+    <p><small>Couldn't draw the bracket: ${esc(String(e && e.message || e))}</small></p>
+    <button class="btn ghost" id="back">Back to the table</button></section>`);
+  v.querySelector('#back').onclick = () => screenTable(A, B);
+  show(v);
 }
 
 async function renderKnockout(A, B, data) {
@@ -1898,7 +1938,7 @@ async function screenGroupTable(A, B) {
     Object.values(WC_GROUP_FILLERS).flat().forEach(f => {
       if (!seen.has(f.name)) { seen.add(f.name); fill.push({ name: f.name, strength: f.strength }); }
     });
-    screenKnockout(A, B, [...rows, ...fill]);
+    try { screenKnockout(A, B, [...rows, ...fill]); } catch (e) { knockoutError(A, B, e); }
   };
 }
 
