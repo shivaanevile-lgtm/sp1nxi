@@ -1494,7 +1494,7 @@ const esc_ = s => String(s); // canvas text needs no HTML escaping
 
 function screenResult(A, B, m) {
   stopPoll();
-  S.lastMatch = { A, B, m };
+  S.lastMatch = { A, B, m, bracket: null };
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
@@ -1569,43 +1569,128 @@ function knockoutOutcome(sa, sb) {
 
 async function screenKnockout(A, B, tableRows) {
   setCrumb('Knockout stage');
-  const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
-  const field = sorted.slice(0, 16).map(r => ({ name: r.name, strength: r.strength, mine: !!r.mine }));
-  // Strictly rank-based — no exceptions for your own XI. If it didn't
-  // finish top 16, it isn't in the bracket, same as it wouldn't be in
-  // a real tournament; the missed-out note below says so plainly.
-  const missed = sorted.slice(16).filter(r => r.mine);
-  field.sort((a, b) => b.strength - a.strength);
 
-  // Simulate the whole bracket up front — a real visual bracket needs
-  // every round's result to lay out and draw connector lines correctly.
-  // Standard 16-team seeding: seed 1 meets 16, and that pair's eventual
-  // winner meets the winner of 8-v-9 in the quarter-final — a FIXED
-  // bracket where each side of the draw stays on its own side the whole
-  // way, not a re-shuffle of winners by strength every round.
-  const SEED_ORDER = [0, 15, 7, 8, 3, 12, 4, 11, 1, 14, 6, 9, 2, 13, 5, 10];
-  const bracketOrder = SEED_ORDER.map(i => field[i]);
-  const roundNames = ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'];
-  const rounds = []; // each: [{x, y, winner}]
-  let current = bracketOrder;
-  for (const _ of roundNames) {
+  // Return cached bracket so navigating away and back is consistent.
+  if (S.lastMatch && S.lastMatch.bracket) {
+    return renderKnockout(A, B, S.lastMatch.bracket);
+  }
+
+  // Real UCL structure (2024/25 onwards, 36-team league phase):
+  //   1–8  → directly to Round of 16
+  //   9–24 → knockout playoff round (8 two-legged ties), winners advance
+  //  25–36 → eliminated
+  const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
+  const top8     = sorted.slice(0,  8).map((r,i) => ({ ...r, leaguePos: i+1 }));
+  const playoff  = sorted.slice(8, 24).map((r,i) => ({ ...r, leaguePos: i+9 }));
+  const missed   = sorted.slice(24).filter(r => r.mine);
+
+  // Knockout playoff: 9v24, 10v23, 11v22 … 16v17
+  // (lower seed = better: 9th hosts 24th etc. — seeded so top-8 clubs
+  //  avoid each other again in the R16)
+  const playoffMatches = [];
+  for (let i = 0; i < 8; i++) {
+    const x = playoff[i], y = playoff[15 - i];
+    playoffMatches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
+  }
+  const playoffWinners = playoffMatches.map(m => m.winner);
+
+  // Round of 16: 8 direct qualifiers vs 8 playoff winners
+  // Standard seeding: 1v(worst playoff winner), 2v... etc.
+  playoffWinners.sort((a, b) => a.strength - b.strength); // worst first
+  const r16field = [];
+  for (let i = 0; i < 8; i++) r16field.push(top8[i], playoffWinners[i]);
+
+  // R16 → QF → SF → Final
+  const mainRounds = [];
+  let current = r16field;
+  for (const _ of ['Round of 16','Quarter-finals','Semi-finals','Final']) {
     const matches = [];
     for (let i = 0; i < current.length; i += 2) {
-      const x = current[i], y = current[i + 1];
+      const x = current[i], y = current[i+1];
       matches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
     }
-    rounds.push(matches);
+    mainRounds.push(matches);
     current = matches.map(m => m.winner);
   }
   const champ = current[0];
 
+  const data = { top8, playoffMatches, playoffWinners, mainRounds, champ, missed };
+  if (S.lastMatch) S.lastMatch.bracket = data;
+  return renderKnockout(A, B, data);
+}
+
+// Shared helper — renders a set of bracket rounds into a scrollable
+// visual bracket with SVG connector lines.
+async function drawBracket(rounds, backFn) {
+  const wrap = el(`<div style="overflow-x:auto;margin:0 -16px;padding:4px 16px">
+    <div class="bracket" id="bkt" style="position:relative;display:flex;gap:30px;min-height:240px"></div>
+  </div>`);
+  const bracket = wrap.querySelector('#bkt');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('style', 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible');
+  bracket.appendChild(svg);
+  const matchBoxes = [];
+  rounds.forEach((matches, r) => {
+    const col = el(`<div class="bround" style="display:flex;flex-direction:column;justify-content:space-around;
+      gap:16px;min-width:152px;flex:none;opacity:0;transition:opacity .4s ease"></div>`);
+    matches.forEach(mt => {
+      const box = el(`<div class="card bmatch" style="padding:8px 10px;margin:0;font-size:.8rem;
+        ${(mt.x.mine || mt.y.mine) ? 'border-color:var(--orange)' : ''}">
+        <div style="padding:2px 0;${mt.winner === mt.x ? 'font-weight:700' : 'opacity:.6'}">
+          ${mt.x.mine ? '🔶 ' : ''}${esc(mt.x.name)}</div>
+        <div style="padding:2px 0;${mt.winner === mt.y ? 'font-weight:700' : 'opacity:.6'}">
+          ${mt.y.mine ? '🔶 ' : ''}${esc(mt.y.name)}</div>
+      </div>`);
+      col.appendChild(box);
+      matchBoxes.push({ round: r, mt, el: box });
+    });
+    bracket.appendChild(col);
+  });
+  return { wrap, bracket, svg, matchBoxes,
+    async reveal() {
+      const cols = bracket.querySelectorAll('.bround');
+      for (const col of cols) { col.style.opacity = 1; await sleep(220); }
+      await sleep(80);
+      const wr = bracket.getBoundingClientRect();
+      svg.setAttribute('width', bracket.scrollWidth); svg.setAttribute('height', bracket.scrollHeight);
+      const cx = box => { const r = box.getBoundingClientRect();
+        return { x: r.left - wr.left + r.width, y: r.top - wr.top + r.height / 2 }; };
+      for (let r = 0; r < rounds.length - 1; r++) {
+        rounds[r].forEach((mt, i) => {
+          const from = cx(matchBoxes.find(b => b.round === r && b.mt === mt).el);
+          const toBox = matchBoxes.find(b => b.round === r+1 && b.mt === rounds[r+1][Math.floor(i/2)]).el;
+          const to = { x: toBox.getBoundingClientRect().left - wr.left, y: cx(toBox).y };
+          const mid = (from.x + to.x) / 2;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', `M${from.x},${from.y} H${mid} V${to.y} H${to.x}`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', document.body.classList.contains('ucl-mode') ? 'rgba(255,255,255,.28)' : 'var(--line)');
+          path.setAttribute('stroke-width', '1.5');
+          svg.appendChild(path);
+        });
+      }
+    }
+  };
+}
+
+async function renderKnockout(A, B, { top8, playoffMatches, playoffWinners, mainRounds, champ, missed }) {
+  const myInPlayoff = playoffMatches.some(m => m.x.mine || m.y.mine);
+  const myInTop8 = top8.some(r => r.mine);
+
   const v = el(`<section>
     <h2>Knockout stage</h2>
-    <p><small>Seeded from the table — 1 plays 16, 2 plays 15, and so on.</small></p>
-    ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} finished outside the top 16 in the table — didn't qualify for the knockout stage.</small></p>`).join('')}
-    <div style="overflow-x:auto;margin:0 -16px;padding:4px 16px">
-      <div class="bracket" id="bracket" style="position:relative;display:flex;gap:30px;min-height:340px"></div>
-    </div>
+    ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} finished 25th or lower — eliminated in the league phase.</small></p>`).join('')}
+    ${myInPlayoff ? '<p><small>Your XI is in the knockout playoff round — win this to reach the Round of 16.</small></p>' : ''}
+    ${myInTop8 ? '<p><small>Your XI qualified directly for the Round of 16.</small></p>' : ''}
+
+    <h3 style="margin-top:14px">Knockout playoff round</h3>
+    <p><small>Teams finishing 9th–24th · 9 v 24, 10 v 23 … 16 v 17</small></p>
+    <div id="playoff-wrap"></div>
+
+    <h3 style="margin-top:18px">Round of 16 onwards</h3>
+    <p><small>Top 8 + 8 playoff winners</small></p>
+    <div id="main-wrap"></div>
+
     <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
       <h3>Champions</h3>
       <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
@@ -1615,63 +1700,15 @@ async function screenKnockout(A, B, tableRows) {
   v.querySelector('#back').onclick = () => screenTable(A, B);
   show(v);
 
-  const bracket = v.querySelector('#bracket');
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('style', 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible');
-  bracket.appendChild(svg);
+  const playoffBkt = await drawBracket([ playoffMatches ]);
+  v.querySelector('#playoff-wrap').appendChild(playoffBkt.wrap);
+  await playoffBkt.reveal();
 
-  const matchBoxes = []; // [{round, idx, el}]
-  rounds.forEach((matches, r) => {
-    const col = el(`<div class="bround" style="display:flex;flex-direction:column;justify-content:space-around;
-      gap:16px;min-width:152px;flex:none;opacity:0;transition:opacity .4s ease"></div>`);
-    matches.forEach(mt => {
-      const box = el(`<div class="card bmatch" style="padding:8px 10px;margin:0;font-size:.8rem;
-        ${(mt.x.mine || mt.y.mine) ? 'border-color:var(--orange)' : ''}">
-        <div style="display:flex;justify-content:space-between;padding:2px 0;${mt.winner === mt.x ? 'font-weight:700' : 'opacity:.6'}">
-          <span>${mt.x.mine ? '🔶 ' : ''}${esc(mt.x.name)}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;${mt.winner === mt.y ? 'font-weight:700' : 'opacity:.6'}">
-          <span>${mt.y.mine ? '🔶 ' : ''}${esc(mt.y.name)}</span></div>
-      </div>`);
-      col.appendChild(box);
-      matchBoxes.push({ round: r, mt, el: box });
-    });
-    bracket.appendChild(col);
-  });
+  const mainBkt = await drawBracket(mainRounds);
+  v.querySelector('#main-wrap').appendChild(mainBkt.wrap);
+  await mainBkt.reveal();
 
-  // Reveal columns left to right, then draw the connector lines once
-  // everything has its final layout position.
-  const cols = bracket.querySelectorAll('.bround');
-  for (const col of cols) {
-    col.style.opacity = 1;
-    await sleep(260);
-  }
-  await sleep(80);
-
-  const wrapRect = bracket.getBoundingClientRect();
-  svg.setAttribute('width', bracket.scrollWidth);
-  svg.setAttribute('height', bracket.scrollHeight);
-  const centerOf = box => {
-    const r = box.getBoundingClientRect();
-    return { x: r.left - wrapRect.left + r.width, y: r.top - wrapRect.top + r.height / 2, left: r.left - wrapRect.left, midY: r.top - wrapRect.top + r.height / 2 };
-  };
-  for (let r = 0; r < rounds.length - 1; r++) {
-    rounds[r].forEach((mt, i) => {
-      const fromBox = matchBoxes.find(b => b.round === r && b.mt === mt).el;
-      const nextRoundIdx = Math.floor(i / 2);
-      const toBox = matchBoxes.find(b => b.round === r + 1 && b.mt === rounds[r + 1][nextRoundIdx]).el;
-      const from = centerOf(fromBox), to = { x: toBox.getBoundingClientRect().left - wrapRect.left, y: centerOf(toBox).y };
-      const midX = (from.x + to.x) / 2;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', `M${from.x},${from.y} H${midX} V${to.y} H${to.x}`);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', document.body.classList.contains('ucl-mode') ? 'rgba(255,255,255,.28)' : 'var(--line)');
-      path.setAttribute('stroke-width', '1.5');
-      svg.appendChild(path);
-    });
-  }
-
-  const champCard = v.querySelector('#champCard');
-  champCard.style.opacity = 1;
+  v.querySelector('#champCard').style.opacity = 1;
 }
 
 async function screenTable(A, B) {
