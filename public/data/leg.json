@@ -1,0 +1,1985 @@
+{
+ "Barcelona 2010–11": [
+  {
+   "id": "LEG-Barcelona-2010-11-1-V-ctor-Vald-s",
+   "name": "Víctor Valdés",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-13-Pinto",
+   "name": "Pinto",
+   "number": 13,
+   "position": "Goalkeeper",
+   "rating": 74
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-2-Dani-Alves",
+   "name": "Dani Alves",
+   "number": 2,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-3-Gerard-Piqu",
+   "name": "Gerard Piqué",
+   "number": 3,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-5-Carles-Puyol",
+   "name": "Carles Puyol",
+   "number": 5,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-22-ric-Abidal",
+   "name": "Éric Abidal",
+   "number": 22,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-19-Maxwell",
+   "name": "Maxwell",
+   "number": 19,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-21-Adriano",
+   "name": "Adriano",
+   "number": 21,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-14-Javier-Mascherano",
+   "name": "Javier Mascherano",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-16-Sergio-Busquets",
+   "name": "Sergio Busquets",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-6-Xavi",
+   "name": "Xavi",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-8-Andr-s-Iniesta",
+   "name": "Andrés Iniesta",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-15-Seydou-Keita",
+   "name": "Seydou Keita",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-10-Lionel-Messi",
+   "name": "Lionel Messi",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 97
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-7-David-Villa",
+   "name": "David Villa",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-17-Pedro",
+   "name": "Pedro",
+   "number": 17,
+   "position": "Attacker",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Barcelona-2010-11-9-Bojan",
+   "name": "Bojan",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 77
+  }
+ ],
+ "Brazil 2002": [
+  {
+   "id": "LEG-Brazil-2002-1-Marcos",
+   "name": "Marcos",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Brazil-2002-12-Dida",
+   "name": "Dida",
+   "number": 12,
+   "position": "Goalkeeper",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Brazil-2002-2-Cafu",
+   "name": "Cafu",
+   "number": 2,
+   "position": "Defender",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Brazil-2002-3-L-cio",
+   "name": "Lúcio",
+   "number": 3,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Brazil-2002-4-Roque-J-nior",
+   "name": "Roque Júnior",
+   "number": 4,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Brazil-2002-5-Edm-lson",
+   "name": "Edmílson",
+   "number": 5,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Brazil-2002-6-Roberto-Carlos",
+   "name": "Roberto Carlos",
+   "number": 6,
+   "position": "Defender",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Brazil-2002-13-Belletti",
+   "name": "Belletti",
+   "number": 13,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Brazil-2002-16-J-nior",
+   "name": "Júnior",
+   "number": 16,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Brazil-2002-8-Gilberto-Silva",
+   "name": "Gilberto Silva",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Brazil-2002-15-Kl-berson",
+   "name": "Kléberson",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Brazil-2002-18-Vampeta",
+   "name": "Vampeta",
+   "number": 18,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Brazil-2002-19-Juninho-Paulista",
+   "name": "Juninho Paulista",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Brazil-2002-23-Kak",
+   "name": "Kaká",
+   "number": 23,
+   "position": "Midfielder",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Brazil-2002-9-Ronaldo",
+   "name": "Ronaldo",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 96
+  },
+  {
+   "id": "LEG-Brazil-2002-10-Rivaldo",
+   "name": "Rivaldo",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Brazil-2002-11-Ronaldinho",
+   "name": "Ronaldinho",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Brazil-2002-20-Ed-lson",
+   "name": "Edílson",
+   "number": 20,
+   "position": "Attacker",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Brazil-2002-17-Den-lson",
+   "name": "Denílson",
+   "number": 17,
+   "position": "Attacker",
+   "rating": 80
+  }
+ ],
+ "Man United 1998–99": [
+  {
+   "id": "LEG-Man-United-1998-99-1-Peter-Schmeichel",
+   "name": "Peter Schmeichel",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Man-United-1998-99-17-Raimond-van-der-Gouw",
+   "name": "Raimond van der Gouw",
+   "number": 17,
+   "position": "Goalkeeper",
+   "rating": 74
+  },
+  {
+   "id": "LEG-Man-United-1998-99-2-Gary-Neville",
+   "name": "Gary Neville",
+   "number": 2,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Man-United-1998-99-3-Denis-Irwin",
+   "name": "Denis Irwin",
+   "number": 3,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Man-United-1998-99-6-Jaap-Stam",
+   "name": "Jaap Stam",
+   "number": 6,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Man-United-1998-99-5-Ronny-Johnsen",
+   "name": "Ronny Johnsen",
+   "number": 5,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Man-United-1998-99-21-Henning-Berg",
+   "name": "Henning Berg",
+   "number": 21,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Man-United-1998-99-12-Phil-Neville",
+   "name": "Phil Neville",
+   "number": 12,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Man-United-1998-99-16-Roy-Keane",
+   "name": "Roy Keane",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Man-United-1998-99-18-Paul-Scholes",
+   "name": "Paul Scholes",
+   "number": 18,
+   "position": "Midfielder",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Man-United-1998-99-8-Nicky-Butt",
+   "name": "Nicky Butt",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Man-United-1998-99-7-David-Beckham",
+   "name": "David Beckham",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Man-United-1998-99-11-Ryan-Giggs",
+   "name": "Ryan Giggs",
+   "number": 11,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Man-United-1998-99-15-Jesper-Blomqvist",
+   "name": "Jesper Blomqvist",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Man-United-1998-99-19-Dwight-Yorke",
+   "name": "Dwight Yorke",
+   "number": 19,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Man-United-1998-99-9-Andy-Cole",
+   "name": "Andy Cole",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Man-United-1998-99-10-Teddy-Sheringham",
+   "name": "Teddy Sheringham",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Man-United-1998-99-20-Ole-Gunnar-Solskj-r",
+   "name": "Ole Gunnar Solskjær",
+   "number": 20,
+   "position": "Attacker",
+   "rating": 83
+  }
+ ],
+ "Arsenal 2003–04": [
+  {
+   "id": "LEG-Arsenal-2003-04-1-Jens-Lehmann",
+   "name": "Jens Lehmann",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-12-Lauren",
+   "name": "Lauren",
+   "number": 12,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-23-Sol-Campbell",
+   "name": "Sol Campbell",
+   "number": 23,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-28-Kolo-Tour",
+   "name": "Kolo Touré",
+   "number": 28,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-3-Ashley-Cole",
+   "name": "Ashley Cole",
+   "number": 3,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-18-Pascal-Cygan",
+   "name": "Pascal Cygan",
+   "number": 18,
+   "position": "Defender",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-22-Ga-l-Clichy",
+   "name": "Gaël Clichy",
+   "number": 22,
+   "position": "Defender",
+   "rating": 74
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-4-Patrick-Vieira",
+   "name": "Patrick Vieira",
+   "number": 4,
+   "position": "Midfielder",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-19-Gilberto-Silva",
+   "name": "Gilberto Silva",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-17-Edu",
+   "name": "Edu",
+   "number": 17,
+   "position": "Midfielder",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-15-Ray-Parlour",
+   "name": "Ray Parlour",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-7-Robert-Pires",
+   "name": "Robert Pires",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-8-Freddie-Ljungberg",
+   "name": "Freddie Ljungberg",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-14-Thierry-Henry",
+   "name": "Thierry Henry",
+   "number": 14,
+   "position": "Attacker",
+   "rating": 96
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-10-Dennis-Bergkamp",
+   "name": "Dennis Bergkamp",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-11-Sylvain-Wiltord",
+   "name": "Sylvain Wiltord",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Arsenal-2003-04-25-Kanu",
+   "name": "Kanu",
+   "number": 25,
+   "position": "Attacker",
+   "rating": 78
+  }
+ ],
+ "Real Madrid 2016–17": [
+  {
+   "id": "LEG-Real-Madrid-2016-17-1-Keylor-Navas",
+   "name": "Keylor Navas",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-13-Kiko-Casilla",
+   "name": "Kiko Casilla",
+   "number": 13,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-2-Dani-Carvajal",
+   "name": "Dani Carvajal",
+   "number": 2,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-3-Pepe",
+   "name": "Pepe",
+   "number": 3,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-4-Sergio-Ramos",
+   "name": "Sergio Ramos",
+   "number": 4,
+   "position": "Defender",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-5-Rapha-l-Varane",
+   "name": "Raphaël Varane",
+   "number": 5,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-6-Nacho",
+   "name": "Nacho",
+   "number": 6,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-12-Marcelo",
+   "name": "Marcelo",
+   "number": 12,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-23-Danilo",
+   "name": "Danilo",
+   "number": 23,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-8-Toni-Kroos",
+   "name": "Toni Kroos",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-19-Luka-Modri",
+   "name": "Luka Modrić",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-14-Casemiro",
+   "name": "Casemiro",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-22-Isco",
+   "name": "Isco",
+   "number": 22,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-10-James-Rodr-guez",
+   "name": "James Rodríguez",
+   "number": 10,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-16-Mateo-Kova-i",
+   "name": "Mateo Kovačić",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-7-Cristiano-Ronaldo",
+   "name": "Cristiano Ronaldo",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 96
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-9-Karim-Benzema",
+   "name": "Karim Benzema",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-11-Gareth-Bale",
+   "name": "Gareth Bale",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-20-Marco-Asensio",
+   "name": "Marco Asensio",
+   "number": 20,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-21-lvaro-Morata",
+   "name": "Álvaro Morata",
+   "number": 21,
+   "position": "Attacker",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Real-Madrid-2016-17-17-Lucas-V-zquez",
+   "name": "Lucas Vázquez",
+   "number": 17,
+   "position": "Attacker",
+   "rating": 80
+  }
+ ],
+ "Spain 2010": [
+  {
+   "id": "LEG-Spain-2010-1-Iker-Casillas",
+   "name": "Iker Casillas",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Spain-2010-12-V-ctor-Vald-s",
+   "name": "Víctor Valdés",
+   "number": 12,
+   "position": "Goalkeeper",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Spain-2010-23-Pepe-Reina",
+   "name": "Pepe Reina",
+   "number": 23,
+   "position": "Goalkeeper",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Spain-2010-15-Sergio-Ramos",
+   "name": "Sergio Ramos",
+   "number": 15,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Spain-2010-3-Gerard-Piqu",
+   "name": "Gerard Piqué",
+   "number": 3,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Spain-2010-5-Carles-Puyol",
+   "name": "Carles Puyol",
+   "number": 5,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Spain-2010-11-Joan-Capdevila",
+   "name": "Joan Capdevila",
+   "number": 11,
+   "position": "Defender",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Spain-2010-4-Carlos-Marchena",
+   "name": "Carlos Marchena",
+   "number": 4,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Spain-2010-17-lvaro-Arbeloa",
+   "name": "Álvaro Arbeloa",
+   "number": 17,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Spain-2010-2-Ra-l-Albiol",
+   "name": "Raúl Albiol",
+   "number": 2,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Spain-2010-16-Sergio-Busquets",
+   "name": "Sergio Busquets",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Spain-2010-14-Xabi-Alonso",
+   "name": "Xabi Alonso",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Spain-2010-8-Xavi",
+   "name": "Xavi",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Spain-2010-6-Andr-s-Iniesta",
+   "name": "Andrés Iniesta",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Spain-2010-10-Cesc-F-bregas",
+   "name": "Cesc Fàbregas",
+   "number": 10,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Spain-2010-21-David-Silva",
+   "name": "David Silva",
+   "number": 21,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Spain-2010-20-Javi-Mart-nez",
+   "name": "Javi Martínez",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Spain-2010-7-David-Villa",
+   "name": "David Villa",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Spain-2010-9-Fernando-Torres",
+   "name": "Fernando Torres",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Spain-2010-18-Pedro",
+   "name": "Pedro",
+   "number": 18,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Spain-2010-22-Jes-s-Navas",
+   "name": "Jesús Navas",
+   "number": 22,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Spain-2010-13-Juan-Mata",
+   "name": "Juan Mata",
+   "number": 13,
+   "position": "Attacker",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Spain-2010-19-Fernando-Llorente",
+   "name": "Fernando Llorente",
+   "number": 19,
+   "position": "Attacker",
+   "rating": 79
+  }
+ ],
+ "Germany 2014": [
+  {
+   "id": "LEG-Germany-2014-1-Manuel-Neuer",
+   "name": "Manuel Neuer",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Germany-2014-22-Roman-Weidenfeller",
+   "name": "Roman Weidenfeller",
+   "number": 22,
+   "position": "Goalkeeper",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Germany-2014-12-Ron-Robert-Zieler",
+   "name": "Ron-Robert Zieler",
+   "number": 12,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Germany-2014-16-Philipp-Lahm",
+   "name": "Philipp Lahm",
+   "number": 16,
+   "position": "Defender",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Germany-2014-20-J-r-me-Boateng",
+   "name": "Jérôme Boateng",
+   "number": 20,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Germany-2014-5-Mats-Hummels",
+   "name": "Mats Hummels",
+   "number": 5,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Germany-2014-17-Per-Mertesacker",
+   "name": "Per Mertesacker",
+   "number": 17,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Germany-2014-4-Benedikt-H-wedes",
+   "name": "Benedikt Höwedes",
+   "number": 4,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Germany-2014-2-Kevin-Gro-kreutz",
+   "name": "Kevin Großkreutz",
+   "number": 2,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Germany-2014-3-Matthias-Ginter",
+   "name": "Matthias Ginter",
+   "number": 3,
+   "position": "Defender",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Germany-2014-21-Shkodran-Mustafi",
+   "name": "Shkodran Mustafi",
+   "number": 21,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Germany-2014-15-Erik-Durm",
+   "name": "Erik Durm",
+   "number": 15,
+   "position": "Defender",
+   "rating": 75
+  },
+  {
+   "id": "LEG-Germany-2014-7-Bastian-Schweinsteiger",
+   "name": "Bastian Schweinsteiger",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Germany-2014-18-Toni-Kroos",
+   "name": "Toni Kroos",
+   "number": 18,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Germany-2014-6-Sami-Khedira",
+   "name": "Sami Khedira",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Germany-2014-8-Mesut-zil",
+   "name": "Mesut Özil",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Germany-2014-23-Christoph-Kramer",
+   "name": "Christoph Kramer",
+   "number": 23,
+   "position": "Midfielder",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Germany-2014-13-Thomas-M-ller",
+   "name": "Thomas Müller",
+   "number": 13,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Germany-2014-19-Mario-G-tze",
+   "name": "Mario Götze",
+   "number": 19,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Germany-2014-9-Andr-Sch-rrle",
+   "name": "André Schürrle",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Germany-2014-11-Miroslav-Klose",
+   "name": "Miroslav Klose",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Germany-2014-10-Lukas-Podolski",
+   "name": "Lukas Podolski",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Germany-2014-14-Julian-Draxler",
+   "name": "Julian Draxler",
+   "number": 14,
+   "position": "Attacker",
+   "rating": 80
+  }
+ ],
+ "France 1998": [
+  {
+   "id": "LEG-France-1998-16-Fabien-Barthez",
+   "name": "Fabien Barthez",
+   "number": 16,
+   "position": "Goalkeeper",
+   "rating": 87
+  },
+  {
+   "id": "LEG-France-1998-1-Bernard-Lama",
+   "name": "Bernard Lama",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 82
+  },
+  {
+   "id": "LEG-France-1998-15-Lilian-Thuram",
+   "name": "Lilian Thuram",
+   "number": 15,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-France-1998-8-Marcel-Desailly",
+   "name": "Marcel Desailly",
+   "number": 8,
+   "position": "Defender",
+   "rating": 90
+  },
+  {
+   "id": "LEG-France-1998-5-Laurent-Blanc",
+   "name": "Laurent Blanc",
+   "number": 5,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-France-1998-3-Bixente-Lizarazu",
+   "name": "Bixente Lizarazu",
+   "number": 3,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-France-1998-18-Frank-Leboeuf",
+   "name": "Frank Leboeuf",
+   "number": 18,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-France-1998-2-Vincent-Candela",
+   "name": "Vincent Candela",
+   "number": 2,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-France-1998-7-Didier-Deschamps",
+   "name": "Didier Deschamps",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-France-1998-17-Emmanuel-Petit",
+   "name": "Emmanuel Petit",
+   "number": 17,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-France-1998-19-Christian-Karembeu",
+   "name": "Christian Karembeu",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-France-1998-4-Patrick-Vieira",
+   "name": "Patrick Vieira",
+   "number": 4,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-France-1998-10-Zinedine-Zidane",
+   "name": "Zinedine Zidane",
+   "number": 10,
+   "position": "Midfielder",
+   "rating": 95
+  },
+  {
+   "id": "LEG-France-1998-6-Youri-Djorkaeff",
+   "name": "Youri Djorkaeff",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 88
+  },
+  {
+   "id": "LEG-France-1998-13-Alain-Boghossian",
+   "name": "Alain Boghossian",
+   "number": 13,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-France-1998-12-Thierry-Henry",
+   "name": "Thierry Henry",
+   "number": 12,
+   "position": "Attacker",
+   "rating": 83
+  },
+  {
+   "id": "LEG-France-1998-20-David-Trezeguet",
+   "name": "David Trezeguet",
+   "number": 20,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-France-1998-9-St-phane-Guivarc-h",
+   "name": "Stéphane Guivarc'h",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 77
+  },
+  {
+   "id": "LEG-France-1998-21-Christophe-Dugarry",
+   "name": "Christophe Dugarry",
+   "number": 21,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-France-1998-11-Robert-Pires",
+   "name": "Robert Pires",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 81
+  }
+ ],
+ "Italy 2006": [
+  {
+   "id": "LEG-Italy-2006-1-Gianluigi-Buffon",
+   "name": "Gianluigi Buffon",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Italy-2006-12-Angelo-Peruzzi",
+   "name": "Angelo Peruzzi",
+   "number": 12,
+   "position": "Goalkeeper",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Italy-2006-5-Fabio-Cannavaro",
+   "name": "Fabio Cannavaro",
+   "number": 5,
+   "position": "Defender",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Italy-2006-23-Marco-Materazzi",
+   "name": "Marco Materazzi",
+   "number": 23,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Italy-2006-13-Alessandro-Nesta",
+   "name": "Alessandro Nesta",
+   "number": 13,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Italy-2006-19-Gianluca-Zambrotta",
+   "name": "Gianluca Zambrotta",
+   "number": 19,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Italy-2006-3-Fabio-Grosso",
+   "name": "Fabio Grosso",
+   "number": 3,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Italy-2006-2-Cristian-Zaccardo",
+   "name": "Cristian Zaccardo",
+   "number": 2,
+   "position": "Defender",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Italy-2006-21-Andrea-Pirlo",
+   "name": "Andrea Pirlo",
+   "number": 21,
+   "position": "Midfielder",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Italy-2006-8-Gennaro-Gattuso",
+   "name": "Gennaro Gattuso",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Italy-2006-20-Simone-Perrotta",
+   "name": "Simone Perrotta",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Italy-2006-16-Mauro-Camoranesi",
+   "name": "Mauro Camoranesi",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Italy-2006-4-Daniele-De-Rossi",
+   "name": "Daniele De Rossi",
+   "number": 4,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Italy-2006-10-Francesco-Totti",
+   "name": "Francesco Totti",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Italy-2006-9-Luca-Toni",
+   "name": "Luca Toni",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Italy-2006-7-Alessandro-Del-Piero",
+   "name": "Alessandro Del Piero",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Italy-2006-11-Alberto-Gilardino",
+   "name": "Alberto Gilardino",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Italy-2006-15-Vincenzo-Iaquinta",
+   "name": "Vincenzo Iaquinta",
+   "number": 15,
+   "position": "Attacker",
+   "rating": 80
+  }
+ ],
+ "Bayern 2012–13": [
+  {
+   "id": "LEG-Bayern-2012-13-1-Manuel-Neuer",
+   "name": "Manuel Neuer",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Bayern-2012-13-22-Tom-Starke",
+   "name": "Tom Starke",
+   "number": 22,
+   "position": "Goalkeeper",
+   "rating": 74
+  },
+  {
+   "id": "LEG-Bayern-2012-13-21-Philipp-Lahm",
+   "name": "Philipp Lahm",
+   "number": 21,
+   "position": "Defender",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Bayern-2012-13-17-J-r-me-Boateng",
+   "name": "Jérôme Boateng",
+   "number": 17,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Bayern-2012-13-4-Dante",
+   "name": "Dante",
+   "number": 4,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Bayern-2012-13-27-David-Alaba",
+   "name": "David Alaba",
+   "number": 27,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Bayern-2012-13-5-Daniel-Van-Buyten",
+   "name": "Daniel Van Buyten",
+   "number": 5,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Bayern-2012-13-13-Rafinha",
+   "name": "Rafinha",
+   "number": 13,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Bayern-2012-13-31-Bastian-Schweinsteiger",
+   "name": "Bastian Schweinsteiger",
+   "number": 31,
+   "position": "Midfielder",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Bayern-2012-13-8-Javi-Mart-nez",
+   "name": "Javi Martínez",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Bayern-2012-13-39-Toni-Kroos",
+   "name": "Toni Kroos",
+   "number": 39,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Bayern-2012-13-30-Luiz-Gustavo",
+   "name": "Luiz Gustavo",
+   "number": 30,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Bayern-2012-13-10-Arjen-Robben",
+   "name": "Arjen Robben",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Bayern-2012-13-7-Franck-Rib-ry",
+   "name": "Franck Ribéry",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Bayern-2012-13-25-Thomas-M-ller",
+   "name": "Thomas Müller",
+   "number": 25,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Bayern-2012-13-9-Mario-Mand-uki",
+   "name": "Mario Mandžukić",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Bayern-2012-13-33-Mario-G-mez",
+   "name": "Mario Gómez",
+   "number": 33,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Bayern-2012-13-11-Xherdan-Shaqiri",
+   "name": "Xherdan Shaqiri",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 79
+  }
+ ],
+ "Chelsea 2004–05": [
+  {
+   "id": "LEG-Chelsea-2004-05-1-Petr-ech",
+   "name": "Petr Čech",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-23-Carlo-Cudicini",
+   "name": "Carlo Cudicini",
+   "number": 23,
+   "position": "Goalkeeper",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-26-John-Terry",
+   "name": "John Terry",
+   "number": 26,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-6-Ricardo-Carvalho",
+   "name": "Ricardo Carvalho",
+   "number": 6,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-13-William-Gallas",
+   "name": "William Gallas",
+   "number": 13,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-20-Paulo-Ferreira",
+   "name": "Paulo Ferreira",
+   "number": 20,
+   "position": "Defender",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-18-Wayne-Bridge",
+   "name": "Wayne Bridge",
+   "number": 18,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-29-Robert-Huth",
+   "name": "Robert Huth",
+   "number": 29,
+   "position": "Defender",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-4-Claude-Mak-l-l",
+   "name": "Claude Makélélé",
+   "number": 4,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-8-Frank-Lampard",
+   "name": "Frank Lampard",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-30-Tiago",
+   "name": "Tiago",
+   "number": 30,
+   "position": "Midfielder",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-10-Joe-Cole",
+   "name": "Joe Cole",
+   "number": 10,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-11-Damien-Duff",
+   "name": "Damien Duff",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-16-Arjen-Robben",
+   "name": "Arjen Robben",
+   "number": 16,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-15-Didier-Drogba",
+   "name": "Didier Drogba",
+   "number": 15,
+   "position": "Attacker",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-22-Ei-ur-Gu-johnsen",
+   "name": "Eiður Guðjohnsen",
+   "number": 22,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Chelsea-2004-05-9-Mateja-Ke-man",
+   "name": "Mateja Kežman",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 78
+  }
+ ],
+ "Liverpool 2019–20": [
+  {
+   "id": "LEG-Liverpool-2019-20-1-Alisson",
+   "name": "Alisson",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-13-Adri-n",
+   "name": "Adrián",
+   "number": 13,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-66-Trent-Alexander-Arnold",
+   "name": "Trent Alexander-Arnold",
+   "number": 66,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-4-Virgil-van-Dijk",
+   "name": "Virgil van Dijk",
+   "number": 4,
+   "position": "Defender",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-12-Joe-Gomez",
+   "name": "Joe Gomez",
+   "number": 12,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-32-Jo-l-Matip",
+   "name": "Joël Matip",
+   "number": 32,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-26-Andrew-Robertson",
+   "name": "Andrew Robertson",
+   "number": 26,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-3-Fabinho",
+   "name": "Fabinho",
+   "number": 3,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-14-Jordan-Henderson",
+   "name": "Jordan Henderson",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-5-Georginio-Wijnaldum",
+   "name": "Georginio Wijnaldum",
+   "number": 5,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-7-James-Milner",
+   "name": "James Milner",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-15-Alex-Oxlade-Chamberlain",
+   "name": "Alex Oxlade-Chamberlain",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-20-Adam-Lallana",
+   "name": "Adam Lallana",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-23-Xherdan-Shaqiri",
+   "name": "Xherdan Shaqiri",
+   "number": 23,
+   "position": "Attacker",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-11-Mohamed-Salah",
+   "name": "Mohamed Salah",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-10-Sadio-Man",
+   "name": "Sadio Mané",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-9-Roberto-Firmino",
+   "name": "Roberto Firmino",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Liverpool-2019-20-27-Divock-Origi",
+   "name": "Divock Origi",
+   "number": 27,
+   "position": "Attacker",
+   "rating": 77
+  }
+ ],
+ "Man City 2017–18": [
+  {
+   "id": "LEG-Man-City-2017-18-31-Ederson",
+   "name": "Ederson",
+   "number": 31,
+   "position": "Goalkeeper",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Man-City-2017-18-1-Claudio-Bravo",
+   "name": "Claudio Bravo",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Man-City-2017-18-2-Kyle-Walker",
+   "name": "Kyle Walker",
+   "number": 2,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Man-City-2017-18-5-John-Stones",
+   "name": "John Stones",
+   "number": 5,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Man-City-2017-18-30-Nicol-s-Otamendi",
+   "name": "Nicolás Otamendi",
+   "number": 30,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Man-City-2017-18-4-Vincent-Kompany",
+   "name": "Vincent Kompany",
+   "number": 4,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Man-City-2017-18-18-Fabian-Delph",
+   "name": "Fabian Delph",
+   "number": 18,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Man-City-2017-18-22-Benjamin-Mendy",
+   "name": "Benjamin Mendy",
+   "number": 22,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Man-City-2017-18-3-Danilo",
+   "name": "Danilo",
+   "number": 3,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Man-City-2017-18-25-Fernandinho",
+   "name": "Fernandinho",
+   "number": 25,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Man-City-2017-18-17-Kevin-De-Bruyne",
+   "name": "Kevin De Bruyne",
+   "number": 17,
+   "position": "Midfielder",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Man-City-2017-18-21-David-Silva",
+   "name": "David Silva",
+   "number": 21,
+   "position": "Midfielder",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Man-City-2017-18-8-lkay-G-ndo-an",
+   "name": "İlkay Gündoğan",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Man-City-2017-18-20-Bernardo-Silva",
+   "name": "Bernardo Silva",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Man-City-2017-18-7-Raheem-Sterling",
+   "name": "Raheem Sterling",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Man-City-2017-18-19-Leroy-San",
+   "name": "Leroy Sané",
+   "number": 19,
+   "position": "Attacker",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Man-City-2017-18-10-Sergio-Ag-ero",
+   "name": "Sergio Agüero",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Man-City-2017-18-33-Gabriel-Jesus",
+   "name": "Gabriel Jesus",
+   "number": 33,
+   "position": "Attacker",
+   "rating": 85
+  }
+ ],
+ "Inter 2009–10": [
+  {
+   "id": "LEG-Inter-2009-10-12-J-lio-C-sar",
+   "name": "Júlio César",
+   "number": 12,
+   "position": "Goalkeeper",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Inter-2009-10-1-Francesco-Toldo",
+   "name": "Francesco Toldo",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Inter-2009-10-13-Maicon",
+   "name": "Maicon",
+   "number": 13,
+   "position": "Defender",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Inter-2009-10-6-L-cio",
+   "name": "Lúcio",
+   "number": 6,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Inter-2009-10-25-Walter-Samuel",
+   "name": "Walter Samuel",
+   "number": 25,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Inter-2009-10-26-Cristian-Chivu",
+   "name": "Cristian Chivu",
+   "number": 26,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Inter-2009-10-23-Marco-Materazzi",
+   "name": "Marco Materazzi",
+   "number": 23,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Inter-2009-10-4-Javier-Zanetti",
+   "name": "Javier Zanetti",
+   "number": 4,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Inter-2009-10-19-Esteban-Cambiasso",
+   "name": "Esteban Cambiasso",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Inter-2009-10-5-Dejan-Stankovi",
+   "name": "Dejan Stanković",
+   "number": 5,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Inter-2009-10-8-Thiago-Motta",
+   "name": "Thiago Motta",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Inter-2009-10-11-Sulley-Muntari",
+   "name": "Sulley Muntari",
+   "number": 11,
+   "position": "Midfielder",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Inter-2009-10-10-Wesley-Sneijder",
+   "name": "Wesley Sneijder",
+   "number": 10,
+   "position": "Midfielder",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Inter-2009-10-22-Diego-Milito",
+   "name": "Diego Milito",
+   "number": 22,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Inter-2009-10-9-Samuel-Eto-o",
+   "name": "Samuel Eto'o",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Inter-2009-10-27-Goran-Pandev",
+   "name": "Goran Pandev",
+   "number": 27,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Inter-2009-10-45-Mario-Balotelli",
+   "name": "Mario Balotelli",
+   "number": 45,
+   "position": "Attacker",
+   "rating": 78
+  }
+ ],
+ "AC Milan 2006–07": [
+  {
+   "id": "LEG-AC-Milan-2006-07-1-Dida",
+   "name": "Dida",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 85
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-44-Massimo-Oddo",
+   "name": "Massimo Oddo",
+   "number": 44,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-13-Alessandro-Nesta",
+   "name": "Alessandro Nesta",
+   "number": 13,
+   "position": "Defender",
+   "rating": 90
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-3-Paolo-Maldini",
+   "name": "Paolo Maldini",
+   "number": 3,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-18-Marek-Jankulovski",
+   "name": "Marek Jankulovski",
+   "number": 18,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-4-Kakha-Kaladze",
+   "name": "Kakha Kaladze",
+   "number": 4,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-2-Cafu",
+   "name": "Cafu",
+   "number": 2,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-8-Gennaro-Gattuso",
+   "name": "Gennaro Gattuso",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-21-Andrea-Pirlo",
+   "name": "Andrea Pirlo",
+   "number": 21,
+   "position": "Midfielder",
+   "rating": 91
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-23-Massimo-Ambrosini",
+   "name": "Massimo Ambrosini",
+   "number": 23,
+   "position": "Midfielder",
+   "rating": 83
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-10-Clarence-Seedorf",
+   "name": "Clarence Seedorf",
+   "number": 10,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-32-Cristian-Brocchi",
+   "name": "Cristian Brocchi",
+   "number": 32,
+   "position": "Midfielder",
+   "rating": 77
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-22-Kak",
+   "name": "Kaká",
+   "number": 22,
+   "position": "Midfielder",
+   "rating": 95
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-9-Filippo-Inzaghi",
+   "name": "Filippo Inzaghi",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-AC-Milan-2006-07-11-Alberto-Gilardino",
+   "name": "Alberto Gilardino",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 82
+  }
+ ]
+}
