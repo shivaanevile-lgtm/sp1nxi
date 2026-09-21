@@ -2278,12 +2278,35 @@ async function publishSquad() {
 
   // Show the waiting screen — no internal poll inside screenWait here,
   // we manage one clean poll ourselves below so they can't fight.
-  show(el(`<section><h2>Squad locked in</h2>
+  const wv = el(`<section><h2>Squad locked in</h2>
     <p>Waiting for your opponent to finish building their XI…</p>
-    <div class="bar"><i style="width:40%"></i></div></section>`));
+    <div class="bar"><i style="width:40%"></i></div>
+    <p id="netstat" style="margin-top:12px"><small>Saving your squad…</small></p></section>`);
+  show(wv);
+  const statusEl = wv.querySelector('#netstat');
+  const t0 = Date.now();
+  let saved = false, lastErr = '', storeKind = '';
+  const setStatus = () => {
+    const secs = Math.round((Date.now() - t0) / 1000);
+    let msg = saved ? `✅ Your squad is saved to room ${esc(room.code)}. Checking for your opponent… (${secs}s)`
+                    : `⏳ Saving your squad… ${lastErr ? `<br>Last try failed: ${esc(lastErr)} — retrying.` : ''}`;
+    if (saved && storeKind === 'kv' && secs > 15)
+      msg += '<br>The room server can take up to a minute to sync. Connecting the D1 database makes it instant.';
+    statusEl.innerHTML = `<small>${msg}</small>`;
+  };
 
-  const submitRes = await api({ action:'submit', code:S.room.code, seat:S.room.seat, squad:payload });
-  if (!submitRes || !submitRes.ok) { toast('Submit failed — check your connection.'); return; }
+  // Keep trying until the save goes through, and re-save every so often:
+  // cheap, harmless if it's already there, and it repairs a squad that got
+  // lost on the server (e.g. both players locking in at the same moment).
+  const room = { ...S.room };   // this match's room, even if a new one opens later
+  const submit = async () => {
+    const r = await api({ action:'submit', code:room.code, seat:room.seat, squad:payload });
+    if (r && r.ok) { saved = true; lastErr = ''; if (r.store) storeKind = r.store; }
+    else lastErr = r ? (r.error || 'server error') : 'no connection';
+    setStatus();
+    return r;
+  };
+  const submitRes = await submit();
 
   // Rebuild a squad exactly as the server holds it. BOTH sides go through
   // this (your own too), so the two phones simulate identical inputs.
@@ -2299,9 +2322,15 @@ async function publishSquad() {
     if (started || !st || !st.squads || !st.squads[0] || !st.squads[1]) return;
     started = true;
     stopPoll();
+    // Keep our squad on the server for a little while after we start, in
+    // case the opponent's phone is still checking and an older server
+    // setup dropped it — otherwise they'd be left waiting forever.
+    let keep = 0;
+    const keepT = setInterval(() => { if (++keep > 12) return clearInterval(keepT); submit(); }, 2500);
     const A = hydrate(st.squads[0], S.players[0]), B = hydrate(st.squads[1], S.players[1]);
     S.players[0] = { ...S.players[0], ...A }; S.players[1] = { ...S.players[1], ...B };
-    const seed = `${S.room.code}|${st.kickoff || 0}`;
+    // Seed from things both phones always agree on — never from timing.
+    const seed = `${room.code}|${A.label}|${B.label}|${A.xi.map(s => s.player.name).join(',')}|${B.xi.map(s => s.player.name).join(',')}`;
     // Server time → this phone's clock, so both count down to the same moment.
     const offset = (r.now || Date.now()) - Date.now();
     const kickAt = st.kickoff ? st.kickoff - offset : Date.now();
@@ -2318,9 +2347,23 @@ async function publishSquad() {
     tick();
   }
 
-  tryAdvance(submitRes);
+  if (submitRes && submitRes.ok) tryAdvance(submitRes);
   if (started) return;
-  S.poll = setInterval(async () => { tryAdvance(await api({ action:'state', code:S.room.code })); }, 1000);
+  let n = 0, missing = 0;
+  S.poll = setInterval(async () => {
+    n++;
+    if (!saved || n % 8 === 0) { const r = await submit(); if (r && r.ok) { tryAdvance(r); return; } }
+    const r = await api({ action:'state', code:room.code });
+    if (r && r.store) storeKind = r.store;
+    // A brand-new room can briefly look "not found" while the server syncs,
+    // so only give up on it after a long unbroken run of misses.
+    if (r && r.error === 'not-found') {
+      missing = missing || Date.now();
+      if (Date.now() - missing > 90000) { statusEl.innerHTML = '<small>❌ This room has expired or the code is wrong. Start a new room.</small>'; return stopPoll(); }
+    } else if (r && r.ok) missing = 0;
+    setStatus();
+    tryAdvance(r);
+  }, 1000);
 }
 
 /* ------------------------------------------------------------------ *
