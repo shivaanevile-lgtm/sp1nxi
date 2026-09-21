@@ -437,10 +437,28 @@ function describeGoal(rand = Math.random) {
   return { method, desc: `scores, ${corner}, ${origin}` };
 }
 
+// Match-day conditions. Each nudges the numbers a little, and shows on the
+// tactics board.
+const WEATHER = {
+  clear: { icon: '☀️', label: 'Clear', line: 'Perfect conditions for football.' },
+  rain:  { icon: '🌧️', label: 'Rain', line: 'Rain lashing down — the ball is skidding off the surface.' },
+  snow:  { icon: '❄️', label: 'Snow', line: "Snow falling — it's the orange ball tonight." },
+  heavy: { icon: '🟫', label: 'Heavy pitch', line: 'A heavy, cut-up pitch — hard going for everyone.' },
+  wind:  { icon: '💨', label: 'Windy', line: 'A swirling wind — long balls are a lottery.' }
+};
+
 function simulate(A, B, seed) {
   const rnd = seed ? seededRng(seed) : Math.random;
-  const xgA = Math.max(0.18, 1.34 * Math.pow(A.strength.att / B.strength.def, 2.1));
-  const xgB = Math.max(0.18, 1.18 * Math.pow(B.strength.att / A.strength.def, 2.1));
+  const wr = rnd();
+  const weather = wr < 0.55 ? 'clear' : wr < 0.75 ? 'rain' : wr < 0.83 ? 'snow' : wr < 0.93 ? 'heavy' : 'wind';
+  let xgA = Math.max(0.18, 1.34 * Math.pow(A.strength.att / B.strength.def, 2.1));
+  let xgB = Math.max(0.18, 1.18 * Math.pow(B.strength.att / A.strength.def, 2.1));
+  if (weather === 'rain') { xgA *= 1.08; xgB *= 1.08; }            // skiddy — more chances
+  if (weather === 'snow') { xgA *= 0.85; xgB *= 0.85; }            // fewer clean chances
+  if (weather === 'heavy') {                                        // a leveller: quality counts for less
+    const avg = (xgA + xgB) / 2; xgA = (xgA * 0.75 + avg * 0.25) * 0.9; xgB = (xgB * 0.75 + avg * 0.25) * 0.9;
+  }
+  if (weather === 'wind') { xgA *= 0.85 + rnd() * 0.3; xgB *= 0.85 + rnd() * 0.3; } // anything can happen
   const gA = Math.min(7, poisson(xgA, rnd)), gB = Math.min(7, poisson(xgB, rnd));
 
   const mins = new Set();
@@ -493,7 +511,7 @@ function simulate(A, B, seed) {
     return { label: row[0], a: row[1], b: row[2], wa: a, wb: b };
   });
 
-  return { gA, gB, events, stats, xgA, xgB, seed: seed || null };
+  return { gA, gB, events, stats, xgA, xgB, weather, seed: seed || null };
 }
 
 /* League prediction: rank the built XI against every club in the
@@ -626,8 +644,14 @@ function screenMode() {
     <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
     <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
     <button class="btn ghost" data-m="join">Join with a code</button>
+    <div class="row" style="display:flex;gap:8px">
+      <button class="btn ghost" id="hof" style="flex:1;width:auto">🏆 Hall of fame</button>
+      <button class="btn ghost" id="h2h" style="flex:1;width:auto">🤝 Head-to-head</button>
+    </div>
     <button class="btn ghost" id="howto">How to play</button>
   </section>`);
+  v.querySelector('#hof').onclick = screenHallOfFame;
+  v.querySelector('#h2h').onclick = screenH2H;
   v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
     S.mode = b.dataset.m;
     if (b.dataset.m === 'join') return screenJoin();
@@ -737,6 +761,7 @@ async function joinRoom(code) {
     if (code.length !== 4) return toast('Codes are four letters.');
     const r = await api({ action:'join', code });
     if (!r || !r.ok) return toast('No room with that code.');
+    if (r.full) { toast('That room is full — watching instead.'); return screenSpectate(code); }
     S.mode = 'online'; S.room = { code, seat: 1 }; S.leagueKey = r.state.league;
     if (S.leagueKey) setLeagueTheme(S.leagueKey);
     if (!S.leagueKey) { S.mode='online'; return screenWait('Waiting for the host to pick a league.', async st => {
@@ -774,6 +799,54 @@ function screenLeague() {
   show(v);
 }
 
+// Spectator link + QR: opens the room in watch-only mode.
+const watchLink = code => `${location.origin}${location.pathname}?watch=${code}`;
+function showWatchQR(box, code) {
+  box.innerHTML = `<div class="card" style="text-align:center">${qrSVG(watchLink(code), 200)}
+    <p style="margin:8px 0 0"><small>Friends scan this to watch the draft and the match live.</small></p></div>`;
+}
+
+// Watch a room: both XIs fill in live, then the same match plays out.
+function screenSpectate(code) {
+  S.mode = 'spectate'; S.room = { code, seat: -1 }; S.players = [];
+  theme(null); setCrumb(`Watching ${code}`);
+  const v = el(`<section><h2>Watching room ${esc(code)}</h2>
+    <p id="spstat"><small>Connecting…</small></p>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px" id="spcols"></div>
+    <button class="btn ghost" id="back">Stop watching</button></section>`);
+  v.querySelector('#back').onclick = () => { stopPoll(); S.mode = null; S.room = null; screenMode(); };
+  show(v);
+  const col = (sq, fallback) => {
+    const done = sq && sq.final, xi = (sq && sq.xi) || [];
+    const n = xi.filter(s => s.player).length;
+    return `<div class="card" style="padding:10px 12px"><b>${esc((sq && sq.label) || fallback)}</b><br>
+      <small>${sq && sq.formation ? esc(sq.formation) : 'picking a formation…'} · ${done ? '✅ locked in' : `${n}/11`}</small>
+      ${xi.map(s => `<div style="display:flex;gap:6px;font-size:.8rem;padding:2px 0;${s.player ? '' : 'opacity:.4'}">
+        <b style="min-width:2.4em">${s.role}</b><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.player ? esc(s.player.name) : '—'}</span></div>`).join('')}</div>`;
+  };
+  let started = false;
+  const tick = async () => {
+    if (started || !document.body.contains(v)) return stopPoll();
+    const r = await api({ action:'state', code });
+    if (!r || !r.ok) { v.querySelector('#spstat').innerHTML = `<small>${r && r.error === 'not-found' ? 'Looking for the room…' : 'Reconnecting…'}</small>`; return; }
+    const st = r.state, prog = st.progress || [null, null];
+    const view = i => st.squads[i] ? { ...st.squads[i], final: true } : prog[i];
+    v.querySelector('#spcols').innerHTML = col(view(0), 'Host') + col(view(1), st.players > 1 ? 'Challenger' : 'Waiting for a player…');
+    v.querySelector('#spstat').innerHTML = `<small>${st.squads[0] && st.squads[1] ? 'Both squads in — kick-off!' : 'The draft is live.'}</small>`;
+    if (st.squads[0] && st.squads[1]) {
+      started = true; stopPoll();
+      S.leagueKey = st.league; setLeagueTheme(st.league);
+      const A = hydrateSquad(st.squads[0], 'Host'), B = hydrateSquad(st.squads[1], 'Challenger');
+      S.players = [A, B];
+      const offset = (r.now || Date.now()) - Date.now();
+      const kickAt = st.kickoff ? st.kickoff - offset : Date.now();
+      setTimeout(() => startMatch(A, B, matchSeed(code, A, B)), Math.max(0, kickAt - Date.now()));
+    }
+  };
+  tick();
+  S.poll = setInterval(tick, 1500);
+}
+
 // A link that drops whoever opens it straight into this room.
 const joinLink = code => `${location.origin}${location.pathname}?join=${code}`;
 
@@ -790,6 +863,7 @@ function screenRoomCode() {
     <button class="btn primary" id="share">Share invite link</button>
     <button class="btn ghost" id="copy">Copy code</button>
     <p id="roomstatus"><small>Waiting for your opponent to join…</small></p>
+    <p><small>Anyone who scans after your opponent joins will watch instead of play.</small></p>
   </section>`);
   v.querySelector('#copy').onclick = () => { navigator.clipboard?.writeText(S.room.code); toast('Code copied'); };
   v.querySelector('#share').onclick = async () => {
@@ -898,8 +972,12 @@ function screenFormationSpin() {
     await reel(box, FORMATION_NAMES, idx, f => f);
     p.formation = FORMATION_NAMES[idx];
     btn.disabled = false; btn.textContent = `Build your ${p.formation}`;
-    btn.onclick = screenBuild;
+    btn.onclick = () => { clearTimeout(autoT); screenBuild(); };
+    if (S.mode === 'online') autoT = setTimeout(() => { if (document.body.contains(v)) screenBuild(); }, 10000);
   };
+  let autoT = null;
+  // online: spin for them if they sit on it for 10 seconds
+  if (S.mode === 'online') autoT = setTimeout(() => { if (document.body.contains(v) && !btn.disabled && !p.formation) btn.onclick(); }, 10000);
   show(v);
 }
 
@@ -924,6 +1002,9 @@ function screenBuild() {
         <span><b id="clubname">No club yet</b><br><small id="count">0 of 11 picked</small></span>
         <span style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem" id="avg">—</span>
       </div>
+      ${S.mode === 'online' ? `<div id="dclock" style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <div class="bar" style="flex:1;margin:0"><i id="dclockbar" style="width:100%;transition:width .2s linear"></i></div>
+        <b id="dclocknum" style="min-width:2.4em;text-align:right;font-variant-numeric:tabular-nums">10s</b></div>` : ''}
     </div>
     <div class="reel"><div class="reel-track"><div class="reel-item">${esc(LEAGUES[S.leagueKey].name)}</div></div></div>
     <p id="hint">Spin for a club — then pick who you want from it and which shirt they take.</p>
@@ -972,6 +1053,36 @@ function screenBuild() {
     rr.disabled = !club || p.rerollsLeft <= 0;
   }
 
+  // Online only: 10 seconds for every action. Run out and it's done for
+  // you — spin, take the best player on offer, or confirm the XI.
+  const timed = S.mode === 'online';
+  let clockT = null;
+  function stopClock() { if (clockT) clearInterval(clockT); clockT = null; }
+  function armClock() {
+    if (!timed) return;
+    stopClock();
+    const end = Date.now() + 10000;
+    const bar = v.querySelector('#dclockbar'), num = v.querySelector('#dclocknum');
+    clockT = setInterval(() => {
+      if (!document.body.contains(v)) return stopClock();
+      if (busy) return;
+      const left = Math.max(0, end - Date.now());
+      bar.style.width = (left / 100) + '%';
+      bar.style.background = left < 3000 ? '#E5484D' : '';
+      num.textContent = Math.ceil(left / 1000) + 's';
+      if (left > 0) return;
+      stopClock();
+      if (club) {                                   // take the best player on offer
+        let best = null;
+        openGroups().forEach(g => club.squad
+          .filter(pl => ELIGIBLE[g].includes(pl.position) && !usedPlayers.has(pl.id) && !p.xi.some(s => s.player && norm(s.player.name) === norm(pl.name)))
+          .forEach(pl => { const r = getRating(pl, g); if (!best || r > best.r) best = { g, pl: { ...pl, rating: r }, r }; }));
+        if (best) { toast(`Time! ${best.pl.name} picked for you.`); choose(best.g, best.pl); }
+      } else if (filled() === 11) { toast('Time! XI confirmed.'); nextAfterBuild(); }
+      else { toast('Time! Spinning for you.'); spin(); }
+    }, 100);
+  }
+
   function groupLabel(g) {
     return { GK: 'Goalkeeper', DEF: 'Defenders', MID: 'Midfielders', ATT_MID: 'Attacking mid / wide', FWD: 'Forwards' }[g];
   }
@@ -993,6 +1104,7 @@ function screenBuild() {
     busy = false; act.disabled = false;
     renderChoices();
     paint();
+    armClock();
   }
 
   function renderChoices() {
@@ -1042,13 +1154,15 @@ function screenBuild() {
       hint.textContent = 'Eleven shirts, eleven clubs.';
       act.classList.remove('hide');
       act.textContent = 'Confirm this XI';
-      act.onclick = () => nextAfterBuild();
+      act.onclick = () => { stopClock(); nextAfterBuild(); };
     } else {
       hint.textContent = `${11 - filled()} to go.`;
       act.classList.remove('hide');
       act.textContent = 'Spin for the next club';
       act.onclick = spin;
     }
+    publishProgress();
+    armClock();
   }
 
   rr.onclick = () => {
@@ -1059,11 +1173,14 @@ function screenBuild() {
     hint.textContent = `${11 - filled()} to go. Spin for another club.`;
     act.classList.remove('hide'); act.textContent = 'Spin for the next club'; act.onclick = spin;
     paint();
+    armClock();
   };
 
   act.onclick = spin;
   setCrumb(`${p.label} · ${p.formation}`);
   show(v); paint();
+  publishProgress();
+  armClock();
 }
 
 /* --- the AI opponent ---------------------------------------------- */
@@ -1203,11 +1320,6 @@ async function screenMatchSim(A, B, m, opts = {}) {
     <style>
       .ms .ms-board{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
       .ms .ms-lists{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-      @media (min-width:760px){
-        .ms .ms-board{grid-template-columns:190px 1fr 190px;align-items:start}
-        .ms .ms-lists{display:contents}
-        .ms .ms-listA{order:-1}
-      }
       .ms .hpitch{position:relative;width:100%;aspect-ratio:105/68;border-radius:12px;overflow:hidden;
         background:repeating-linear-gradient(90deg,rgba(255,255,255,.045) 0 5%,rgba(0,0,0,.05) 5% 10%),
                    linear-gradient(160deg,#2E2822,#15120F);border:1px solid rgba(255,255,255,.12)}
@@ -1228,6 +1340,22 @@ async function screenMatchSim(A, B, m, opts = {}) {
       .ms .ms-cap{display:inline-block;font-size:.6rem;font-weight:800;padding:0 3px;border-radius:3px;background:#fff;color:#111;margin-left:2px}
       .ms .ms-fit{height:4px;border-radius:2px;background:rgba(255,255,255,.15);overflow:hidden}
       .ms .ms-fit i{display:block;height:100%;width:100%;background:#22D3EE;transition:width 1s linear}
+      .ms .wx{position:absolute;inset:0;pointer-events:none;z-index:5}
+      .ms .wx-rain{background-image:repeating-linear-gradient(105deg,rgba(190,215,255,.35) 0 1px,transparent 1px 14px);
+        background-size:40px 40px;animation:wxfall .35s linear infinite}
+      .ms .wx-snow{background-image:radial-gradient(circle,rgba(255,255,255,.9) 1.2px,transparent 1.8px),
+        radial-gradient(circle,rgba(255,255,255,.7) 1px,transparent 1.6px);
+        background-size:34px 34px,21px 21px;background-position:0 0,10px 12px;animation:wxsnow 3s linear infinite}
+      .ms .wx-heavy{background:radial-gradient(ellipse 14% 20% at 10% 50%,rgba(92,64,36,.55),transparent 70%),
+        radial-gradient(ellipse 14% 20% at 90% 50%,rgba(92,64,36,.55),transparent 70%),
+        radial-gradient(ellipse 10% 30% at 50% 50%,rgba(92,64,36,.4),transparent 70%),rgba(70,50,30,.18)}
+      .ms .wx-wind{background-image:repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,255,255,.14) 22px 23px);
+        background-size:120px 60px;animation:wxwind 1.2s linear infinite;
+        -webkit-mask-image:repeating-linear-gradient(90deg,#000 0 60px,transparent 60px 120px);mask-image:repeating-linear-gradient(90deg,#000 0 60px,transparent 60px 120px)}
+      .ms .wx-tag{position:absolute;left:8px;top:6px;z-index:7;font-size:.72rem;background:rgba(0,0,0,.45);color:#fff;padding:2px 8px;border-radius:10px}
+      @keyframes wxfall{to{background-position:-10px 40px}}
+      @keyframes wxsnow{to{background-position:8px 34px,-6px 33px}}
+      @keyframes wxwind{to{background-position:120px 0}}
     </style>
     <div class="sheet" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
       background:linear-gradient(100deg,var(--club-a) 0%,var(--club-a) 48%,var(--club-b2,#241F19) 52%);border-radius:14px">
@@ -1247,6 +1375,8 @@ async function screenMatchSim(A, B, m, opts = {}) {
         <div class="hm" style="left:-2px;top:37%;width:5.5%;height:26%"></div>
         <div class="hm" style="right:-2px;top:37%;width:5.5%;height:26%"></div>
         <div id="ball" style="left:50%;top:50%"></div>
+        ${m.weather && m.weather !== 'clear' ? `<div class="wx wx-${m.weather}"></div>` : ''}
+        ${m.weather ? `<span class="wx-tag">${WEATHER[m.weather].icon} ${WEATHER[m.weather].label}</span>` : ''}
       </div>
       <div class="ms-lists">
         <div class="ms-list ms-listA"><h4>${esc(A.label)} · Starting XI</h4>${listHTML(A, 'home', capA)}</div>
@@ -1353,7 +1483,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
   async function ballTo(L, W, p, caption, hold) {
     if (skipped) return;
     const d = Math.hypot(L - bL, W - bW);
-    const dur = Math.max(0.45, Math.min(1.2, d / 45));
+    const dur = Math.max(0.45, Math.min(1.2, d / 45)) * (m.weather === 'heavy' || m.weather === 'snow' ? 1.18 : 1);
     ball.style.transitionDuration = dur + 's';
     bL = L; bW = W;
     if (p) { poss = p.side; carrier = key(p); p.dot.style.transitionDuration = dur + 's'; }
@@ -1367,7 +1497,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
 
   const events = m.events.slice().sort((a, b) => a.min - b.min);
   const CHAINS = 14, used = new Set();
-  commentary.innerHTML = 'Kick-off.';
+  commentary.innerHTML = m.weather ? `Kick-off. ${WEATHER[m.weather].icon} ${esc(WEATHER[m.weather].line)}` : 'Kick-off.';
   SFX.crowdStart(); SFX.whistle(1, true);
   await ballTo(50, 50, pickDot('home'), null);
 
@@ -1611,6 +1741,9 @@ function screenResult(A, B, m) {
   stopPoll();
   SFX.crowdStop();
   if (!S.lastMatch || S.lastMatch.m !== m) S.lastMatch = { A, B, m, ko: null, autoShown: false };
+  hofSave(A, B, m);
+  const h2h = recordH2H(A, B, m) || (S.mode === 'online' && S.room
+    ? store.get('sp1nxi-h2h', {})[(S.room.seat === 0 ? B : A).label.trim().toLowerCase()] : null);
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
@@ -1652,7 +1785,10 @@ function screenResult(A, B, m) {
       const col = (side, t) => `<div><small style="opacity:.75">${esc(t.label)}</small>${pr[side].map(p =>
         `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:3px 0;font-size:.85rem">
           <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}${p.goals ? ' ' + '⚽'.repeat(p.goals) : ''}</span>${ratingChip(p.r)}</div>`).join('')}</div>`;
-      return `<div class="card"><h3>Player of the match</h3>
+      return `${m.weather ? `<p style="text-align:center;margin:6px 0"><small>${WEATHER[m.weather].icon} ${WEATHER[m.weather].label}</small></p>` : ''}
+        <div class="card"><h3>🎙️ Pundit's verdict</h3><p style="margin:0;line-height:1.5">${esc(punditReport(A, B, m))}</p></div>
+        ${h2h ? `<div class="card"><h3>Head-to-head vs ${esc(h2h.name)}</h3><p style="margin:0">${h2hLine(h2h)}</p></div>` : ''}
+        <div class="card"><h3>Player of the match</h3>
         <div style="display:flex;align-items:center;gap:12px">${ratingChip(mo.r, true)}
           <div><b>${esc(mo.name)}</b><br><small>${esc((mo.side === 'home' ? A : B).label)}${mo.goals ? ` · ${mo.goals} goal${mo.goals > 1 ? 's' : ''}` : ''}</small></div></div></div>
         <div class="card"><h3>Player ratings</h3>
@@ -1993,6 +2129,7 @@ async function renderKnockout(A, B, st, opts = {}) {
   }
   const cc = v.querySelector('#champCard');
   if (cc) cc.style.opacity = 1;
+  if (done) hofKnockout(A, B, st);
 }
 
 // Shared helper — renders bracket rounds into a scrollable visual bracket
@@ -2265,23 +2402,48 @@ function poll(cb) {
 }
 function stopPoll() { if (S.poll) clearInterval(S.poll); S.poll = null; }
 
+// A squad as sent to the server (players may still be empty mid-draft).
+function squadPayload(p) {
+  return {
+    label: p.label, formation: p.formation,
+    badge: p.badge ? { home: p.badge.home, away: p.badge.away, name: p.badge.name } : null,
+    strength: p.strength,
+    xi: (p.xi || []).map(s => ({ role:s.role, x:s.x, y:s.y, player: s.player ? {
+      name:s.player.name, number:s.player.number, rating:s.player.rating,
+      club:{ name:s.player.club.name, home:s.player.club.home, away:s.player.club.away } } : null }))
+  };
+}
+// Rebuild a squad exactly as the server holds it — everyone (both players
+// and any spectators) goes through this, so they all simulate the same match.
+function hydrateSquad(sq, fallbackLabel) {
+  return {
+    label: sq.label || fallbackLabel, formation: sq.formation, strength: sq.strength,
+    badge: sq.badge || { home:'#888', away:'#fff', name:'' },
+    xi: sq.xi.map(s => ({ ...s, player: { ...s.player, club: s.player.club || { name:'', home:'#888', away:'#fff' } } }))
+  };
+}
+// Seed from things every device agrees on — never from timing.
+const matchSeed = (code, A, B) =>
+  `${code}|${A.label}|${B.label}|${A.xi.map(s => s.player.name).join(',')}|${B.xi.map(s => s.player.name).join(',')}`;
+
+// Mid-draft updates, so spectators can watch the XI fill up.
+function publishProgress() {
+  if (S.mode !== 'online' || !S.room) return;
+  api({ action:'progress', code:S.room.code, seat:S.room.seat, squad: squadPayload(me()) });
+}
+
 async function publishSquad() {
   const p = me();
-  const payload = {
-    label: p.label, formation: p.formation,
-    badge: { home: p.badge.home, away: p.badge.away, name: p.badge.name },
-    strength: p.strength,
-    xi: p.xi.map(s => ({ role:s.role, x:s.x, y:s.y, player:{
-      name:s.player.name, number:s.player.number, rating:s.player.rating,
-      club:{ name:s.player.club.name, home:s.player.club.home, away:s.player.club.away } } }))
-  };
+  const payload = squadPayload(p);
 
   // Show the waiting screen — no internal poll inside screenWait here,
   // we manage one clean poll ourselves below so they can't fight.
   const wv = el(`<section><h2>Squad locked in</h2>
     <p>Waiting for your opponent to finish building their XI…</p>
     <div class="bar"><i style="width:40%"></i></div>
-    <p id="netstat" style="margin-top:12px"><small>Saving your squad…</small></p></section>`);
+    <p id="netstat" style="margin-top:12px"><small>Saving your squad…</small></p>
+    <button class="btn ghost" id="watchqr">👀 Let friends watch</button><div id="watchbox"></div></section>`);
+  wv.querySelector('#watchqr').onclick = () => showWatchQR(wv.querySelector('#watchbox'), S.room.code);
   show(wv);
   const statusEl = wv.querySelector('#netstat');
   const t0 = Date.now();
@@ -2308,13 +2470,6 @@ async function publishSquad() {
   };
   const submitRes = await submit();
 
-  // Rebuild a squad exactly as the server holds it. BOTH sides go through
-  // this (your own too), so the two phones simulate identical inputs.
-  const hydrate = (sq, fallback) => ({
-    label: sq.label || fallback.label, formation: sq.formation, strength: sq.strength,
-    badge: sq.badge || { home:'#888', away:'#fff', name:'' },
-    xi: sq.xi.map(s => ({ ...s, player: { ...s.player, club: s.player.club || { name:'', home:'#888', away:'#fff' } } }))
-  });
 
   let started = false;
   function tryAdvance(r) {
@@ -2327,10 +2482,9 @@ async function publishSquad() {
     // setup dropped it — otherwise they'd be left waiting forever.
     let keep = 0;
     const keepT = setInterval(() => { if (++keep > 12) return clearInterval(keepT); submit(); }, 2500);
-    const A = hydrate(st.squads[0], S.players[0]), B = hydrate(st.squads[1], S.players[1]);
+    const A = hydrateSquad(st.squads[0], S.players[0].label), B = hydrateSquad(st.squads[1], S.players[1].label);
     S.players[0] = { ...S.players[0], ...A }; S.players[1] = { ...S.players[1], ...B };
-    // Seed from things both phones always agree on — never from timing.
-    const seed = `${room.code}|${A.label}|${B.label}|${A.xi.map(s => s.player.name).join(',')}|${B.xi.map(s => s.player.name).join(',')}`;
+    const seed = matchSeed(room.code, A, B);
     // Server time → this phone's clock, so both count down to the same moment.
     const offset = (r.now || Date.now()) - Date.now();
     const kickAt = st.kickoff ? st.kickoff - offset : Date.now();
@@ -2492,6 +2646,258 @@ function playerRatings(A, B, m) {
 const ratingColor = r => r >= 9 ? '#2563EB' : r >= 8 ? '#16A34A' : r >= 7 ? '#65A30D' : r >= 6 ? '#E08A0B' : '#E5484D';
 const ratingChip = (r, big) => `<span style="display:inline-block;min-width:${big ? 46 : 34}px;text-align:center;padding:${big ? '6px 8px' : '2px 6px'};
   border-radius:6px;background:${ratingColor(r)};color:#fff;font-weight:800;font-size:${big ? '1.1rem' : '.78rem'}">${r.toFixed(1)}</span>`;
+
+/* ------------------------------------------------------------------ *
+ * PUNDIT — a short TV-style match report built from what actually
+ * happened: the result, the story of the goals, standout players, cards,
+ * the weather and whether the scoreline was fair. Seeded like the match
+ * so both phones in an online game read the same words.
+ * ------------------------------------------------------------------ */
+function punditReport(A, B, m) {
+  if (m.pundit) return m.pundit;
+  const rand = m.seed ? seededRng(m.seed + '|pundit') : Math.random;
+  const pick = arr => arr[Math.floor(rand() * arr.length)];
+  const nameOf = side => (side === 'home' ? A : B).label;
+  const goals = m.events.filter(e => e.type === 'goal').sort((a, b) => a.min - b.min);
+  const cards = m.events.filter(e => e.type === 'card');
+  const draw = m.gA === m.gB, winSide = m.gA > m.gB ? 'home' : 'away', loseSide = winSide === 'home' ? 'away' : 'home';
+  const W = draw ? null : nameOf(winSide), L = draw ? null : nameOf(loseSide);
+  const margin = Math.abs(m.gA - m.gB), total = m.gA + m.gB;
+  const out = [];
+
+  // did the winners have to come from behind?
+  let h = 0, a = 0, trailed = false;
+  goals.forEach(g => { if (g.side === 'home') h++; else a++; if (!draw && (winSide === 'home' ? h < a : a < h)) trailed = true; });
+  const last = goals[goals.length - 1];
+  const lateWinner = !draw && margin === 1 && last && last.side === winSide && last.min >= 84;
+
+  if (draw && total === 0) out.push(pick([
+    `A goalless stalemate between ${nameOf('home')} and ${nameOf('away')} — two defences that simply wouldn't blink.`,
+    `Nil-nil. You won't see this one on the highlights reel, but tactically it was a proper chess match.`]));
+  else if (draw) out.push(pick([
+    `${m.gA}–${m.gB}, and honestly neither side will be happy with a point after that.`,
+    `Honours even at ${m.gA}–${m.gB} — end to end, and a fair result in the end.`]));
+  else if (margin >= 3) out.push(pick([
+    `That was a hammering. ${W} were ruthless, ${L} were nowhere — ${Math.max(m.gA, m.gB)}–${Math.min(m.gA, m.gB)} flatters nobody.`,
+    `A statement win from ${W}. ${L} will want to watch that one back through their fingers.`]));
+  else if (lateWinner) out.push(pick([
+    `Drama right at the death! ${last.player} pops up in the ${last.min}th minute to win it for ${W}.`,
+    `Just when it looked settled, ${last.player} strikes on ${last.min} minutes — ${W} snatch it late.`]));
+  else if (trailed) out.push(pick([
+    `What a response from ${W}. They went behind and came roaring back to win ${Math.max(m.gA, m.gB)}–${Math.min(m.gA, m.gB)}.`,
+    `Character, that. ${W} fell behind and turned it round — that's what good teams do.`]));
+  else if (margin === 2) out.push(pick([
+    `A comfortable day's work for ${W} — ${L} never really laid a glove on them.`,
+    `Job done for ${W}. Two goals to the good and rarely in any trouble.`]));
+  else out.push(pick([
+    `A tight one, but ${W} just about deserved it against a stubborn ${L} side.`,
+    `${W} edge it. Not always pretty, but they got the job done.`]));
+
+  // standout scorers
+  const tally = {};
+  goals.forEach(g => { tally[g.player] = (tally[g.player] || 0) + 1; });
+  const top = Object.entries(tally).sort((x, y) => y[1] - x[1])[0];
+  if (top && top[1] >= 3) out.push(`And take a bow, ${top[0]} — a hat-trick. The match ball is going home with him.`);
+  else if (top && top[1] === 2) out.push(pick([`${top[0]} with a brace — he looked sharp every time he got near the box.`,
+    `Two for ${top[0]}. When he's in this mood, defenders just can't live with him.`]));
+  else if (goals.length && !lateWinner) {
+    const g = goals[0], how = g.method === 'penalty' ? 'from the penalty spot' : g.desc.replace(/^scores,?\s*/, '');
+    out.push(`${g.player} opened the scoring on ${g.min} minutes — ${how}.`);
+  }
+
+  // was the result fair?
+  const xgW = winSide === 'home' ? m.xgA : m.xgB, xgL = winSide === 'home' ? m.xgB : m.xgA;
+  if (!draw && xgL - xgW > 0.4) out.push(`Mind you, ${L} created the better chances — a real smash-and-grab from ${W}.`);
+  else if (draw && Math.abs(m.xgA - m.xgB) > 0.6) out.push(`${m.xgA > m.xgB ? nameOf('home') : nameOf('away')} will feel they left two points out there on the chances they had.`);
+
+  if (cards.length >= 3) out.push(pick([`${cards.length} bookings — the referee's arm got a workout tonight.`, `Feisty, too: ${cards.length} yellow cards and plenty of needle.`]));
+  if (m.weather && m.weather !== 'clear') out.push({
+    rain: 'The rain made it a slippery, scrappy night — mistakes were always coming.',
+    snow: 'Credit to both sets of players for making a game of it in the snow.',
+    heavy: 'That pitch was like a ploughed field — it took a lot out of the legs.',
+    wind: 'The wind played havoc with anything in the air.' }[m.weather]);
+
+  const mo = playerRatings(A, B, m).motm;
+  out.push(`My player of the match? ${mo.name} — ${mo.goals >= 2 ? 'the goals say it all' : mo.r >= 8.5 ? 'outstanding from start to finish'
+    : mo.goals ? 'took his goal brilliantly and never stopped working' : mo.grp === 'GK' || mo.grp === 'DEF' ? 'an absolute rock at the back' : 'quietly excellent all game'}.`);
+  m.pundit = out.join(' ');
+  return m.pundit;
+}
+
+/* ------------------------------------------------------------------ *
+ * SAVED ON THIS PHONE — head-to-head records and the hall of fame.
+ * ------------------------------------------------------------------ */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+// Head-to-head: your online record against each friend, by nickname.
+function recordH2H(A, B, m) {
+  if (S.mode !== 'online' || !S.room || m.h2hDone) return null;
+  m.h2hDone = true;
+  const mine = S.room.seat === 0 ? 'home' : 'away';
+  const opp = (mine === 'home' ? B : A).label, gf = mine === 'home' ? m.gA : m.gB, ga = mine === 'home' ? m.gB : m.gA;
+  const all = store.get('sp1nxi-h2h', {});
+  const key = opp.trim().toLowerCase();
+  const r = all[key] || { name: opp, w: 0, d: 0, l: 0, gf: 0, ga: 0, best: null };
+  r.name = opp; r.gf += gf; r.ga += ga;
+  if (gf > ga) r.w++; else if (gf < ga) r.l++; else r.d++;
+  if (gf > ga && (!r.best || gf - ga > r.best.gf - r.best.ga || (gf - ga === r.best.gf - r.best.ga && gf > r.best.gf)))
+    r.best = { gf, ga, date: Date.now() };
+  all[key] = r;
+  store.set('sp1nxi-h2h', all);
+  return r;
+}
+const h2hLine = r => `${r.w}W ${r.d}D ${r.l}L${r.best ? ` · biggest win ${r.best.gf}–${r.best.ga}` : ''}`;
+
+function screenH2H() {
+  theme(null); setCrumb('Head-to-head');
+  const rows = Object.values(store.get('sp1nxi-h2h', {})).sort((a, b) => (b.w + b.d + b.l) - (a.w + a.d + a.l));
+  const v = el(`<section><h2>Head-to-head</h2>
+    <p><small>Your online results against each friend, saved on this phone.</small></p>
+    ${rows.length ? rows.map(r => `<div class="card" style="padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><b>vs ${esc(r.name)}</b>
+          <small>${r.w + r.d + r.l} played · goals ${r.gf}–${r.ga}</small></div>
+        <div style="margin-top:6px">${h2hLine(r)}</div></div>`).join('')
+      : '<div class="card"><small>No online matches yet. Start a room and play a friend.</small></div>'}
+    <button class="btn ghost" id="back">Back</button></section>`);
+  v.querySelector('#back').onclick = screenMode;
+  show(v);
+}
+
+// Hall of fame: every XI you build, with its rating and how far it went.
+const TROPHY = { 5: '🏆 Champions', 4: '🥈 Runners-up', 3: 'Semi-finals', 2: 'Quarter-finals', 1: 'Knockout rounds' };
+function hofSave(A, B, m) {
+  if (m.hofIds || S.mode === 'spectate') return;
+  m.hofIds = {};
+  const human = S.mode === 'ai' ? ['home'] : S.mode === 'online' ? [S.room && S.room.seat === 1 ? 'away' : 'home'] : ['home', 'away'];
+  const all = store.get('sp1nxi-hof', []);
+  human.forEach(side => {
+    const t = side === 'home' ? A : B, o = side === 'home' ? B : A;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    m.hofIds[side] = id;
+    all.push({ id, date: Date.now(), league: S.leagueKey, label: t.label, formation: t.formation,
+      rating: Math.round(t.strength.overall), att: Math.round(t.strength.att), mid: Math.round(t.strength.mid), def: Math.round(t.strength.def),
+      badge: { home: t.badge.home, away: t.badge.away },
+      xi: t.xi.map(s => ({ role: s.role, x: s.x, y: s.y, name: s.player.name, number: s.player.number, rating: s.player.rating })),
+      vs: o.label, gf: side === 'home' ? m.gA : m.gB, ga: side === 'home' ? m.gB : m.gA, trophy: 0 });
+  });
+  // keep it tidy: the best 40 by trophy then rating
+  all.sort((a, b) => (b.trophy - a.trophy) || (b.rating - a.rating));
+  store.set('sp1nxi-hof', all.slice(0, 40));
+}
+// After a knockout finishes, stamp how far each of your XIs went.
+function hofKnockout(A, B, st) {
+  const lm = S.lastMatch;
+  if (!lm || !lm.m || !lm.m.hofIds || st.hofDone) return;
+  st.hofDone = true;
+  const all = store.get('sp1nxi-hof', []);
+  mineInField(st).forEach(row => {
+    const side = row.name === `${B.label}'s XI` ? 'away' : 'home';
+    const e = all.find(x => x.id === lm.m.hofIds[side]);
+    if (!e) return;
+    let reached = -1;
+    st.stages.forEach((s, k) => { if (s.some(mt => mt.x === row || mt.y === row)) reached = k; });
+    const fromEnd = st.names.length - 1 - reached;   // 0 = final, 1 = semis …
+    const rank = reached < 0 ? 0 : st.champ === row ? 5 : fromEnd === 0 ? 4 : fromEnd === 1 ? 3 : fromEnd === 2 ? 2 : 1;
+    e.trophy = Math.max(e.trophy, rank);
+  });
+  store.set('sp1nxi-hof', all);
+}
+const hofScore = e => e.trophy * 100 + (e.gf - e.ga) * 3 + e.rating / 100;
+
+function screenHallOfFame() {
+  theme(null); setCrumb('Hall of fame');
+  const all = store.get('sp1nxi-hof', []);
+  const byRating = all.slice().sort((a, b) => b.rating - a.rating);
+  const best = all.slice().sort((a, b) => hofScore(b) - hofScore(a))[0];
+  const res = e => `${e.gf}–${e.ga} vs ${esc(e.vs)}${e.trophy ? ` · ${TROPHY[e.trophy]}` : ''}`;
+  const row = (e, tag) => `<div class="card hof" data-id="${e.id}" style="padding:12px 14px;cursor:pointer;display:flex;gap:12px;align-items:center">
+      <span style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.6rem;min-width:44px;text-align:center">${e.rating}</span>
+      <span style="flex:1;min-width:0">${tag ? `<small style="color:var(--orange);font-weight:700">${tag}</small><br>` : ''}
+        <b>${esc(e.label)}</b> <small>· ${esc(e.formation)} · ${esc((LEAGUES[e.league] || {}).name || '')}</small><br>
+        <small>${res(e)}</small></span></div>`;
+  const v = el(`<section><h2>Hall of fame</h2>
+    <p><small>Your XIs, saved on this phone. Tap one to see it or share it.</small></p>
+    ${all.length ? `${best ? row(best, 'BEST RESULT') : ''}${row(byRating[0], 'HIGHEST RATED')}
+      <h3 style="margin-top:16px">All squads</h3>${byRating.map(e => row(e)).join('')}`
+      : '<div class="card"><small>Build an XI and play a match — it lands here.</small></div>'}
+    <button class="btn ghost" id="back">Back</button></section>`);
+  v.querySelectorAll('.hof').forEach(n => n.onclick = () => screenHofEntry(n.dataset.id));
+  v.querySelector('#back').onclick = screenMode;
+  show(v);
+}
+
+function screenHofEntry(id) {
+  const e = store.get('sp1nxi-hof', []).find(x => x.id === id);
+  if (!e) return screenHallOfFame();
+  setCrumb('Hall of fame');
+  const v = el(`<section><h2>${esc(e.label)}</h2>
+    <p><small>${esc(e.formation)} · ${esc((LEAGUES[e.league] || {}).name || '')} · ${new Date(e.date).toLocaleDateString()}</small></p>
+    <div class="card" style="display:flex;justify-content:space-around;text-align:center">
+      <div><b style="font-size:1.6rem">${e.rating}</b><br><small>Rating</small></div>
+      <div><b style="font-size:1.6rem">${e.gf}–${e.ga}</b><br><small>vs ${esc(e.vs)}</small></div>
+      <div><b style="font-size:1.1rem">${e.trophy ? TROPHY[e.trophy] : '—'}</b><br><small>Knockouts</small></div></div>
+    <div class="card">${e.xi.map(s => `<div style="display:flex;gap:10px;padding:3px 0">
+      <b style="min-width:26px;text-align:right">${s.number ?? ''}</b><span style="flex:1">${esc(s.name)}</span>
+      <small style="opacity:.7">${s.role}</small><b>${s.rating}</b></div>`).join('')}</div>
+    <button class="btn primary" id="share">Share this XI</button>
+    <button class="btn ghost" id="del">Remove from hall of fame</button>
+    <button class="btn ghost" id="back">Back</button></section>`);
+  v.querySelector('#share').onclick = () => shareHofCard(e);
+  v.querySelector('#del').onclick = () => { store.set('sp1nxi-hof', store.get('sp1nxi-hof', []).filter(x => x.id !== id)); screenHallOfFame(); };
+  v.querySelector('#back').onclick = screenHallOfFame;
+  show(v);
+}
+
+// Share image: the XI on a pitch, rating, result and trophy.
+async function shareHofCard(e) {
+  const W = 1080, H = 1350, cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
+  ctx.fillStyle = '#F4EDE2'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = e.badge.home; ctx.fillRect(0, 0, W, 250);
+  const ink = readable(e.badge.home);
+  ctx.fillStyle = ink; ctx.textAlign = 'left';
+  ctx.font = "800 40px 'Bricolage Grotesque', sans-serif"; ctx.fillText('Sp1nXI · Hall of fame', 56, 80);
+  ctx.font = "800 64px 'Bricolage Grotesque', sans-serif"; ctx.fillText(e.label, 56, 170);
+  ctx.font = "500 28px Archivo, sans-serif";
+  ctx.fillText(`${e.formation} · ${(LEAGUES[e.league] || {}).name || ''}`, 56, 215);
+  ctx.textAlign = 'right'; ctx.font = "800 120px 'Bricolage Grotesque', sans-serif"; ctx.fillText(String(e.rating), W - 56, 190);
+  // pitch
+  const px = 90, py = 290, pw = W - 180, ph = 760;
+  ctx.fillStyle = '#2E6B3A'; rr(px, py, pw, ph, 24); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 3;
+  ctx.strokeRect(px + 20, py + 20, pw - 40, ph - 40);
+  ctx.beginPath(); ctx.moveTo(px + 20, py + ph / 2); ctx.lineTo(px + pw - 20, py + ph / 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(px + pw / 2, py + ph / 2, 80, 0, Math.PI * 2); ctx.stroke();
+  e.xi.forEach(s => {
+    const x = px + 20 + (s.x / 100) * (pw - 40), y = py + 20 + (s.y / 100) * (ph - 40);
+    ctx.fillStyle = e.badge.home; ctx.beginPath(); ctx.arc(x, y, 32, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = "800 26px Archivo, sans-serif";
+    ctx.fillText(String(s.number ?? ''), x, y + 9);
+    ctx.fillStyle = '#fff'; ctx.font = "600 22px Archivo, sans-serif";
+    const parts = s.name.split(' ');
+    const nm = s.name.length <= 12 ? s.name : parts.length > 2 && parts[parts.length - 2].length <= 3 ? parts.slice(-2).join(' ') : parts[parts.length - 1];
+    ctx.fillText(nm.length > 12 ? nm.slice(0, 11) + '…' : nm, x, y + 60);
+  });
+  // result + trophy
+  ctx.textAlign = 'center'; ctx.fillStyle = '#241F19';
+  ctx.font = "800 44px 'Bricolage Grotesque', sans-serif";
+  ctx.fillText(`${e.gf}–${e.ga} vs ${e.vs}`, W / 2, 1130);
+  ctx.font = "600 34px Archivo, sans-serif";
+  ctx.fillText(e.trophy ? TROPHY[e.trophy] : `Attack ${e.att} · Midfield ${e.mid} · Defence ${e.def}`, W / 2, 1190);
+  ctx.font = "500 24px Archivo, sans-serif"; ctx.fillStyle = '#6B6258';
+  ctx.fillText('Built with Sp1nXI', W / 2, 1300);
+  cv.toBlob(async blob => {
+    const file = new File([blob], 'sp1nxi-xi.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'My Sp1nXI' }); return; } catch (err) {} }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sp1nxi-xi.png'; a.click();
+  }, 'image/png');
+}
 
 /* QR encoder — Kazuhiko Arase's QRCode for JavaScript (MIT licence,
  * http://www.d-project.com/), bundled inline so no extra file or CDN is
@@ -3780,7 +4186,9 @@ function qrSVG(text, size = 220) {
 (function start() {
   const params = new URLSearchParams(location.search);
   const code = (params.get('join') || '').trim().toUpperCase();
+  const watch = (params.get('watch') || '').trim().toUpperCase();
   screenMode();
+  if (watch) { try { history.replaceState(null, '', location.pathname); } catch (e) {} return screenSpectate(watch); }
   if (code) {
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     toast(`Joining room ${code}…`);
