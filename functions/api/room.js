@@ -26,7 +26,9 @@ function d1Store(db) {
   const ensure = async () => {
     if (tableReady) return;
     await db.prepare(`CREATE TABLE IF NOT EXISTS rooms (
-      code TEXT PRIMARY KEY, league TEXT, players INTEGER, s0 TEXT, s1 TEXT, kickoff INTEGER, created INTEGER)`).run();
+      code TEXT PRIMARY KEY, league TEXT, players INTEGER, s0 TEXT, s1 TEXT, kickoff INTEGER, created INTEGER, p0 TEXT, p1 TEXT)`).run();
+    // tables made by the previous version lack the draft-progress columns
+    for (const col of ['p0', 'p1']) { try { await db.prepare(`ALTER TABLE rooms ADD COLUMN ${col} TEXT`).run(); } catch (e) { /* already there */ } }
     tableReady = true;
   };
   return {
@@ -34,7 +36,7 @@ function d1Store(db) {
       await ensure();
       const r = await db.prepare('SELECT * FROM rooms WHERE code = ?').bind(code).first();
       if (!r) return null;
-      return { league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], kickoff: r.kickoff || null, created: r.created };
+      return { league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], progress: [parse(r.p0), parse(r.p1)], kickoff: r.kickoff || null, created: r.created };
     },
     async create(code, league) {
       await ensure();
@@ -44,6 +46,7 @@ function d1Store(db) {
     join: code => db.prepare('UPDATE rooms SET players = 2 WHERE code = ?').bind(code).run(),
     setLeague: (code, league) => db.prepare('UPDATE rooms SET league = ? WHERE code = ?').bind(league, code).run(),
     setSquad: (code, seat, squad) => db.prepare(`UPDATE rooms SET s${seat} = ? WHERE code = ?`).bind(JSON.stringify(squad), code).run(),
+    setProgress: (code, seat, squad) => db.prepare(`UPDATE rooms SET p${seat} = ? WHERE code = ?`).bind(JSON.stringify(squad), code).run(),
     // only the first caller's time sticks, so both phones get the same one
     setKickoff: (code, t) => db.prepare('UPDATE rooms SET kickoff = ? WHERE code = ? AND kickoff IS NULL').bind(t, code).run()
   };
@@ -57,15 +60,16 @@ function kvStore(kv) {
     async read(code) {
       const meta = await get('room:' + code);
       if (!meta) return null;
-      const [s0, s1] = await Promise.all([get(`room:${code}:s0`), get(`room:${code}:s1`)]);
+      const [s0, s1, p0, p1] = await Promise.all(['s0', 's1', 'p0', 'p1'].map(k => get(`room:${code}:${k}`)));
       // older rooms kept squads inside the main record
       const old = meta.squads || [null, null];
-      return { league: meta.league, players: meta.players, squads: [s0 || old[0], s1 || old[1]], kickoff: meta.kickoff || null, created: meta.created };
+      return { league: meta.league, players: meta.players, squads: [s0 || old[0], s1 || old[1]], progress: [p0, p1], kickoff: meta.kickoff || null, created: meta.created };
     },
     create: (code, league) => put('room:' + code, { league, players: 1, created: Date.now() }),
     async join(code) { const m = await get('room:' + code); if (m && m.players < 2) { m.players = 2; await put('room:' + code, m); } },
     async setLeague(code, league) { const m = await get('room:' + code); if (m) { m.league = league; await put('room:' + code, m); } },
     setSquad: (code, seat, squad) => put(`room:${code}:s${seat}`, squad),
+    setProgress: (code, seat, squad) => put(`room:${code}:p${seat}`, squad),
     async setKickoff(code, t) { const m = await get('room:' + code); if (m && !m.kickoff) { m.kickoff = t; await put('room:' + code, m); } }
   };
 }
@@ -96,7 +100,16 @@ async function handle({ request, env }) {
   if (!state) return json({ ok: false, error: 'not-found' }, 404);
 
   if (action === 'state') return json({ ok: true, state });
-  if (action === 'join') { if (state.players < 2) await store.join(code); return json({ ok: true, state: await store.read(code) }); }
+  // A third person in (e.g. scanning the room QR late) becomes a spectator.
+  if (action === 'join') {
+    if (state.players >= 2) return json({ ok: true, full: true, state });
+    await store.join(code);
+    return json({ ok: true, state: await store.read(code) });
+  }
+  if (action === 'progress') {
+    await store.setProgress(code, body.seat === 1 ? 1 : 0, body.squad);
+    return json({ ok: true });
+  }
   if (action === 'league') { await store.setLeague(code, body.league); return json({ ok: true, state: await store.read(code) }); }
 
   if (action === 'submit') {
