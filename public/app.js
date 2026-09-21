@@ -527,6 +527,20 @@ const WC_GROUPS = {
   Portugal: 'K', Colombia: 'K',
   England: 'L', Croatia: 'L'
 };
+const WC_GROUP_FILLERS = {
+  A: [{name:'Poland', strength:73}, {name:'Ecuador', strength:71}],
+  B: [{name:'Australia', strength:72}, {name:'Austria', strength:74}],
+  C: [{name:'Chile', strength:72}, {name:'Serbia', strength:74}],
+  D: [{name:'Paraguay', strength:70}, {name:'Iran', strength:71}],
+  E: [{name:'Turkey', strength:73}, {name:'Romania', strength:70}],
+  F: [{name:'Ivory Coast', strength:72}, {name:'Iraq', strength:68}],
+  G: [{name:'Morocco', strength:76}, {name:'Scotland', strength:72}],
+  H: [{name:'Colombia', strength:76}, {name:'Panama', strength:69}],
+  I: [{name:'Algeria', strength:72}, {name:'Egypt', strength:71}],
+  J: [{name:'Ecuador', strength:71}, {name:'Bolivia', strength:68}],
+  K: [{name:'Mexico', strength:74}, {name:'Canada', strength:76}],
+  L: [{name:'USA', strength:76}, {name:'Switzerland', strength:75}]
+};
 // Which real nation an XI "represents" — whichever nation contributed the
 // most players to it, since a built XI is a cross-nation squad, not one
 // team, but still needs a group to be shown against.
@@ -1107,10 +1121,16 @@ const PITCH_HALF_MARKINGS = `<div class="markings">
 // match. engagement runs 4 (deep in the isTop side's own box) to 96
 // (deep in the non-isTop side's own box), same scale as pitch Y.
 function formationY(slot, isTop, engagement) {
-  const roleAdvance = (90 - slot.y) / (90 - 17); // 0 = GK, 1 = most advanced, for this player's own team
+  const roleAdvance = (90 - slot.y) / (90 - 17); // 0 = GK, 1 = most advanced
+  // GK barely moves — pinned to within 8% of their own goal line regardless
+  // of where the engagement line is. Everyone else spreads out around it.
+  if (roleAdvance < 0.08) {
+    const goalLine = isTop ? 6 : 94;
+    return Math.max(3, Math.min(97, goalLine + (isTop ? 1 : -1) * (Math.random() * 3)));
+  }
   const dir = isTop ? 1 : -1;
-  const span = 30; // how far the XI spreads out from the engagement line
-  return Math.max(4, Math.min(96, engagement + dir * (roleAdvance - 0.5) * span * 2));
+  const span = 24; // tighter spread — reduces clustering at extremes
+  return Math.max(6, Math.min(94, engagement + dir * (roleAdvance - 0.5) * span * 2));
 }
 
 async function screenMatchSim(A, B, m) {
@@ -1212,11 +1232,13 @@ async function screenMatchSim(A, B, m) {
       const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
       const dx = ballAtX - bx, dy = ballAtY - by;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const strength = side === ballSide ? 15 : 9;
-      const pull = Math.max(0, 1 - dist / 48) * strength;
-      const jitter = 3.6;
-      const tx = bx + blockShiftX + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
-      const ty = by + (dy / dist) * pull * 0.7 + (Math.random() * jitter - jitter / 2);
+      const strength = side === ballSide ? 6 : 3.5;
+      const pull = Math.max(0, 1 - dist / 60) * strength;
+      const jitter = 1.8;
+      const rawTx = bx + blockShiftX + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
+      const rawTy = by + (dy / dist) * pull * 0.7 + (Math.random() * jitter - jitter / 2);
+      const tx = Math.max(bx - 8, Math.min(bx + 8, rawTx));
+      const ty = Math.max(by - 6, Math.min(by + 6, rawTy));
       dot.style.transitionDuration = (1.1 + Math.random() * 0.8) + 's';
       dot.style.left = Math.max(4, Math.min(96, tx)) + '%';
       dot.style.top = Math.max(3, Math.min(97, ty)) + '%';
@@ -1494,7 +1516,7 @@ const esc_ = s => String(s); // canvas text needs no HTML escaping
 
 function screenResult(A, B, m) {
   stopPoll();
-  S.lastMatch = { A, B, m, bracket: null };
+  S.lastMatch = { A, B, m, bracket: null, autoShown: false };
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
@@ -1544,15 +1566,31 @@ function screenResult(A, B, m) {
     <button class="btn ghost" id="share">Share this result</button>
     <button class="btn ghost" id="again">Play again</button>
   </section>`);
-  v.querySelector('#totable').onclick = () => { clearTimeout(autoT); screenTable(A, B); };
+  v.querySelector('#totable').onclick = () => { clearTimeout(autoT); S.lastMatch.autoShown = true; slideToTable(A, B, v); };
   v.querySelector('#xi').onclick = () => { clearTimeout(autoT); screenLineups(A, B); };
   v.querySelector('#share').onclick = () => { clearTimeout(autoT); shareResultCard(A, B, m); };
   v.querySelector('#again').onclick = () => { clearTimeout(autoT); S.players = []; S.turn = 0; S.room = null; screenMode(); };
   show(v);
-  // The table follows on its own after a few seconds of looking at the
-  // score — tapping any button above cancels this so it never yanks the
-  // screen away mid-read.
-  const autoT = setTimeout(() => screenTable(A, B), 7000);
+  // One-time auto-advance only — navigating back to the scoresheet
+  // after visiting the table never re-triggers it.
+  let autoT = null;
+  if (!S.lastMatch.autoShown) {
+    autoT = setTimeout(() => {
+      if (!S.lastMatch.autoShown) {
+        S.lastMatch.autoShown = true;
+        slideToTable(A, B, v);
+      }
+    }, 7000);
+  }
+}
+
+function slideToTable(A, B, fromEl) {
+  if (fromEl) {
+    fromEl.style.transition = 'opacity .35s ease, transform .35s ease';
+    fromEl.style.opacity = '0';
+    fromEl.style.transform = 'translateY(-18px)';
+  }
+  setTimeout(() => screenTable(A, B), fromEl ? 340 : 0);
 }
 
 /* --- the predicted table: a separate screen, rows reveal in turn --- */
@@ -1569,55 +1607,112 @@ function knockoutOutcome(sa, sb) {
 
 async function screenKnockout(A, B, tableRows) {
   setCrumb('Knockout stage');
+  if (S.lastMatch && S.lastMatch.bracket) return renderKnockout(A, B, S.lastMatch.bracket);
 
-  // Return cached bracket so navigating away and back is consistent.
-  if (S.lastMatch && S.lastMatch.bracket) {
-    return renderKnockout(A, B, S.lastMatch.bracket);
-  }
-
-  // Real UCL structure (2024/25 onwards, 36-team league phase):
-  //   1–8  → directly to Round of 16
-  //   9–24 → knockout playoff round (8 two-legged ties), winners advance
-  //  25–36 → eliminated
   const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
-  const top8     = sorted.slice(0,  8).map((r,i) => ({ ...r, leaguePos: i+1 }));
-  const playoff  = sorted.slice(8, 24).map((r,i) => ({ ...r, leaguePos: i+9 }));
-  const missed   = sorted.slice(24).filter(r => r.mine);
+  const isUCL = S.leagueKey === 'UCL';
+  let data;
 
-  // Knockout playoff: 9v24, 10v23, 11v22 … 16v17
-  // (lower seed = better: 9th hosts 24th etc. — seeded so top-8 clubs
-  //  avoid each other again in the R16)
-  const playoffMatches = [];
-  for (let i = 0; i < 8; i++) {
-    const x = playoff[i], y = playoff[15 - i];
-    playoffMatches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
-  }
-  const playoffWinners = playoffMatches.map(m => m.winner);
-
-  // Round of 16: 8 direct qualifiers vs 8 playoff winners
-  // Standard seeding: 1v(worst playoff winner), 2v... etc.
-  playoffWinners.sort((a, b) => a.strength - b.strength); // worst first
-  const r16field = [];
-  for (let i = 0; i < 8; i++) r16field.push(top8[i], playoffWinners[i]);
-
-  // R16 → QF → SF → Final
-  const mainRounds = [];
-  let current = r16field;
-  for (const _ of ['Round of 16','Quarter-finals','Semi-finals','Final']) {
-    const matches = [];
-    for (let i = 0; i < current.length; i += 2) {
-      const x = current[i], y = current[i+1];
-      matches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
+  if (isUCL) {
+    const top8    = sorted.slice(0,  8);
+    const playoff = sorted.slice(8, 24);
+    const missed  = sorted.slice(24).filter(r => r.mine);
+    const playoffMatches = [];
+    for (let i = 0; i < 8; i++) {
+      const x = playoff[i], y = playoff[15 - i];
+      playoffMatches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
     }
-    mainRounds.push(matches);
-    current = matches.map(m => m.winner);
+    const pw = playoffMatches.map(m => m.winner).sort((a, b) => a.strength - b.strength);
+    const r16 = [];
+    for (let i = 0; i < 8; i++) r16.push(top8[i], pw[i]);
+    const mainRounds = [];
+    let cur = r16;
+    for (const _ of ['Round of 16','Quarter-finals','Semi-finals','Final']) {
+      const ms = [];
+      for (let i = 0; i < cur.length; i += 2) {
+        const x = cur[i], y = cur[i+1];
+        ms.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
+      }
+      mainRounds.push(ms); cur = ms.map(m => m.winner);
+    }
+    data = { isUCL: true, top8, playoffMatches, mainRounds, champ: cur[0], missed };
+  } else {
+    const field  = sorted.slice(0, 16);
+    const missed = sorted.slice(16).filter(r => r.mine);
+    const SEEDS  = [0,15,7,8,3,12,4,11,1,14,6,9,2,13,5,10];
+    const seeded = SEEDS.map(i => field[i] || field[field.length-1]);
+    const rnames = S.leagueKey === 'WC'
+      ? ['Round of 32','Quarter-finals','Semi-finals','Final']
+      : ['Round of 16','Quarter-finals','Semi-finals','Final'];
+    const rounds = [];
+    let cur = seeded;
+    for (const _ of rnames) {
+      const ms = [];
+      for (let i = 0; i < cur.length; i += 2) {
+        const x = cur[i], y = cur[i+1];
+        ms.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
+      }
+      rounds.push(ms); cur = ms.map(m => m.winner);
+    }
+    data = { isUCL: false, rounds, rnames, champ: cur[0], missed };
   }
-  const champ = current[0];
 
-  const data = { top8, playoffMatches, playoffWinners, mainRounds, champ, missed };
   if (S.lastMatch) S.lastMatch.bracket = data;
   return renderKnockout(A, B, data);
 }
+
+async function renderKnockout(A, B, data) {
+  const { champ, missed, isUCL } = data;
+  const winnerLabel = S.leagueKey === 'WC' ? 'World Champions' : 'Champions';
+
+  if (isUCL) {
+    const { top8, playoffMatches, mainRounds } = data;
+    const myInPlayoff = playoffMatches.some(m => m.x.mine || m.y.mine);
+    const myInTop8 = top8.some(r => r.mine);
+    const v = el(`<section>
+      <h2>Knockout stage</h2>
+      ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} finished 25th or lower — eliminated at the league phase.</small></p>`).join('')}
+      ${myInPlayoff ? '<p><small>🔶 Your XI is in the playoff round — win to reach the Round of 16.</small></p>' : ''}
+      ${myInTop8 ? '<p><small>✅ Your XI qualified directly for the Round of 16.</small></p>' : ''}
+      <h3 style="margin-top:14px">Knockout playoff round</h3>
+      <p><small>9th–24th · 9 v 24, 10 v 23 … 16 v 17</small></p>
+      <div id="playoff-wrap"></div>
+      <h3 style="margin-top:18px">Round of 16 onwards</h3>
+      <p><small>Top 8 direct + 8 playoff winners</small></p>
+      <div id="main-wrap"></div>
+      <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
+        <h3>${winnerLabel}</h3>
+        <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
+      </div>
+      <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
+    </section>`);
+    v.querySelector('#back').onclick = () => screenTable(A, B);
+    show(v);
+    const pb = await drawBracket([playoffMatches]);
+    v.querySelector('#playoff-wrap').appendChild(pb.wrap); await pb.reveal();
+    const mb = await drawBracket(mainRounds);
+    v.querySelector('#main-wrap').appendChild(mb.wrap); await mb.reveal();
+    v.querySelector('#champCard').style.opacity = 1;
+  } else {
+    const { rounds, rnames } = data;
+    const v = el(`<section>
+      <h2>Knockout stage</h2>
+      ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} didn't qualify for the knockout round.</small></p>`).join('')}
+      <div id="bkt-wrap"></div>
+      <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
+        <h3>${winnerLabel}</h3>
+        <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
+      </div>
+      <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
+    </section>`);
+    v.querySelector('#back').onclick = () => screenTable(A, B);
+    show(v);
+    const bkt = await drawBracket(rounds);
+    v.querySelector('#bkt-wrap').appendChild(bkt.wrap); await bkt.reveal();
+    v.querySelector('#champCard').style.opacity = 1;
+  }
+}
+
 
 // Shared helper — renders a set of bracket rounds into a scrollable
 // visual bracket with SVG connector lines.
@@ -1813,16 +1908,17 @@ async function screenGroupTable(A, B) {
 
   const needed = gA === gB ? [gA] : [gA, gB];
   for (const letter of needed) {
-    const members = rows.filter(r => r.group === letter).sort((a, b) => b.strength - a.strength);
-    const card = el(`<div class="card"><h3>Group ${letter}</h3>
-      <table class="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table>
-    </div>`);
+    const curated = rows.filter(r => r.group === letter).sort((a, b) => b.strength - a.strength);
+    const fillers = (WC_GROUP_FILLERS[letter] || []).slice(0, Math.max(0, 4 - curated.length))
+      .map(f => ({ ...f, pts: Math.round(f.strength * 0.18 - 9) }));
+    const members = [...curated, ...fillers].sort((a, b) => b.strength - a.strength);
+    const card = el('<div class="card"><h3>Group ' + letter + '</h3><table class="tbl"><tr><th>#</th><th>Squad</th><th>Rating</th><th>Pts</th></tr></table></div>');
     groupsEl.appendChild(card);
     const t = card.querySelector('table');
     members.forEach((r, i) => {
       const tr = document.createElement('tr');
       if (r.mine) tr.className = 'me';
-      [i + 1, r.name, r.strength, r.pts].forEach((val, ci) => {
+      [i + 1, r.name, r.strength, r.pts || 0].forEach((val, ci) => {
         const td = document.createElement('td');
         td.textContent = String(val);
         if (ci === 0 && i < 2) { td.style.borderLeft = '4px solid #22C55E'; td.style.paddingLeft = '8px'; }
