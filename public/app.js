@@ -656,6 +656,25 @@ function screenTutorial() {
   show(v);
 }
 
+// Ask the player for a nickname before they start building — stored
+// locally and included in the squad payload so the opponent sees it.
+function screenNickname(label, onDone) {
+  const v = el(`<section>
+    <h2>What's your name?</h2>
+    <p>Your opponent will see this next to your team.</p>
+    <input id="nick" maxlength="20" placeholder="${esc(label)}"
+      style="width:100%;padding:14px;font-size:1.3rem;text-align:center;
+      border-radius:12px;border:1px solid var(--line);background:#fff;
+      font-family:'Bricolage Grotesque';font-weight:700">
+    <button class="btn primary" id="go">Let's go</button>
+  </section>`);
+  const inp = v.querySelector('#nick');
+  const proceed = () => { onDone(inp.value.trim() || label); };
+  v.querySelector('#go').onclick = proceed;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') proceed(); });
+  show(v);
+}
+
 function screenJoin() {
   const v = el(`<section>
     <h2>Join a room</h2>
@@ -714,14 +733,20 @@ function screenLeague() {
 function screenRoomCode() {
   const v = el(`<section>
     <h2>Room open</h2>
-    <p>Send this code to your opponent. The game starts as soon as they join.</p>
+    <p>Send this code to your opponent. Both of you will build at the same time.</p>
     <div class="card"><div class="code">${S.room.code}</div></div>
     <button class="btn ghost" id="copy">Copy code</button>
-    <p><small>Waiting for a second player…</small></p>
+    <p id="roomstatus"><small>Waiting for your opponent to join…</small></p>
   </section>`);
   v.querySelector('#copy').onclick = () => { navigator.clipboard?.writeText(S.room.code); toast('Code copied'); };
   show(v);
-  poll(st => { if (st.players >= 2) { stopPoll(); startTurns(); } });
+  poll(st => {
+    if (st.players >= 2) {
+      stopPoll();
+      v.querySelector('#roomstatus').innerHTML = '<small>Opponent joined — building now!</small>';
+      setTimeout(() => startTurns(), 600);
+    }
+  });
 }
 
 function screenWait(msg, onState) {
@@ -733,13 +758,25 @@ function screenWait(msg, onState) {
 /* --- turn orchestration ------------------------------------------- */
 function startTurns() {
   stopPoll();
-  if (!S.players.length) {
-    if (S.mode === 'ai') S.players = [mkPlayer('You'), mkPlayer('The AI', true)];
-    else if (S.mode === 'pass') S.players = [mkPlayer('Player 1'), mkPlayer('Player 2')];
-    else S.players = [mkPlayer(S.room.seat === 0 ? 'You' : 'Host'), mkPlayer(S.room.seat === 0 ? 'Opponent' : 'You')];
-    S.turn = S.mode === 'online' ? S.room.seat : 0;
+  if (S.mode === 'ai') {
+    if (!S.players.length) S.players = [mkPlayer('You'), mkPlayer('The AI', true)];
+    S.turn = 0;
+    return screenFormationSpin();
   }
-  screenFormationSpin();
+  if (S.mode === 'pass') {
+    if (!S.players.length) S.players = [mkPlayer('Player 1'), mkPlayer('Player 2')];
+    S.turn = 0;
+    return screenFormationSpin();
+  }
+  // Online: both players build at the same time and independently.
+  // S.players[0] is always seat-0 (host), S.players[1] always seat-1.
+  // S.turn = our own seat so that me() always points to ourselves.
+  if (!S.players.length) {
+    S.players = [mkPlayer('Host'), mkPlayer('Challenger')];
+  }
+  S.turn = S.room.seat;
+  const myDefault = S.room.seat === 0 ? 'Host' : 'Challenger';
+  screenNickname(myDefault, name => { me().label = name; screenFormationSpin(); });
 }
 const mkPlayer = (label, ai=false) => ({ label, ai, formation:null, club:null, squad:null, xi:null, strength:null });
 
@@ -1168,27 +1205,32 @@ async function screenMatchSim(A, B, m) {
     const blockShiftX = (ballAtX - 50) * 0.14;
     Object.entries(dotEls).forEach(([side, team]) => Object.entries(team).forEach(([name, dot]) => {
       if (side + '|' + name === scriptedKey) return;
+      // Staggered, not synchronized — each dot only has a chance of
+      // actually moving on any given tick, so 22 players don't all shift
+      // in the same instant like one robotic pulse.
+      if (Math.random() < 0.35) return;
       const bx = parseFloat(dot.dataset.bx), by = parseFloat(dot.dataset.by);
       const dx = ballAtX - bx, dy = ballAtY - by;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
       const strength = side === ballSide ? 15 : 9;
       const pull = Math.max(0, 1 - dist / 48) * strength;
-      const jitter = 2.5;
+      const jitter = 3.6;
       const tx = bx + blockShiftX + (dx / dist) * pull + (Math.random() * jitter * 2 - jitter);
       const ty = by + (dy / dist) * pull * 0.7 + (Math.random() * jitter - jitter / 2);
+      dot.style.transitionDuration = (1.1 + Math.random() * 0.8) + 's';
       dot.style.left = Math.max(4, Math.min(96, tx)) + '%';
       dot.style.top = Math.max(3, Math.min(97, ty)) + '%';
     }));
   }
-  const wobbleT = setInterval(applyDrift, 850);
+  const wobbleT = setInterval(applyDrift, 950);
 
-  // A real 90 minutes compressed to ~30 seconds, played as a fixed number
-  // of short "chains" — a passing move ending in a shot, a tackle, or
-  // nothing much — rather than jumping straight to each scripted event.
-  // Real goals/cards get woven into the chain nearest their minute so the
-  // motion never just teleports to them.
+  // A real 90 minutes compressed to a bit under a minute, played as a
+  // fixed number of short "chains" — a passing move ending in a shot, a
+  // tackle, or nothing much — rather than jumping straight to each
+  // scripted event. Real goals/cards get woven into the chain nearest
+  // their minute so the motion never just teleports to them.
   const events = m.events.slice().sort((a, b) => a.min - b.min);
-  const totalMin = 90, CHAINS = 18;
+  const totalMin = 90, CHAINS = 14;
   const used = new Set();
   const jitterX = x => Math.max(6, Math.min(94, x + (Math.random() * 16 - 8)));
   const pickDot = side => { const xi = teams[side].team.xi; return xi[Math.floor(Math.random() * xi.length)]; };
@@ -1196,14 +1238,24 @@ async function screenMatchSim(A, B, m) {
 
   async function hop(x, y, caption, holdMs, mover) {
     if (skipped) return;
-    ball.style.left = x + '%'; ball.style.top = y + '%';
-    ballAtX = x; ballAtY = y;
+    // A little random wander on every move rather than a dead-straight
+    // glide to the exact same spot every time — small enough it never
+    // looks like a mistake, big enough to break the mechanical feel.
+    const wx = Math.max(3, Math.min(97, x + (Math.random() * 6 - 3)));
+    const wy = Math.max(3, Math.min(97, y + (Math.random() * 6 - 3)));
+    const dur = (1.15 + Math.random() * 0.5) + 's';
+    ball.style.transitionDuration = dur;
+    ball.style.left = wx + '%'; ball.style.top = wy + '%';
+    ballAtX = wx; ballAtY = wy;
     if (mover) { ballSide = mover.side; scriptedKey = mover.side + '|' + mover.name; }
     else scriptedKey = null;
-    if (mover) { const dot = dotEls[mover.side][mover.name]; if (dot) { dot.style.left = x + '%'; dot.style.top = y + '%'; } }
-    applyDrift(); // teammates start shifting the instant the ball moves, not up to 850ms later
-    await sleep(820);
-    await sleep(90 + Math.random() * 110); // a beat on arrival — a touch, a look up — before the next move
+    if (mover) {
+      const dot = dotEls[mover.side][mover.name];
+      if (dot) { dot.style.transitionDuration = dur; dot.style.left = wx + '%'; dot.style.top = wy + '%'; }
+    }
+    applyDrift(); // teammates start shifting the instant the ball moves, not up to 950ms later
+    await sleep(1150);
+    await sleep(120 + Math.random() * 160); // a beat on arrival — a touch, a look up — before the next move
     if (caption) { commentary.innerHTML = caption; await sleep(holdMs || 650); }
   }
 
@@ -1815,25 +1867,60 @@ function poll(cb) {
   S.poll = setInterval(async () => {
     const r = await api({ action:'state', code:S.room.code });
     if (r && r.ok) cb(r.state);
-  }, 2000);
+  }, 1000);
 }
 function stopPoll() { if (S.poll) clearInterval(S.poll); S.poll = null; }
 
 async function publishSquad() {
   const p = me();
-  const payload = { label:p.label, formation:p.formation, badge:p.badge, strength:p.strength,
+  const payload = {
+    label: p.label, formation: p.formation,
+    badge: { home: p.badge.home, away: p.badge.away, name: p.badge.name },
+    strength: p.strength,
     xi: p.xi.map(s => ({ role:s.role, x:s.x, y:s.y, player:{
       name:s.player.name, number:s.player.number, rating:s.player.rating,
-      club:{ name:s.player.club.name, home:s.player.club.home, away:s.player.club.away } } })) };
-  await api({ action:'submit', code:S.room.code, seat:S.room.seat, squad:payload });
-  screenWait('Squad sent. Waiting for your opponent to finish theirs.', st => {
-    const other = st.squads[S.room.seat === 0 ? 1 : 0];
-    if (!other) return;
+      club:{ name:s.player.club.name, home:s.player.club.home, away:s.player.club.away } } }))
+  };
+
+  // Show the waiting screen — no internal poll inside screenWait here,
+  // we manage one clean poll ourselves below so they can't fight.
+  show(el(`<section><h2>Squad locked in</h2>
+    <p>Waiting for your opponent to finish building their XI…</p>
+    <div class="bar"><i style="width:40%"></i></div></section>`));
+
+  const submitRes = await api({ action:'submit', code:S.room.code, seat:S.room.seat, squad:payload });
+  if (!submitRes || !submitRes.ok) { toast('Submit failed — check your connection.'); return; }
+
+  function tryAdvance(st) {
+    if (!st || !st.squads) return false;
+    const otherSeat = S.room.seat === 0 ? 1 : 0;
+    const other = st.squads[otherSeat];
+    if (!other || !other.xi || !other.xi.length) return false;
     stopPoll();
-    const opp = S.players[S.room.seat === 0 ? 1 : 0];
-    Object.assign(opp, other);
+    const opp = S.players[otherSeat];
+    opp.label     = other.label     || opp.label;
+    opp.formation = other.formation;
+    opp.badge     = other.badge     || { home:'#888', away:'#fff', name:'' };
+    opp.strength  = other.strength;
+    opp.xi        = other.xi.map(s => ({
+      ...s, player: { ...s.player,
+        club: s.player.club || { name:'', home:'#888', away:'#fff' }
+      }
+    }));
+    // Always match: seat-0 as home (players[0]) vs seat-1 as away (players[1])
     startMatch(S.players[0], S.players[1]);
-  });
+    return true;
+  }
+
+  // If the opponent already submitted before we did, their squad is
+  // already in the response — no need to poll at all.
+  if (tryAdvance(submitRes.state)) return;
+
+  // Otherwise poll every 1.5s until their squad arrives.
+  S.poll = setInterval(async () => {
+    const r = await api({ action:'state', code:S.room.code });
+    if (r && r.ok) tryAdvance(r.state);
+  }, 1500);
 }
 
 /* ------------------------------------------------------------------ */
