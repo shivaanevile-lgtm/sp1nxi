@@ -41,6 +41,17 @@ const LEAGUES = {
   WC: { id: 1, name: 'World Cup', country: 'World', tint: '#0B3D2E', clubs: [
     ['Argentina','#75AADB','#FFFFFF',1],['France','#002654','#ED2939',1],['Brazil','#FFDF00','#009C3B',1],['England','#FFFFFF','#CF081F',1],['Spain','#C60B1E','#FFC400',1],['Portugal','#FF0000','#006600',1],['Germany','#000000','#DD0000',1],['Netherlands','#FF6600','#154D8A',1],['Belgium','#000000','#FDDA24',2],['Croatia','#FF0000','#FFFFFF',2],['Uruguay','#5FA8D3','#FFFFFF',2],['Morocco','#C1272D','#006233',2],['Colombia','#FCD116','#003893',2],['Japan','#000080','#FFFFFF',2],['USA','#B22234','#3C3B6E',2],['Mexico','#006847','#CE1126',2],['Switzerland','#FF0000','#FFFFFF',3],['Senegal','#00853F','#FDEF42',3],['Canada','#FF0000','#FFFFFF',3],['South Korea','#CD2E3A','#0047A0',3]
   ] },
+  // All-time great sides — real squads, real shirt numbers, from that season.
+  LEG: { id: 0, name: 'Legends', country: 'All-time greats', tint: '#B8892B', clubs: [
+    ['Barcelona 2010–11','#A50044','#004D98',1],['Brazil 2002','#FFDF00','#009C3B',1],
+    ['Man United 1998–99','#DA291C','#000000',1],['Arsenal 2003–04','#EF0107','#023474',1],
+    ['Real Madrid 2016–17','#FFFFFF','#00529F',1],['Spain 2010','#C60B1E','#FFC400',1],
+    ['Germany 2014','#FFFFFF','#000000',1],['France 1998','#002654','#ED2939',1],
+    ['Italy 2006','#0066CC','#FFFFFF',1],['Bayern 2012–13','#DC052D','#0066B2',1],
+    ['Chelsea 2004–05','#034694','#FFFFFF',1],['Liverpool 2019–20','#C8102E','#00B2A9',1],
+    ['Man City 2017–18','#6CABDD','#1C2C5B',1],['Inter 2009–10','#0068A8','#000000',1],
+    ['AC Milan 2006–07','#FB090B','#000000',1]
+  ] },
 };
 
 // Kit colours for clubs that can show up via live data (promotions,
@@ -302,7 +313,7 @@ function demoSquad(clubName, tier) {
 // Curated real rosters — hand-set ratings, no API, no stats crunching.
 // Only leagues listed here have a file; others fall through to the
 // KV/API path and finally to the demo generator.
-const CURATED_LEAGUES = { PL: '/data/pl.json', UCL: '/data/ucl.json', WC: '/data/wc.json' };
+const CURATED_LEAGUES = { PL: '/data/pl.json', UCL: '/data/ucl.json', WC: '/data/wc.json', LEG: '/data/leg.json' };
 const curatedCache = new Map();
 async function loadCurated(leagueKey) {
   if (!CURATED_LEAGUES[leagueKey]) return null;
@@ -499,7 +510,7 @@ async function predictTable(leagueKey, squads) {
   // UCL's league phase is 8 games per club, not a full 38-game season —
   // points need to scale to whichever the actual competition plays, or a
   // UCL table would show Premier-League-sized numbers for an 8-game phase.
-  const games = leagueKey === 'UCL' ? 8 : leagueKey === 'WC' ? 3 : 38;
+  const games = leagueKey === 'UCL' ? 8 : leagueKey === 'WC' ? 3 : leagueKey === 'LEG' ? 16 : 38;
   const ppgMin = 0.4, ppgMax = leagueKey === 'WC' ? 3.0 : 2.5; // WC: 3 games, so max is a clean 9 points
   rows.forEach((r, i) => {
     const t = (r.strength - bot) / Math.max(top - bot, 0.01);
@@ -596,7 +607,7 @@ function screenMode() {
   theme(null); setCrumb(''); setLeagueTheme(null);
   const v = el(`<section>
     <h1>Spin it. Build it. Play it.</h1>
-    <p>Premier League, Champions League night, or the World Cup. Spin a formation, then spin your way through eleven shirts — five rerolls for the whole XI — then watch the match.</p>
+    <p>Premier League, Champions League night, the World Cup, or the all-time Legends. Spin a formation, then spin your way through eleven shirts — five rerolls for the whole XI — then watch the match.</p>
     <button class="btn primary" data-m="ai">Play the AI<span class="sub">Instant opponent, builds its own XI</span></button>
     <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
     <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
@@ -702,8 +713,13 @@ function screenJoin() {
     <button class="btn ghost" id="back">Back</button>
   </section>`);
   v.querySelector('#back').onclick = screenMode;
-  v.querySelector('#go').onclick = async () => {
-    const code = v.querySelector('#code').value.trim().toUpperCase();
+  v.querySelector('#go').onclick = () => joinRoom(v.querySelector('#code').value.trim().toUpperCase());
+  show(v);
+}
+
+// Join a room by code — from the join screen, or straight from a scanned
+// QR code / invite link (?join=CODE).
+async function joinRoom(code) {
     if (code.length !== 4) return toast('Codes are four letters.');
     const r = await api({ action:'join', code });
     if (!r || !r.ok) return toast('No room with that code.');
@@ -713,8 +729,6 @@ function screenJoin() {
         if (st.league) { S.leagueKey = st.league; setLeagueTheme(st.league); S.leagueClubs = await getLeagueClubs(st.league); startTurns(); } }); }
     S.leagueClubs = await getLeagueClubs(S.leagueKey);
     startTurns();
-  };
-  show(v);
 }
 
 function screenLeague() {
@@ -746,15 +760,29 @@ function screenLeague() {
   show(v);
 }
 
+// A link that drops whoever opens it straight into this room.
+const joinLink = code => `${location.origin}${location.pathname}?join=${code}`;
+
 function screenRoomCode() {
+  const link = joinLink(S.room.code);
   const v = el(`<section>
     <h2>Room open</h2>
-    <p>Send this code to your opponent. Both of you will build at the same time.</p>
-    <div class="card"><div class="code">${S.room.code}</div></div>
+    <p>Get your opponent to scan this with their phone camera, or send them the code. Both of you build at the same time.</p>
+    <div class="card" style="text-align:center">
+      ${qrSVG(link, 220)}
+      <p style="margin:10px 0 4px"><small>Scan to join</small></p>
+      <div class="code">${S.room.code}</div>
+    </div>
+    <button class="btn primary" id="share">Share invite link</button>
     <button class="btn ghost" id="copy">Copy code</button>
     <p id="roomstatus"><small>Waiting for your opponent to join…</small></p>
   </section>`);
   v.querySelector('#copy').onclick = () => { navigator.clipboard?.writeText(S.room.code); toast('Code copied'); };
+  v.querySelector('#share').onclick = async () => {
+    const text = `Join my Sp1nXI room — code ${S.room.code}`;
+    if (navigator.share) { try { await navigator.share({ title: 'Sp1nXI', text, url: link }); return; } catch (e) { /* cancelled */ } }
+    navigator.clipboard?.writeText(link); toast('Invite link copied');
+  };
   show(v);
   poll(st => {
     if (st.players >= 2) {
@@ -960,7 +988,7 @@ function screenBuild() {
     groups.forEach(g => {
       const taken = usedPlayers;
       const cands = club.squad
-        .filter(pl => ELIGIBLE[g].includes(pl.position) && !taken.has(pl.id))
+        .filter(pl => ELIGIBLE[g].includes(pl.position) && !taken.has(pl.id) && !p.xi.some(s => s.player && norm(s.player.name) === norm(pl.name)))
         .map(pl => ({ ...pl, rating: getRating(pl, g) }))
         .sort((a, b) => b.rating - a.rating);
       if (!cands.length) return;
@@ -1037,7 +1065,7 @@ async function buildAI(ai, onSlot) {
     const s = slots[i], grp = GROUP[s.role];
     const club = pool[i % pool.length];
     club.squad = club.squad || await getSquad(S.leagueKey, club);
-    const cands = club.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !usedPlayers.has(pl.id))
+    const cands = club.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !usedPlayers.has(pl.id) && !ai.xi.some(s => norm(s.player.name) === norm(pl.name)))
       .map(pl => ({ ...pl, rating: getRating(pl, grp), club }))
       .sort((a, b) => b.rating - a.rating);
     // Weighted toward the best available rather than a flat random pick
@@ -1135,11 +1163,11 @@ function formationY(slot, isTop, engagement) {
   return Math.max(6, Math.min(94, engagement + dir * (roleAdvance - 0.5) * span * 2));
 }
 
-async function screenMatchSim(A, B, m) {
+async function screenMatchSim(A, B, m, opts = {}) {
   theme(null);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
-  setCrumb('Kick-off');
+  setCrumb(opts.crumb || 'Kick-off');
 
   // Coordinates used throughout: L = along the pitch (0 = home goal on the
   // left, 100 = away goal on the right), W = across it (0 = top touchline).
@@ -1291,7 +1319,10 @@ async function screenMatchSim(A, B, m) {
   requestAnimationFrame(clockTick);
 
   const stop = () => { clearInterval(moveT); };
-  v.querySelector('#skip').onclick = () => { skipped = true; stop(); screenResult(A, B, m); };
+  // Where the match hands off to: the scoresheet normally, or back into a
+  // knockout run when this is one of your ties.
+  const finishMatch = () => { SFX.crowdStop(); if (opts.onDone) opts.onDone(m); else screenResult(A, B, m); };
+  v.querySelector('#skip').onclick = () => { skipped = true; stop(); finishMatch(); };
   show(v);
 
   const pickDot = (side, withGK) => {
@@ -1323,10 +1354,12 @@ async function screenMatchSim(A, B, m) {
   const events = m.events.slice().sort((a, b) => a.min - b.min);
   const CHAINS = 14, used = new Set();
   commentary.innerHTML = 'Kick-off.';
+  SFX.crowdStart(); SFX.whistle(1, true);
   await ballTo(50, 50, pickDot('home'), null);
 
   for (let c = 0; c < CHAINS; c++) {
     if (skipped) return;
+    if (c === CHAINS / 2) { commentary.innerHTML = 'Half-time.'; SFX.whistle(2, true); await sleep(900); }
     const slotEnd = t0 + REAL_MS * (c + 1) / CHAINS;
     const chainMin = Math.round(((c + 0.5) / CHAINS) * 90);
     const ev = events.find(e => !used.has(e) && e.min <= chainMin + 5); // overdue events still get played
@@ -1351,7 +1384,7 @@ async function screenMatchSim(A, B, m) {
         await ballTo(side === 'home' ? 99.5 : 0.5, shotW, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1300);
         if (side === 'home') scoreA++; else scoreB++;
         scoreEl.textContent = `${scoreA} – ${scoreB}`;
-        tagRow(scorer, '⚽');
+        tagRow(scorer, '⚽'); SFX.roar();
         poss = null;
         const restart = side === 'home' ? 'away' : 'home';
         await ballTo(50, 50, pickDot(restart), `Kick-off, ${esc(teams[restart].label)} to restart.`, 600);
@@ -1360,7 +1393,7 @@ async function screenMatchSim(A, B, m) {
         await ballTo(advanceTo(other, 0.3), clampW(20 + Math.random() * 60), pickDot(other));
         await ballTo(bL + (Math.random() * 8 - 4), clampW(bW + (Math.random() * 16 - 8)), scorer,
           `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 900);
-        tagRow(scorer, '🟨');
+        tagRow(scorer, '🟨'); SFX.whistle(1);
         await ballTo(bL, bW, pickDot(other));
       }
     } else {
@@ -1413,15 +1446,16 @@ async function screenMatchSim(A, B, m) {
     await ballTo(ev.side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1200);
     if (ev.side === 'home') scoreA++; else scoreB++;
     scoreEl.textContent = `${scoreA} – ${scoreB}`;
-    tagRow(scorer, '⚽');
+    tagRow(scorer, '⚽'); SFX.roar();
   }
   // stoppage time plays out on the clock before the whistle
   await sleep(1500);
   finished = true; stop();
   clock.textContent = 'FT';
   commentary.innerHTML = '<b>Full time.</b>';
-  await sleep(900);
-  if (!skipped) screenResult(A, B, m);
+  SFX.whistle(3, true);
+  await sleep(1700);
+  if (!skipped) finishMatch();
 }
 
 
@@ -1451,28 +1485,34 @@ async function shareResultCard(A, B, m) {
   grad.addColorStop(1, B.badge.home === '#FFFFFF' ? '#241F19' : B.badge.home);
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, bandH);
 
-  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.fillStyle = readable(A.badge.home);
   ctx.font = "800 40px 'Bricolage Grotesque', sans-serif";
   ctx.textAlign = 'left';
   ctx.fillText('Sp1n', 56, 84);
   ctx.fillStyle = '#E4762B';
   ctx.fillText('XI', 56 + ctx.measureText('Sp1n').width, 84);
 
-  ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+  // text colour per side, so white/yellow kits stay readable
+  const inkA = readable(A.badge.home), inkB = readable(B.badge.home === '#FFFFFF' ? '#241F19' : B.badge.home);
+  ctx.textAlign = 'center';
   ctx.font = "700 34px Archivo, sans-serif";
-  wrapText(ctx, A.label, W * 0.27, 190, 380, 38);
-  wrapText(ctx, B.label, W * 0.73, 190, 380, 38);
+  ctx.fillStyle = inkA; wrapText(ctx, A.label, W * 0.27, 190, 380, 38);
+  ctx.fillStyle = inkB; wrapText(ctx, B.label, W * 0.73, 190, 380, 38);
   ctx.font = "500 22px Archivo, sans-serif"; ctx.globalAlpha = .85;
-  ctx.fillText(A.formation, W * 0.27, 230);
-  ctx.fillText(B.formation, W * 0.73, 230);
+  ctx.fillStyle = inkA; ctx.fillText(A.formation, W * 0.27, 230);
+  ctx.fillStyle = inkB; ctx.fillText(B.formation, W * 0.73, 230);
   ctx.globalAlpha = 1;
 
   ctx.font = "800 130px 'Bricolage Grotesque', sans-serif";
-  ctx.fillText(`${m.gA} – ${m.gB}`, W / 2, 350);
+  const sw = ctx.measureText(`${m.gA} – ${m.gB}`).width + 70;
+  ctx.fillStyle = 'rgba(0,0,0,.32)'; rr(W / 2 - sw / 2, 250, sw, 130, 22); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.fillText(`${m.gA} – ${m.gB}`, W / 2, 360);
 
-  ctx.font = "600 24px Archivo, sans-serif"; ctx.globalAlpha = .8;
-  ctx.fillText(esc_(LEAGUES[S.leagueKey].name), W / 2, 400);
-  ctx.globalAlpha = 1;
+  ctx.font = "600 24px Archivo, sans-serif";
+  const lname = esc_(LEAGUES[S.leagueKey].name), lw = ctx.measureText(lname).width + 36;
+  ctx.fillStyle = 'rgba(0,0,0,.32)'; rr(W / 2 - lw / 2, 388, lw, 34, 17); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(lname, W / 2, 413);
 
   // scorers
   let y = bandH + 70;
@@ -1489,6 +1529,19 @@ async function shareResultCard(A, B, m) {
     ctx.fillText(line, 56, y);
     y += 42;
   });
+
+  // player of the match
+  const pr = playerRatings(A, B, m), mo = pr.motm;
+  y += 24;
+  ctx.font = "800 30px 'Bricolage Grotesque', sans-serif"; ctx.fillStyle = '#241F19';
+  ctx.fillText('Player of the match', 56, y);
+  y += 50;
+  ctx.fillStyle = ratingColor(mo.r); rr(56, y - 32, 84, 44, 8); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = "800 26px Archivo, sans-serif"; ctx.textAlign = 'center';
+  ctx.fillText(mo.r.toFixed(1), 98, y - 1);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#241F19'; ctx.font = "600 26px Archivo, sans-serif";
+  ctx.fillText(`${mo.name} — ${(mo.side === 'home' ? A : B).label}`, 158, y);
+  y += 30;
 
   // squad strength
   y += 30;
@@ -1542,7 +1595,8 @@ const esc_ = s => String(s); // canvas text needs no HTML escaping
 
 function screenResult(A, B, m) {
   stopPoll();
-  S.lastMatch = { A, B, m, bracket: null, autoShown: false };
+  SFX.crowdStop();
+  if (!S.lastMatch || S.lastMatch.m !== m) S.lastMatch = { A, B, m, ko: null, autoShown: false };
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
@@ -1579,6 +1633,17 @@ function screenResult(A, B, m) {
       <div class="events">${evRows}</div>
       ${statRows}
     </div>
+    ${(() => {
+      const pr = playerRatings(A, B, m), mo = pr.motm;
+      const col = (side, t) => `<div><small style="opacity:.75">${esc(t.label)}</small>${pr[side].map(p =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:3px 0;font-size:.85rem">
+          <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}${p.goals ? ' ' + '⚽'.repeat(p.goals) : ''}</span>${ratingChip(p.r)}</div>`).join('')}</div>`;
+      return `<div class="card"><h3>Player of the match</h3>
+        <div style="display:flex;align-items:center;gap:12px">${ratingChip(mo.r, true)}
+          <div><b>${esc(mo.name)}</b><br><small>${esc((mo.side === 'home' ? A : B).label)}${mo.goals ? ` · ${mo.goals} goal${mo.goals > 1 ? 's' : ''}` : ''}</small></div></div></div>
+        <div class="card"><h3>Player ratings</h3>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 14px">${col('home', A)}${col('away', B)}</div></div>`;
+    })()}
     <div class="card">
       <h3>Squad strength</h3>
       ${[A, B].map(p => `<div style="margin:10px 0">
@@ -1631,71 +1696,246 @@ function knockoutOutcome(sa, sb) {
   return Math.random() < pa; // true = side A wins
 }
 
-async function screenKnockout(A, B, tableRows) {
-  setCrumb('Knockout stage');
-  // Reuse the saved draw so revisits show the same bracket — but only if
-  // it's in the shape this league needs; otherwise draw it fresh.
-  const cached = S.lastMatch && S.lastMatch.bracket;
-  if (cached && (cached.isUCL ? cached.mainRounds : cached.rounds)) {
-    return renderKnockout(A, B, cached).catch(e => knockoutError(A, B, e));
+/* --- knockout: instant simulation, or play your own run ------------- */
+// Resolve a tie instantly with a believable scoreline (and sometimes pens).
+function resolveTie(x, y) {
+  const xWins = knockoutOutcome(x.strength, y.strength);
+  const pens = Math.random() < 0.16;
+  let w, l;
+  if (pens) { w = l = Math.floor(Math.random() * 3); }
+  else { l = [0, 0, 0, 1, 1, 2][Math.floor(Math.random() * 6)]; w = l + 1 + (Math.random() < 0.35 ? 1 : 0); }
+  const mt = { x, y, winner: xWins ? x : y, sx: xWins ? w : l, sy: xWins ? l : w };
+  if (pens) {
+    const a = 3 + Math.floor(Math.random() * 3), b = Math.max(0, a - 1 - Math.floor(Math.random() * 2));
+    mt.px = xWins ? a : b; mt.py = xWins ? b : a;
   }
-
-  const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
-  const isUCL = S.leagueKey === 'UCL';
-  let data;
-
-  if (isUCL) {
-    const top8    = sorted.slice(0,  8);
-    const playoff = sorted.slice(8, 24);
-    const missed  = sorted.slice(24).filter(r => r.mine);
-    const playoffMatches = [];
-    for (let i = 0; i < 8; i++) {
-      const x = playoff[i], y = playoff[15 - i];
-      playoffMatches.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
-    }
-    const pw = playoffMatches.map(m => m.winner).sort((a, b) => a.strength - b.strength);
-    const r16 = [];
-    for (let i = 0; i < 8; i++) r16.push(top8[i], pw[i]);
-    const mainRounds = [];
-    let cur = r16;
-    for (const _ of ['Round of 16','Quarter-finals','Semi-finals','Final']) {
-      const ms = [];
-      for (let i = 0; i < cur.length; i += 2) {
-        const x = cur[i], y = cur[i+1];
-        ms.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
-      }
-      mainRounds.push(ms); cur = ms.map(m => m.winner);
-    }
-    data = { isUCL: true, top8, playoffMatches, mainRounds, champ: cur[0], missed };
-  } else {
-    const field  = sorted.slice(0, 16);
-    const missed = sorted.slice(16).filter(r => r.mine);
-    const SEEDS  = [0,15,7,8,3,12,4,11,1,14,6,9,2,13,5,10];
-    const seeded = SEEDS.map(i => field[i] || field[field.length-1]);
-    const rnames = S.leagueKey === 'WC'
-      ? ['Round of 32','Quarter-finals','Semi-finals','Final']
-      : ['Round of 16','Quarter-finals','Semi-finals','Final'];
-    const rounds = [];
-    let cur = seeded;
-    for (const _ of rnames) {
-      const ms = [];
-      for (let i = 0; i < cur.length; i += 2) {
-        const x = cur[i], y = cur[i+1];
-        ms.push({ x, y, winner: knockoutOutcome(x.strength, y.strength) ? x : y });
-      }
-      rounds.push(ms); cur = ms.map(m => m.winner);
-    }
-    data = { isUCL: false, rounds, rnames, champ: cur[0], missed };
-  }
-
-  if (S.lastMatch) S.lastMatch.bracket = data;
-  return renderKnockout(A, B, data).catch(e => knockoutError(A, B, e));
+  return mt;
 }
 
-// If anything goes wrong drawing the bracket, say so on screen instead
-// of leaving a blank page.
+// Who's in the knockout rounds, and the first round's pairings.
+function knockoutField(tableRows) {
+  const sorted = tableRows.slice().sort((a, b) => b.strength - a.strength);
+  if (S.leagueKey === 'UCL') {
+    // 1–8 straight to the Round of 16; 9–24 play a playoff (9v24 … 16v17)
+    const top8 = sorted.slice(0, 8), playoff = sorted.slice(8, 24);
+    const first = [];
+    for (let i = 0; i < 8; i++) first.push([playoff[i], playoff[15 - i]]);
+    return { isUCL: true, top8, first, missed: sorted.slice(24).filter(r => r.mine),
+      names: ['Knockout playoff', 'Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'] };
+  }
+  const field = sorted.slice(0, 16);
+  const SEEDS = [0, 15, 7, 8, 3, 12, 4, 11, 1, 14, 6, 9, 2, 13, 5, 10];
+  const seeded = SEEDS.map(i => field[i]).filter(Boolean);
+  const first = [];
+  for (let i = 0; i + 1 < seeded.length; i += 2) first.push([seeded[i], seeded[i + 1]]);
+  return { isUCL: false, top8: [], first, missed: sorted.slice(16).filter(r => r.mine),
+    names: ['Round of 16', 'Quarter-finals', 'Semi-finals', 'Final'] };
+}
+// Winners of stage k meet in stage k+1. In the UCL, the top 8 come in at
+// the Round of 16: 1st plays the winner of 16 v 17, 2nd the winner of 15 v 18…
+function nextPairs(st, k) {
+  const winners = st.stages[k].map(mt => mt.winner);
+  if (st.isUCL && k === 0) return st.top8.map((t, i) => [t, winners[7 - i]]);
+  const out = [];
+  for (let i = 0; i + 1 < winners.length; i += 2) out.push([winners[i], winners[i + 1]]);
+  return out;
+}
+// Ties with one of your XIs wait to be played; everything else resolves now.
+const makeStage = pairs => pairs.map(([x, y]) => (x.mine || y.mine) ? { x, y, winner: null } : resolveTie(x, y));
+function simulateAll(st) {
+  if (!st.stages.length) st.stages.push(st.first.map(([x, y]) => resolveTie(x, y)));
+  for (;;) {
+    const k = st.stages.length - 1;
+    st.stages[k].forEach((mt, i) => { if (!mt.winner) st.stages[k][i] = resolveTie(mt.x, mt.y); });
+    if (st.stages.length >= st.names.length) break;
+    st.stages.push(nextPairs(st, k).map(([x, y]) => resolveTie(x, y)));
+  }
+  st.champ = st.stages[st.stages.length - 1][0].winner;
+}
+const mineInField = st => st.first.flat().concat(st.top8).filter(r => r && r.mine);
+
+async function screenKnockout(A, B, tableRows) {
+  setCrumb('Knockout stage');
+  const lm = S.lastMatch || (S.lastMatch = { A, B });
+  if (lm.ko && lm.ko.champ) return renderKnockout(A, B, lm.ko).catch(e => knockoutError(A, B, e));
+  if (lm.ko) return screenRun(A, B);
+
+  const st = knockoutField(tableRows);
+  st.stages = [];
+  if (!mineInField(st).length) {
+    simulateAll(st); lm.ko = st;
+    return renderKnockout(A, B, st).catch(e => knockoutError(A, B, e));
+  }
+  const v = el(`<section>
+    <h2>Knockout stage</h2>
+    <p>You're through. How do you want to play it?</p>
+    <button class="btn primary" id="play">Play your run<span class="sub">Each of your ties on the tactics board, penalties if it's level</span></button>
+    <button class="btn" id="sim">Simulate instantly<span class="sub">See the whole bracket right away</span></button>
+    <button class="btn ghost" id="back">Back to the table</button>
+  </section>`);
+  v.querySelector('#play').onclick = () => { st.stages.push(makeStage(st.first)); lm.ko = st; screenRun(A, B); };
+  v.querySelector('#sim').onclick = () => { simulateAll(st); lm.ko = st; renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); };
+  v.querySelector('#back').onclick = () => screenTable(A, B);
+  show(v);
+}
+
+// The in-between screen of a run: last result, the bracket so far, and
+// whatever comes next (your next tie, the next round, or the rest).
+function screenRun(A, B) {
+  setCrumb('Knockout stage');
+  const st = S.lastMatch.ko;
+  const k = st.stages.length - 1, cur = st.stages[k];
+  const pending = cur.filter(mt => !mt.winner);
+  const lost = r => st.stages.some(s => s.some(mt => mt.winner && (mt.x === r || mt.y === r) && mt.winner !== r));
+  const alive = mineInField(st).filter(r => !lost(r));
+  const acts = [];
+  let note = st.note || '';
+  if (!note && st.isUCL && k === 0 && st.top8.some(r => r.mine)) note = '✅ Top-8 finish — straight into the Round of 16.';
+
+  if (pending.length) {
+    const mt = pending[0];
+    acts.push({ label: `Kick off · ${st.names[k]}`, sub: `${mt.x.name} v ${mt.y.name}`, primary: true, fn: () => playTie(A, B, mt, st.names[k]) });
+    acts.push({ label: 'Simulate the rest instantly', fn: () => { simulateAll(st); renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); } });
+  } else if (k === st.names.length - 1) {
+    st.champ = cur[0].winner;
+    if (st.champ.mine) SFX.roar(1.2);
+  } else if (alive.length) {
+    acts.push({ label: `On to the ${st.names[k + 1]}`, primary: true, fn: () => { st.stages.push(makeStage(nextPairs(st, k))); st.note = ''; screenRun(A, B); } });
+  } else {
+    acts.push({ label: 'See how the rest plays out', primary: true, fn: () => { simulateAll(st); renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); } });
+  }
+  return renderKnockout(A, B, st, { note, actions: acts }).catch(e => knockoutError(A, B, e));
+}
+
+// A named club's own best XI, so an opponent can play on the board.
+const clubXICache = new Map();
+async function buildClubXI(name) {
+  const key = S.leagueKey + '|' + name;
+  if (clubXICache.has(key)) return clubXICache.get(key);
+  const club = (S.leagueClubs || []).find(c => c.name === name);
+  let team = null;
+  if (club) {
+    const squad = club.squad || await getSquad(S.leagueKey, club);
+    for (const f of ['4-3-3', '4-2-3-1', '4-4-2', '3-5-2', '4-5-1', '3-4-3', '5-3-2', '5-4-1']) {
+      const used = new Set(), xi = [];
+      for (const s of FORMATIONS[f]) {
+        const grp = GROUP[s.role];
+        const pick = squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !used.has(pl.id))
+          .map(pl => ({ ...pl, rating: getRating(pl, grp), club })).sort((a, b) => b.rating - a.rating)[0];
+        if (!pick) break;
+        used.add(pick.id); xi.push({ ...s, player: pick, rerolls: 0 });
+      }
+      if (xi.length === 11) { team = { label: club.name, formation: f, xi, strength: rateSquad(xi), badge: club }; break; }
+    }
+  }
+  clubXICache.set(key, team);
+  return team;
+}
+async function teamForRow(A, B, row) {
+  if (row.mine) return row.name === `${B.label}'s XI` ? B : A;
+  return buildClubXI(row.name);
+}
+
+async function playTie(A, B, mt, stageName) {
+  const st = S.lastMatch.ko;
+  const home = await teamForRow(A, B, mt.x), away = await teamForRow(A, B, mt.y);
+  if (!home || !away) {
+    Object.assign(mt, resolveTie(mt.x, mt.y));
+    st.note = `No real squad on file for ${esc((home ? mt.y : mt.x).name)}, so that tie was simulated: ${esc(mt.x.name)} ${mt.sx}–${mt.sy} ${esc(mt.y.name)}.`;
+    return screenRun(A, B);
+  }
+  const m = simulate(home, away);
+  screenMatchSim(home, away, m, { crumb: stageName, onDone: () => {
+    const finish = (px, py) => {
+      mt.sx = m.gA; mt.sy = m.gB;
+      const pens = px != null;
+      if (pens) { mt.px = px; mt.py = py; }
+      mt.winner = (m.gA > m.gB || (pens && px > py)) ? mt.x : mt.y;
+      const winTeam = mt.winner === mt.x ? home : away;
+      const scorers = m.events.filter(e => e.type === 'goal').map(e => `${esc(e.player)} ${e.min}'`).join(', ');
+      const through = mt.winner.mine ? `✅ ${esc(winTeam.label)} go through.` : `❌ Knocked out by ${esc(winTeam.label)}.`;
+      st.note = `<b>${esc(stageName)}</b> · ${esc(home.label)} ${m.gA}–${m.gB} ${esc(away.label)}${pens ? ` · ${px}–${py} on penalties` : ''}
+        ${scorers ? `<br><small>⚽ ${scorers}</small>` : ''}<br>${through}`;
+      screenRun(A, B);
+    };
+    if (m.gA === m.gB) screenPenalties(home, away, m, finish); else finish();
+  } });
+}
+
+/* --- penalty shootout ------------------------------------------------ */
+function screenPenalties(H, Aw, m, onDone) {
+  setCrumb('Penalties');
+  const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 75);
+  const order = { FWD: 0, ATT_MID: 1, MID: 2, DEF: 3 };
+  const takers = t => t.xi.filter(s => GROUP[s.role] !== 'GK')
+    .sort((a, b) => (order[GROUP[a.role]] - order[GROUP[b.role]]) || (rating(b) - rating(a)));
+  const keeper = t => t.xi.find(s => GROUP[s.role] === 'GK') || t.xi[0];
+  const T = { home: { team: H, takers: takers(H), gk: keeper(H), kicks: [] }, away: { team: Aw, takers: takers(Aw), gk: keeper(Aw), kicks: [] } };
+
+  const v = el(`<section>
+    <h2>Penalties</h2>
+    <p><small>${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after 90 minutes.</small></p>
+    <div class="card" style="text-align:center">
+      <div id="pscore" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">0 – 0</div>
+      ${['home', 'away'].map(s => `<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <b style="flex:0 0 38%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(T[s].team.label)}</b>
+        <div id="pk-${s}" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>`).join('')}
+    </div>
+    <p id="pcomm" style="text-align:center;min-height:2.8em"></p>
+    <div id="pend"></div>
+    <button class="btn ghost" id="pskip">Skip to the result</button>
+  </section>`);
+  show(v);
+  const circle = () => el('<span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--line,#ccc);display:inline-block"></span>');
+  ['home', 'away'].forEach(s => { for (let i = 0; i < 5; i++) v.querySelector('#pk-' + s).appendChild(circle()); });
+  const comm = v.querySelector('#pcomm'), pscore = v.querySelector('#pscore');
+  let fast = false;
+  v.querySelector('#pskip').onclick = () => { fast = true; };
+  const wait = ms => fast ? Promise.resolve() : sleep(ms);
+  const sum = s => T[s].kicks.filter(Boolean).length;
+  const decided = () => {
+    const a = sum('home'), b = sum('away'), na = T.home.kicks.length, nb = T.away.kicks.length;
+    if (na <= 5 && nb <= 5 && (na < 5 || nb < 5)) return a + (5 - na) < b || b + (5 - nb) < a;
+    return na === nb && a !== b;
+  };
+
+  (async () => {
+    while (!decided()) {
+      const side = T.home.kicks.length <= T.away.kicks.length ? 'home' : 'away';
+      const other = side === 'home' ? 'away' : 'home';
+      const n = T[side].kicks.length;
+      const taker = T[side].takers[n % T[side].takers.length];
+      const p = Math.max(0.6, Math.min(0.9, 0.76 + (rating(taker) - rating(T[other].gk)) * 0.005));
+      comm.innerHTML = `<b>${esc(taker.player.name)}</b> steps up…`;
+      if (!fast) SFX.whistle(1);
+      await wait(1100);
+      const scored = Math.random() < p;
+      if (!fast) SFX.thump();
+      T[side].kicks.push(scored);
+      const row = v.querySelector('#pk-' + side);
+      if (n >= 5) { row.appendChild(circle()); }
+      const c = row.children[n];
+      c.style.background = scored ? '#22C55E' : '#E5484D';
+      c.style.borderColor = scored ? '#22C55E' : '#E5484D';
+      pscore.textContent = `${sum('home')} – ${sum('away')}`;
+      comm.innerHTML = scored ? `⚽ <b>${esc(taker.player.name)}</b> scores!`
+        : Math.random() < 0.6 ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
+      if (!fast) { if (scored) SFX.roar(0.55); else SFX.groan(); }
+      await wait(1200);
+    }
+    const a = sum('home'), b = sum('away');
+    const win = a > b ? H : Aw;
+    if (!fast) SFX.roar(1);
+    comm.innerHTML = `<b>${esc(win.label)}</b> win ${Math.max(a, b)}–${Math.min(a, b)} on penalties.`;
+    v.querySelector('#pskip').remove();
+    const go = el('<button class="btn primary">Continue</button>');
+    go.onclick = () => onDone(a, b);
+    v.querySelector('#pend').appendChild(go);
+  })();
+}
+
 function knockoutError(A, B, e) {
-  if (S.lastMatch) S.lastMatch.bracket = null;
+  if (S.lastMatch) S.lastMatch.ko = null;
   const v = el(`<section><h2>Knockout stage</h2>
     <p><small>Couldn't draw the bracket: ${esc(String(e && e.message || e))}</small></p>
     <button class="btn ghost" id="back">Back to the table</button></section>`);
@@ -1703,81 +1943,69 @@ function knockoutError(A, B, e) {
   show(v);
 }
 
-async function renderKnockout(A, B, data) {
-  const { champ, missed, isUCL } = data;
+// Draws the bracket (complete or part-played), plus any note and actions.
+async function renderKnockout(A, B, st, opts = {}) {
+  const done = !!st.champ;
   const winnerLabel = S.leagueKey === 'WC' ? 'World Champions' : 'Champions';
-
-  if (isUCL) {
-    const { top8, playoffMatches, mainRounds } = data;
-    const myInPlayoff = playoffMatches.some(m => m.x.mine || m.y.mine);
-    const myInTop8 = top8.some(r => r.mine);
-    const v = el(`<section>
-      <h2>Knockout stage</h2>
-      ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} finished 25th or lower — eliminated at the league phase.</small></p>`).join('')}
-      ${myInPlayoff ? '<p><small>🔶 Your XI is in the playoff round — win to reach the Round of 16.</small></p>' : ''}
-      ${myInTop8 ? '<p><small>✅ Your XI qualified directly for the Round of 16.</small></p>' : ''}
-      <h3 style="margin-top:14px">Knockout playoff round</h3>
-      <p><small>9th–24th · 9 v 24, 10 v 23 … 16 v 17</small></p>
-      <div id="playoff-wrap"></div>
-      <h3 style="margin-top:18px">Round of 16 onwards</h3>
-      <p><small>Top 8 direct + 8 playoff winners</small></p>
-      <div id="main-wrap"></div>
-      <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
-        <h3>${winnerLabel}</h3>
-        <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
-      </div>
-      <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
-    </section>`);
-    v.querySelector('#back').onclick = () => screenTable(A, B);
-    show(v);
-    const pb = await drawBracket([playoffMatches]);
-    v.querySelector('#playoff-wrap').appendChild(pb.wrap); await pb.reveal();
-    const mb = await drawBracket(mainRounds);
-    v.querySelector('#main-wrap').appendChild(mb.wrap); await mb.reveal();
-    v.querySelector('#champCard').style.opacity = 1;
-  } else {
-    const { rounds, rnames } = data;
-    const v = el(`<section>
-      <h2>Knockout stage</h2>
-      ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} didn't qualify for the knockout round.</small></p>`).join('')}
-      <div id="bkt-wrap"></div>
-      <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
-        <h3>${winnerLabel}</h3>
-        <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
-      </div>
-      <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
-    </section>`);
-    v.querySelector('#back').onclick = () => screenTable(A, B);
-    show(v);
-    const bkt = await drawBracket(rounds);
-    v.querySelector('#bkt-wrap').appendChild(bkt.wrap); await bkt.reveal();
-    v.querySelector('#champCard').style.opacity = 1;
+  const v = el(`<section>
+    <h2>${done ? 'Knockout stage' : 'Your knockout run'}</h2>
+    ${st.missed.map(r => `<p><small>⚠️ ${esc(r.name)} didn't make the knockout rounds.</small></p>`).join('')}
+    ${opts.note ? `<div class="card" style="margin-bottom:10px">${opts.note}</div>` : ''}
+    <div id="acts"></div>
+    ${done ? `<div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease">
+      <h3>${winnerLabel}</h3>
+      <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${st.champ.mine ? '🏆 ' : ''}${esc(st.champ.name)}</p></div>` : ''}
+    ${st.isUCL ? `<h3 style="margin-top:14px">Knockout playoff round</h3><p><small>9th–24th · 9 v 24, 10 v 23 … 16 v 17</small></p>
+      <div id="w1"></div><h3 style="margin-top:18px">Round of 16 onwards</h3><p><small>Top 8 + 8 playoff winners</small></p>` : ''}
+    <div id="w2"></div>
+    <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
+  </section>`);
+  v.querySelector('#back').onclick = () => screenTable(A, B);
+  (opts.actions || []).forEach(a => {
+    const b = el(`<button class="btn ${a.primary ? 'primary' : 'ghost'}">${esc(a.label)}${a.sub ? `<span class="sub">${esc(a.sub)}</span>` : ''}</button>`);
+    b.onclick = a.fn;
+    v.querySelector('#acts').appendChild(b);
+  });
+  show(v);
+  const main = st.isUCL ? st.stages.slice(1) : st.stages;
+  const mainNames = st.isUCL ? st.names.slice(1) : st.names;
+  if (st.isUCL && st.stages[0]) {
+    const pb = await drawBracket([st.stages[0]], [st.names[0]]);
+    v.querySelector('#w1').appendChild(pb.wrap); await pb.reveal();
   }
+  if (main.length) {
+    const mb = await drawBracket(main, mainNames);
+    v.querySelector('#w2').appendChild(mb.wrap); await mb.reveal();
+  }
+  const cc = v.querySelector('#champCard');
+  if (cc) cc.style.opacity = 1;
 }
 
-
-// Shared helper — renders a set of bracket rounds into a scrollable
-// visual bracket with SVG connector lines.
-async function drawBracket(rounds, backFn) {
+// Shared helper — renders bracket rounds into a scrollable visual bracket
+// with SVG connector lines, a label over each round and scores per tie.
+async function drawBracket(rounds, names = []) {
   const wrap = el(`<div style="overflow-x:auto;margin:0 -16px;padding:4px 16px">
-    <div class="bracket" id="bkt" style="position:relative;display:flex;gap:30px;min-height:240px"></div>
+    <div class="bracket" id="bkt" style="position:relative;display:flex;gap:30px;min-height:240px;padding-top:22px"></div>
   </div>`);
   const bracket = wrap.querySelector('#bkt');
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('style', 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible');
   bracket.appendChild(svg);
   const matchBoxes = [];
+  const line = (mt, t, score, pen) => {
+    const style = !mt.winner ? '' : mt.winner === t ? 'font-weight:700' : 'opacity:.6';
+    const sc = score == null ? '' : `${score}${pen != null ? ` <small>(${pen})</small>` : ''}`;
+    return `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;${style}">
+      <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.mine ? '🔶 ' : ''}${esc(t.name)}</span><span>${sc}</span></div>`;
+  };
   rounds.forEach((matches, r) => {
-    const col = el(`<div class="bround" style="display:flex;flex-direction:column;justify-content:space-around;
-      gap:16px;min-width:152px;flex:none;opacity:0;transition:opacity .4s ease"></div>`);
+    const col = el(`<div class="bround" style="position:relative;display:flex;flex-direction:column;justify-content:space-around;
+      gap:16px;min-width:164px;flex:none;opacity:0;transition:opacity .4s ease">
+      ${names[r] ? `<div style="position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:.7rem;opacity:.7">${esc(names[r])}</div>` : ''}</div>`);
     matches.forEach(mt => {
       const box = el(`<div class="card bmatch" style="padding:8px 10px;margin:0;font-size:.8rem;
         ${(mt.x.mine || mt.y.mine) ? 'border-color:var(--orange)' : ''}">
-        <div style="padding:2px 0;${mt.winner === mt.x ? 'font-weight:700' : 'opacity:.6'}">
-          ${mt.x.mine ? '🔶 ' : ''}${esc(mt.x.name)}</div>
-        <div style="padding:2px 0;${mt.winner === mt.y ? 'font-weight:700' : 'opacity:.6'}">
-          ${mt.y.mine ? '🔶 ' : ''}${esc(mt.y.name)}</div>
-      </div>`);
+        ${line(mt, mt.x, mt.sx, mt.px)}${line(mt, mt.y, mt.sy, mt.py)}</div>`);
       col.appendChild(box);
       matchBoxes.push({ round: r, mt, el: box });
     });
@@ -1794,9 +2022,11 @@ async function drawBracket(rounds, backFn) {
         return { x: r.left - wr.left + r.width, y: r.top - wr.top + r.height / 2 }; };
       for (let r = 0; r < rounds.length - 1; r++) {
         rounds[r].forEach((mt, i) => {
-          const from = cx(matchBoxes.find(b => b.round === r && b.mt === mt).el);
-          const toBox = matchBoxes.find(b => b.round === r+1 && b.mt === rounds[r+1][Math.floor(i/2)]).el;
-          const to = { x: toBox.getBoundingClientRect().left - wr.left, y: cx(toBox).y };
+          const fromB = matchBoxes.find(b => b.round === r && b.mt === mt);
+          const toB = matchBoxes.find(b => b.round === r + 1 && b.mt === rounds[r + 1][Math.floor(i / 2)]);
+          if (!fromB || !toB) return;
+          const from = cx(fromB.el);
+          const to = { x: toB.el.getBoundingClientRect().left - wr.left, y: cx(toB.el).y };
           const mid = (from.x + to.x) / 2;
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           path.setAttribute('d', `M${from.x},${from.y} H${mid} V${to.y} H${to.x}`);
@@ -1815,7 +2045,11 @@ async function screenTable(A, B) {
   setCrumb(S.leagueKey === 'WC' ? 'Group stage' : 'Predicted table');
   if (S.leagueKey === 'WC') return screenGroupTable(A, B);
 
-  const legend = S.leagueKey === 'UCL'
+  const legend = S.leagueKey === 'LEG'
+    ? `<p style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0">
+        <small><span style="display:inline-block;width:10px;height:10px;background:#22C55E;border-radius:2px;margin-right:4px"></span>Top 16 into the knockout rounds</small>
+       </p>`
+    : S.leagueKey === 'UCL'
     ? `<p style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0">
         <small><span style="display:inline-block;width:10px;height:10px;background:#22C55E;border-radius:2px;margin-right:4px"></span>Straight to Round of 16</small>
         <small><span style="display:inline-block;width:10px;height:10px;background:#3B82F6;border-radius:2px;margin-right:4px"></span>Knockout playoff round</small>
@@ -1864,7 +2098,7 @@ async function screenTable(A, B) {
       await sleep(65);
     }
     diag.remove();
-    if (rows.length && S.leagueKey === 'UCL') {
+    if (rows.length && (S.leagueKey === 'UCL' || S.leagueKey === 'LEG')) {
       v.insertAdjacentHTML('beforeend', '<button class="btn primary" id="toko" style="margin-top:14px">See the knockout bracket</button>');
       v.querySelector('#toko').onclick = () => screenKnockout(A, B, rows);
     }
@@ -1945,6 +2179,7 @@ async function screenGroupTable(A, B) {
 // Left-edge status colour for a table row — mirrors how real league and
 // UCL tables mark qualification/relegation zones.
 function rowColor(pos, total, leagueKey) {
+  if (leagueKey === 'LEG') return pos <= 16 ? '#22C55E' : null; // top 16 into the knockout
   if (leagueKey === 'UCL') {
     if (pos <= 8) return '#22C55E';   // straight to Round of 16
     if (pos <= 24) return '#3B82F6';  // knockout playoff round
@@ -2068,5 +2303,1423 @@ async function publishSquad() {
   }, 1500);
 }
 
+/* ------------------------------------------------------------------ *
+ * SOUND — all synthesised with Web Audio (no audio files): crowd bed,
+ * referee's whistle, goal roar, ball strike, groan. Mute persists.
+ * ------------------------------------------------------------------ */
+const SFX = (() => {
+  let ctx = null, muted = false, crowd = null;
+  try { muted = localStorage.getItem('sp1nxi-muted') === '1'; } catch (e) {}
+  const ac = () => {
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ctx = new C(); }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  };
+  const noiseBuf = (c, secs) => {
+    const b = c.createBuffer(1, Math.floor(c.sampleRate * secs), c.sampleRate), d = b.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    return b;
+  };
+  function whistle(n = 1, long = false) {
+    if (muted) return; const c = ac(); if (!c) return;
+    let t = c.currentTime + 0.02;
+    for (let i = 0; i < n; i++) {
+      const dur = long && i === n - 1 ? 0.9 : 0.28;
+      const o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+      o.frequency.value = 2900; lfo.frequency.value = 38; lg.gain.value = 180;
+      lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+      g.gain.setValueAtTime(0.12, t + dur - 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); lfo.start(t); o.stop(t + dur + 0.02); lfo.stop(t + dur + 0.02);
+      t += dur + 0.14;
+    }
+  }
+  function crowdStart() {
+    if (muted || crowd) return; const c = ac(); if (!c) return;
+    const src = c.createBufferSource(); src.buffer = noiseBuf(c, 4); src.loop = true;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.6;
+    const g = c.createGain(); g.gain.setValueAtTime(0, c.currentTime); g.gain.linearRampToValueAtTime(0.08, c.currentTime + 1.5);
+    const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 0.13; lg.gain.value = 0.025;
+    lfo.connect(lg); lg.connect(g.gain);
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start(); lfo.start();
+    crowd = { src, g, lfo };
+  }
+  function crowdStop() {
+    if (!crowd || !ctx) return;
+    const { src, g, lfo } = crowd; crowd = null;
+    const t = ctx.currentTime;
+    g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 1.2);
+    src.stop(t + 1.3); lfo.stop(t + 1.3);
+  }
+  function roar(level = 1) {
+    if (muted) return; const c = ac(); if (!c) return;
+    const t = c.currentTime, src = c.createBufferSource(); src.buffer = noiseBuf(c, 3.4);
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7;
+    bp.frequency.setValueAtTime(450, t); bp.frequency.linearRampToValueAtTime(1100, t + 0.5); bp.frequency.linearRampToValueAtTime(700, t + 3);
+    const g = c.createGain(); g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.35 * level, t + 0.35); g.gain.linearRampToValueAtTime(0, t + 3.2);
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start(t); src.stop(t + 3.4);
+  }
+  function thump() {
+    if (muted) return; const c = ac(); if (!c) return;
+    const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.16);
+  }
+  function groan() {
+    if (muted) return; const c = ac(); if (!c) return;
+    const t = c.currentTime, src = c.createBufferSource(); src.buffer = noiseBuf(c, 1.4);
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(900, t); lp.frequency.linearRampToValueAtTime(250, t + 1.2);
+    const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.18, t + 0.15); g.gain.linearRampToValueAtTime(0, t + 1.3);
+    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start(t); src.stop(t + 1.4);
+  }
+  function setMuted(v) {
+    muted = v;
+    try { localStorage.setItem('sp1nxi-muted', v ? '1' : '0'); } catch (e) {}
+    if (v) crowdStop();
+  }
+  return { whistle, crowdStart, crowdStop, roar, thump, groan, setMuted, get muted() { return muted; } };
+})();
+
+// Mute toggle, top-right next to the page label.
+(function addMuteButton() {
+  const hdr = document.querySelector('header.top'), cr = document.getElementById('crumb');
+  if (!hdr || !cr) return;
+  const box = document.createElement('div');
+  box.style.cssText = 'display:flex;align-items:center;gap:6px';
+  cr.replaceWith(box); box.appendChild(cr);
+  const b = document.createElement('button');
+  b.setAttribute('aria-label', 'Sound on/off');
+  b.style.cssText = 'background:none;border:0;font-size:1.1rem;cursor:pointer;padding:4px;line-height:1';
+  const paint = () => { b.textContent = SFX.muted ? '🔇' : '🔊'; };
+  paint();
+  b.onclick = () => { SFX.setMuted(!SFX.muted); paint(); if (!SFX.muted && document.querySelector('.ms')) SFX.crowdStart(); };
+  box.appendChild(b);
+})();
+
+/* --- player ratings out of 10 + player of the match ----------------- */
+function playerRatings(A, B, m) {
+  if (m.ratings) return m.ratings;
+  const out = {};
+  [['home', A, m.gA, m.gB], ['away', B, m.gB, m.gA]].forEach(([side, t, gf, ga]) => {
+    out[side] = t.xi.map(s => {
+      const grp = GROUP[s.role], nm = s.player.name;
+      const goals = m.events.filter(e => e.side === side && e.type === 'goal' && e.player === nm).length;
+      const cards = m.events.filter(e => e.side === side && e.type === 'card' && e.player === nm).length;
+      let r = 6.3 + ((s.player.rating || 75) - 80) * 0.03 + (gf > ga ? 0.45 : gf < ga ? -0.35 : 0.05) + (Math.random() * 0.8 - 0.4);
+      r += goals * 1.1 - cards * 0.4;
+      if (grp === 'GK' || grp === 'DEF') r += ga === 0 ? (grp === 'GK' ? 0.9 : 0.6) : -0.18 * ga;
+      if (grp === 'MID') r += 0.1 * gf;
+      return { name: nm, number: s.player.number, grp, r: Math.round(Math.max(4.8, Math.min(10, r)) * 10) / 10, goals, cards };
+    });
+  });
+  let motm = null;
+  ['home', 'away'].forEach(side => out[side].forEach(p => { if (!motm || p.r > motm.r) motm = { ...p, side }; }));
+  out.motm = motm;
+  m.ratings = out;
+  return out;
+}
+const ratingColor = r => r >= 9 ? '#2563EB' : r >= 8 ? '#16A34A' : r >= 7 ? '#65A30D' : r >= 6 ? '#E08A0B' : '#E5484D';
+const ratingChip = (r, big) => `<span style="display:inline-block;min-width:${big ? 46 : 34}px;text-align:center;padding:${big ? '6px 8px' : '2px 6px'};
+  border-radius:6px;background:${ratingColor(r)};color:#fff;font-weight:800;font-size:${big ? '1.1rem' : '.78rem'}">${r.toFixed(1)}</span>`;
+
+/* QR encoder — Kazuhiko Arase's QRCode for JavaScript (MIT licence,
+ * http://www.d-project.com/), bundled inline so no extra file or CDN is
+ * needed. "QR Code" is a registered trademark of DENSO WAVE INCORPORATED. */
+const QRCodeLib = (() => {
+  const defs = {
+  'QRMode': function (module, exports, require) {
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+  },
+  'QRMath': function (module, exports, require) {
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+  },
+  'QRPolynomial': function (module, exports, require) {
+var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+  },
+  'QRErrorCorrectLevel': function (module, exports, require) {
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+  },
+  'QRRSBlock': function (module, exports, require) {
+var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+  },
+  'QRBitBuffer': function (module, exports, require) {
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+  },
+  'QRMaskPattern': function (module, exports, require) {
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+  },
+  'QRUtil': function (module, exports, require) {
+var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+  },
+  'QR8bitByte': function (module, exports, require) {
+var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+  },
+  'index': function (module, exports, require) {
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+  }
+  };
+  const cache = {};
+  const req = name => {
+    name = name.replace('./', '');
+    if (cache[name]) return cache[name].exports;
+    const module = cache[name] = { exports: {} };
+    defs[name](module, module.exports, req);
+    return module.exports;
+  };
+  return { QRCode: req('index'), ECL: req('QRErrorCorrectLevel') };
+})();
+
+// Text → crisp SVG QR code (dark modules on white, with a quiet zone).
+function qrSVG(text, size = 220) {
+  const qr = new QRCodeLib.QRCode(-1, QRCodeLib.ECL.M);
+  qr.addData(text); qr.make();
+  const n = qr.getModuleCount(), q = 4, total = n + q * 2;
+  let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + q},${r + q}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${size}" height="${size}" shape-rendering="crispEdges" style="display:block;margin:0 auto;background:#fff;border-radius:10px"><path d="${d}" fill="#111"/></svg>`;
+}
+
 /* ------------------------------------------------------------------ */
-screenMode();
+// Opened from a scanned QR code or invite link? Go straight into that room.
+(function start() {
+  const params = new URLSearchParams(location.search);
+  const code = (params.get('join') || '').trim().toUpperCase();
+  screenMode();
+  if (code) {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    toast(`Joining room ${code}…`);
+    joinRoom(code);
+  }
+})();
