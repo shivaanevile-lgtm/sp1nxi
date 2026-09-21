@@ -13,8 +13,10 @@ const TTL = 60 * 60 * 6;                        // rooms expire after six hours
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';    // no I or O
 const KICKOFF_DELAY = 4000;                     // ms from "both in" to kick-off
 
+let STORE_KIND = '';
 const json = (obj, status = 200) =>
-  new Response(JSON.stringify({ ...obj, now: Date.now() }), { status, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify({ ...obj, now: Date.now(), store: STORE_KIND }),
+    { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const newCode = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 const parse = s => { try { return s ? JSON.parse(s) : null; } catch { return null; } };
 
@@ -68,8 +70,14 @@ function kvStore(kv) {
   };
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(ctx) {
+  try { return await handle(ctx); }
+  catch (e) { return json({ ok: false, error: 'server: ' + String(e && e.message || e).slice(0, 120) }, 500); }
+}
+
+async function handle({ request, env }) {
   const store = env.DB ? d1Store(env.DB) : env.ROOMS ? kvStore(env.ROOMS) : null;
+  STORE_KIND = env.DB ? 'd1' : env.ROOMS ? 'kv' : 'none';
   if (!store) return json({ ok: false, error: 'no-storage' }, 500);
 
   let body;
