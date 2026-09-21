@@ -437,6 +437,16 @@ function describeGoal(rand = Math.random) {
   return { method, desc: `scores, ${corner}, ${origin}` };
 }
 
+// Real elite referees, matched to the competition.
+const REFEREES = {
+  PL: [['Michael Oliver', 'ENG'], ['Anthony Taylor', 'ENG'], ['Simon Hooper', 'ENG'], ['Chris Kavanagh', 'ENG'], ['Paul Tierney', 'ENG'],
+       ['Stuart Attwell', 'ENG'], ['Craig Pawson', 'ENG'], ['Andy Madley', 'ENG'], ['Jarred Gillett', 'AUS'], ['Robert Jones', 'ENG']],
+  EU: [['Szymon Marciniak', 'POL'], ['Clément Turpin', 'FRA'], ['François Letexier', 'FRA'], ['Slavko Vinčić', 'SVN'], ['Danny Makkelie', 'NED'],
+       ['Michael Oliver', 'ENG'], ['Anthony Taylor', 'ENG'], ['István Kovács', 'ROU'], ['Davide Massa', 'ITA'], ['Felix Zwayer', 'GER'], ['Jesús Gil Manzano', 'ESP']],
+  WC: [['Szymon Marciniak', 'POL'], ['Facundo Tello', 'ARG'], ['Wilton Sampaio', 'BRA'], ['Ismail Elfath', 'USA'], ['Clément Turpin', 'FRA'],
+       ['Danny Makkelie', 'NED'], ['Michael Oliver', 'ENG'], ['Mustapha Ghorbal', 'ALG'], ['Abdulrahman Al-Jassim', 'QAT'], ['Slavko Vinčić', 'SVN']]
+};
+
 // Match-day conditions. Each nudges the numbers a little, and shows on the
 // tactics board.
 const WEATHER = {
@@ -495,7 +505,17 @@ function simulate(A, B, seed) {
       events.push({ side, min: nextMin(), type: 'card', player: s.player.name });
     }
   });
+  // VAR: some goals get a check and stand; now and then a goal is ruled out.
+  const VAR_WHY = [['offside', 'Checking a possible offside'], ['handball', 'Possible handball in the build-up'], ['foul', 'Checking for a foul in the build-up']];
+  events.forEach(e => { if (e.type === 'goal' && e.method !== 'penalty' && rnd() < 0.15) e.var = VAR_WHY[Math.floor(rnd() * 3)][0]; });
+  if (rnd() < 0.3) {
+    const side = rnd() < xgA / (xgA + xgB) ? 'home' : 'away';
+    const s = scorerFor(side === 'home' ? A : B);
+    events.push({ side, min: nextMin(), type: 'noGoal', player: s.player.name, reason: VAR_WHY[Math.floor(rnd() * 3)][0] });
+  }
   events.sort((a, b) => a.min - b.min);
+  const refs = REFEREES[S.leagueKey === 'PL' ? 'PL' : S.leagueKey === 'WC' ? 'WC' : 'EU'];
+  const referee = refs[Math.floor(rnd() * refs.length)];
 
   const share = A.strength.mid / (A.strength.mid + B.strength.mid);
   const poss = Math.round(38 + share * 24);
@@ -511,7 +531,7 @@ function simulate(A, B, seed) {
     return { label: row[0], a: row[1], b: row[2], wa: a, wb: b };
   });
 
-  return { gA, gB, events, stats, xgA, xgB, weather, seed: seed || null };
+  return { gA, gB, events, stats, xgA, xgB, weather, referee, seed: seed || null };
 }
 
 /* League prediction: rank the built XI against every club in the
@@ -645,12 +665,18 @@ function screenMode() {
     <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
     <button class="btn ghost" data-m="join">Join with a code</button>
     <div class="row" style="display:flex;gap:8px">
+      <button class="btn ghost" id="quiz" style="flex:1;width:auto">🧠 Guess the XI<span class="sub">Name the players</span></button>
+      <button class="btn ghost" id="nameteam" style="flex:1;width:auto">🔎 Name the team<span class="sub">Spot the side</span></button>
+    </div>
+    <div class="row" style="display:flex;gap:8px">
       <button class="btn ghost" id="hof" style="flex:1;width:auto">🏆 Hall of fame</button>
       <button class="btn ghost" id="h2h" style="flex:1;width:auto">🤝 Head-to-head</button>
     </div>
     <button class="btn ghost" id="howto">How to play</button>
   </section>`);
   v.querySelector('#hof').onclick = screenHallOfFame;
+  v.querySelector('#quiz').onclick = () => screenQuiz();
+  v.querySelector('#nameteam').onclick = () => screenNameTeam();
   v.querySelector('#h2h').onclick = screenH2H;
   v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
     S.mode = b.dataset.m;
@@ -806,15 +832,59 @@ function showWatchQR(box, code) {
     <p style="margin:8px 0 0"><small>Friends scan this to watch the draft and the match live.</small></p></div>`;
 }
 
+/* --- spectator prediction game ------------------------------------ *
+ * Exact score = 3 points, right result = 1. Predictions lock at kick-off,
+ * and nobody sees anyone else's numbers until then. */
+const predPoints = (p, gA, gB) => (p.h === gA && p.a === gB) ? 3 : Math.sign(p.h - p.a) === Math.sign(gA - gB) ? 1 : 0;
+async function fillPredictions(box, m, A, B) {
+  const r = await api({ action:'state', code:S.room.code });
+  const preds = (r && r.ok && r.state.preds || []).filter(p => p.h != null);
+  if (!preds.length) return;
+  const me = store.get('sp1nxi-name', '');
+  const rows = preds.map(p => ({ ...p, pts: predPoints(p, m.gA, m.gB) })).sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+  box.innerHTML = `<div class="card"><h3>🔮 Prediction leaderboard</h3>
+    <p style="margin:0 0 6px"><small>Exact score 3 pts · right result 1 pt · final ${m.gA}–${m.gB}</small></p>
+    ${rows.map((p, i) => `<div style="display:flex;gap:10px;align-items:center;padding:4px 0;${p.name === me ? 'font-weight:800' : ''}">
+      <span style="min-width:1.4em">${i === 0 && p.pts ? '🥇' : i + 1}</span><span style="flex:1">${esc(p.name)}</span>
+      <small>${p.h}–${p.a}</small><b style="min-width:3.2em;text-align:right">${p.pts} pt${p.pts === 1 ? '' : 's'}</b></div>`).join('')}</div>`;
+}
+
 // Watch a room: both XIs fill in live, then the same match plays out.
 function screenSpectate(code) {
   S.mode = 'spectate'; S.room = { code, seat: -1 }; S.players = [];
   theme(null); setCrumb(`Watching ${code}`);
   const v = el(`<section><h2>Watching room ${esc(code)}</h2>
     <p id="spstat"><small>Connecting…</small></p>
+    <div class="card" id="predcard">
+      <h3>🔮 Predict the score</h3>
+      <p style="margin:0 0 8px"><small>Exact score 3 pts · right result 1 pt. Locks at kick-off.</small></p>
+      <input id="pname" maxlength="16" placeholder="Your name" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <span id="plh" style="flex:1;text-align:right;font-weight:700">Host</span>
+        <input id="ph" type="number" min="0" max="15" value="1" inputmode="numeric" style="width:3.2em;padding:8px;font-size:1.3rem;text-align:center;border-radius:10px;border:1px solid var(--line)">
+        <b>–</b>
+        <input id="pa" type="number" min="0" max="15" value="1" inputmode="numeric" style="width:3.2em;padding:8px;font-size:1.3rem;text-align:center;border-radius:10px;border:1px solid var(--line)">
+        <span id="pla" style="flex:1;font-weight:700">Challenger</span>
+      </div>
+      <button class="btn primary" id="psend" style="margin-top:10px">Lock in prediction</button>
+      <p id="plist" style="margin:6px 0 0"><small></small></p>
+    </div>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px" id="spcols"></div>
     <button class="btn ghost" id="back">Stop watching</button></section>`);
   v.querySelector('#back').onclick = () => { stopPoll(); S.mode = null; S.room = null; screenMode(); };
+  const pname = v.querySelector('#pname');
+  pname.value = store.get('sp1nxi-name', '');
+  let myPred = null, closed = false;
+  v.querySelector('#psend').onclick = async () => {
+    const name = pname.value.trim();
+    if (!name) return toast('Add your name first.');
+    const h = Math.max(0, Math.min(15, parseInt(v.querySelector('#ph').value, 10) || 0));
+    const a = Math.max(0, Math.min(15, parseInt(v.querySelector('#pa').value, 10) || 0));
+    store.set('sp1nxi-name', name);
+    const r = await api({ action:'predict', code, name, h, a });
+    if (r && r.ok) { myPred = { h, a }; toast(`Locked in: ${h}–${a}`); v.querySelector('#psend').textContent = `Locked in ${h}–${a} · tap to change`; }
+    else toast(r && r.error === 'closed' ? 'Too late — predictions closed at kick-off.' : "Couldn't save that — try again.");
+  };
   show(v);
   const col = (sq, fallback) => {
     const done = sq && sq.final, xi = (sq && sq.xi) || [];
@@ -832,6 +902,16 @@ function screenSpectate(code) {
     const st = r.state, prog = st.progress || [null, null];
     const view = i => st.squads[i] ? { ...st.squads[i], final: true } : prog[i];
     v.querySelector('#spcols').innerHTML = col(view(0), 'Host') + col(view(1), st.players > 1 ? 'Challenger' : 'Waiting for a player…');
+    const lab = i => (st.squads[i] || prog[i] || {}).label;
+    if (lab(0)) v.querySelector('#plh').textContent = lab(0);
+    if (lab(1)) v.querySelector('#pla').textContent = lab(1);
+    const preds = st.preds || [];
+    v.querySelector('#plist').innerHTML = `<small>${preds.length ? `Predictions in: ${preds.map(p => esc(p.name)).join(', ')}` : 'No predictions yet — be the first.'}</small>`;
+    if (!closed && st.kickoff && (r.now || Date.now()) >= st.kickoff - 1500) {
+      closed = true;
+      v.querySelector('#psend').disabled = true;
+      v.querySelector('#psend').textContent = myPred ? `Your prediction: ${myPred.h}–${myPred.a}` : 'Predictions closed';
+    }
     v.querySelector('#spstat').innerHTML = `<small>${st.squads[0] && st.squads[1] ? 'Both squads in — kick-off!' : 'The draft is live.'}</small>`;
     if (st.squads[0] && st.squads[1]) {
       started = true; stopPoll();
@@ -1294,7 +1374,65 @@ function formationY(slot, isTop, engagement) {
   return Math.max(6, Math.min(94, engagement + dir * (roleAdvance - 0.5) * span * 2));
 }
 
+// Broadcast-style line-ups before kick-off: both XIs, formations, the
+// weather and the referee. Runs for a few seconds (same length on every
+// phone in an online game), or tap to go straight to kick-off.
+function screenPrematch(A, B, m, opts, go) {
+  theme(null); setCrumb(opts.crumb || 'Line-ups');
+  const title = opts.crumb || (LEAGUES[S.leagueKey] || {}).name || 'Match day';
+  const ref = m.referee ? `${(NATIONS[m.referee[1]] || ['', ''])[1]} ${esc(m.referee[0])}` : '';
+  const list = (t, side) => t.xi.map((s, i) => `
+    <div class="pm-row" style="animation-delay:${0.35 + i * 0.07}s;${side === 'away' ? 'flex-direction:row-reverse;text-align:right' : ''}">
+      <span class="pm-num" style="background:${t.badge.home};color:${readable(t.badge.home)}">${esc(String(s.player.number ?? ''))}</span>
+      <span class="pm-nm">${esc(s.player.name)}</span><span class="pm-rl">${s.role}</span></div>`).join('');
+  const v = el(`<section class="pm">
+    <style>
+      .pm .pm-card{background:linear-gradient(160deg,#101725,#1B2437 60%,#111827);color:#fff;border-radius:16px;overflow:hidden;
+        box-shadow:0 10px 30px rgba(0,0,0,.25)}
+      .pm .pm-top{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+      .pm .pm-live{background:#E5484D;color:#fff;font-weight:800;padding:2px 8px;border-radius:4px;animation:pmblink 1.2s infinite}
+      @keyframes pmblink{50%{opacity:.55}}
+      .pm .pm-teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:6px 14px 12px}
+      .pm .pm-team{font-family:'Bricolage Grotesque';font-weight:800;font-size:1.15rem;line-height:1.1}
+      .pm .pm-team small{display:block;font-family:inherit;font-weight:500;font-size:.75rem;color:#9FB0CC}
+      .pm .pm-bar{height:4px;border-radius:2px;margin-top:6px}
+      .pm .pm-meta{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:.8rem;color:#C9D4E8;padding:8px 14px;
+        background:rgba(255,255,255,.05);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
+      .pm .pm-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 12px;padding:10px 12px 14px}
+      .pm .pm-row{display:flex;align-items:center;gap:7px;padding:3px 0;opacity:0;transform:translateY(6px);animation:pmin .35s ease forwards}
+      @keyframes pmin{to{opacity:1;transform:none}}
+      .pm .pm-num{flex:none;min-width:24px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem}
+      .pm .pm-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.82rem}
+      .pm .pm-rl{flex:none;font-size:.62rem;color:#8193B2}
+      .pm .pm-count{height:3px;background:rgba(255,255,255,.12)}
+      .pm .pm-count i{display:block;height:100%;width:0;background:#E4762B;animation:pmcount 7s linear forwards}
+      @keyframes pmcount{to{width:100%}}
+    </style>
+    <div class="pm-card">
+      <div class="pm-top"><span class="pm-live">Live</span><span>${esc(title)}</span></div>
+      <div class="pm-teams">
+        <div class="pm-team">${esc(A.label)}<small>${esc(A.formation || '')}</small><div class="pm-bar" style="background:${A.badge.home}"></div></div>
+        <div style="padding:0 10px;font-weight:800;color:#9FB0CC">v</div>
+        <div class="pm-team" style="text-align:right">${esc(B.label)}<small>${esc(B.formation || '')}</small><div class="pm-bar" style="background:${B.badge.home}"></div></div>
+      </div>
+      <div class="pm-meta">
+        ${m.weather ? `<span>${WEATHER[m.weather].icon} ${WEATHER[m.weather].label}</span>` : ''}
+        ${ref ? `<span>Referee: ${ref}</span>` : ''}
+      </div>
+      <div class="pm-cols"><div>${list(A, 'home')}</div><div>${list(B, 'away')}</div></div>
+      <div class="pm-count"><i></i></div>
+    </div>
+    <button class="btn primary" id="pmgo" style="margin-top:12px">Kick off</button>
+  </section>`);
+  let gone = false;
+  const next = () => { if (gone || !document.body.contains(v)) return; gone = true; go(); };
+  v.querySelector('#pmgo').onclick = next;
+  show(v);
+  setTimeout(next, 7000);
+}
+
 async function screenMatchSim(A, B, m, opts = {}) {
+  if (!opts.introDone) return screenPrematch(A, B, m, opts, () => screenMatchSim(A, B, m, { ...opts, introDone: true }));
   theme(null);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
@@ -1352,6 +1490,12 @@ async function screenMatchSim(A, B, m, opts = {}) {
       .ms .wx-wind{background-image:repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,255,255,.14) 22px 23px);
         background-size:120px 60px;animation:wxwind 1.2s linear infinite;
         -webkit-mask-image:repeating-linear-gradient(90deg,#000 0 60px,transparent 60px 120px);mask-image:repeating-linear-gradient(90deg,#000 0 60px,transparent 60px 120px)}
+      .ms .var-ban{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);z-index:9;opacity:0;
+        background:rgba(10,10,20,.88);color:#fff;border:2px solid #7C5CFF;border-radius:12px;padding:10px 18px;text-align:center;
+        font-weight:800;letter-spacing:.06em;transition:opacity .25s,transform .25s;pointer-events:none}
+      .ms .var-ban.on{opacity:1;transform:translate(-50%,-50%) scale(1);animation:varpulse 1s ease-in-out infinite}
+      .ms .var-ban small{display:block;font-weight:500;letter-spacing:0;opacity:.85;margin-top:2px}
+      @keyframes varpulse{50%{box-shadow:0 0 0 6px rgba(124,92,255,.35)}}
       .ms .wx-tag{position:absolute;left:8px;top:6px;z-index:7;font-size:.72rem;background:rgba(0,0,0,.45);color:#fff;padding:2px 8px;border-radius:10px}
       @keyframes wxfall{to{background-position:-10px 40px}}
       @keyframes wxsnow{to{background-position:8px 34px,-6px 33px}}
@@ -1376,6 +1520,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
         <div class="hm" style="right:-2px;top:37%;width:5.5%;height:26%"></div>
         <div id="ball" style="left:50%;top:50%"></div>
         ${m.weather && m.weather !== 'clear' ? `<div class="wx wx-${m.weather}"></div>` : ''}
+        <div class="var-ban" id="varban"></div>
         ${m.weather ? `<span class="wx-tag">${WEATHER[m.weather].icon} ${WEATHER[m.weather].label}</span>` : ''}
       </div>
       <div class="ms-lists">
@@ -1412,7 +1557,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
   const place = (elm, L, W) => { elm.style.left = L + '%'; elm.style.top = W + '%'; };
 
   let bL = 50, bW = 50, poss = null, carrier = null;
-  let skipped = false;
+  let skipped = false, lineUp = true;   // lineUp: both teams in their own half for a kick-off
 
   // The heart of it: both teams as one compact block around the ball.
   // The side in possession stretches up to ~36% of the pitch; the side
@@ -1424,6 +1569,10 @@ async function screenMatchSim(A, B, m, opts = {}) {
       return [L, 50 + (bW - 50) * 0.18 + Math.sin(t / 1900 + p.ph) * 1.2];
     }
     const home = p.side === 'home';
+    if (lineUp) {   // kick-off shape: each side in its own half, spread across the pitch
+      const L = home ? 7 + p.adv * 41 : 93 - p.adv * 41;
+      return [L + Math.sin(t / 1300 + p.ph) * 0.6, 50 + (p.lane - 50) * 0.9 + Math.cos(t / 1550 + p.ph2) * 0.8];
+    }
     const hasBall = poss === p.side, neutral = poss === null;
     const behind = neutral ? 20 : hasBall ? 28 : 14;
     const depth = hasBall ? 36 : 32;
@@ -1443,21 +1592,41 @@ async function screenMatchSim(A, B, m, opts = {}) {
       place(p.dot, L, W);
     });
   }
-  tick();
+  // Walk-out: both teams come out of the tunnel together, then take their places.
+  players.forEach((p, i) => { p.dot.style.transition = 'none'; place(p.dot, 47 + (i % 11) * 0.6 + (p.side === 'home' ? -2 : 2), 108); });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    players.forEach(p => { p.dot.style.transition = ''; p.dot.style.transitionDuration = (2.2 + Math.random() * 0.8) + 's'; });
+    tick();
+    setTimeout(() => players.forEach(p => { p.dot.style.transitionDuration = ''; }), 3200);
+  }));
   const moveT = setInterval(tick, 380);
 
-  // Real time → match clock. The whole 90 plays in about a minute, and
-  // the clock ticks every frame as mm:ss so it never sits still or jumps.
-  const REAL_MS = 60000;
-  const t0 = performance.now();
-  let stoppage = 1 + Math.floor(Math.random() * 5), finished = false;
+  // Two halves of ~30 real seconds. The clock runs to 45:00, then counts
+  // added time (45+1 … 45+N) while the half's last spell plays out; the
+  // ref blows for half-time, both sides reset to their shapes, and the
+  // second half kicks off from the centre. Same again up to 90+N.
+  // Each half gets at least 30 real seconds, more if it's packed with goals,
+  // so every event can land on (or right by) its actual minute.
+  const COST = e => e.type === 'goal' ? (e.var ? 13000 : 9000) : e.type === 'noGoal' ? 13000 : 3500;
+  const halfOf = e => e.min <= 45 ? 1 : 2;
+  const halfMs = [1, 2].map(h => Math.max(30000, m.events.filter(e => halfOf(e) === h).reduce((t, e) => t + COST(e), 0) + 9000));
+  let HALF_MS = halfMs[0], PER_MIN = HALF_MS / 45;
+  const crng = m.seed ? seededRng(m.seed + '|clock') : Math.random;
+  const added = [1 + Math.floor(crng() * 4), 2 + Math.floor(crng() * 5)];   // 1–4 and 2–6 minutes
+  let half = 1, halfStart = performance.now(), phase = 'play', finished = false;
   const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  function clockText() {
+    if (phase === 'HT') return 'HT';
+    const el = performance.now() - halfStart, base = half === 1 ? 0 : 45;
+    if (el < HALF_MS) return fmt(base * 60 + (el / HALF_MS) * 45 * 60);
+    return `${base + 45}:00 +${Math.min(added[half - 1], 1 + Math.floor((el - HALF_MS) / PER_MIN))}`;
+  }
   function clockTick() {
     if (skipped || finished) return;
-    const frac = (performance.now() - t0) / REAL_MS;
-    const secs = Math.min(frac, 1) * 90 * 60;
-    clock.textContent = frac < 1 ? fmt(secs) : `90:00 +${stoppage}`;
-    players.forEach(p => { if (p.row) p.row.querySelector('.ms-fit i').style.width = Math.max(30, 100 - p.drain * Math.min(frac, 1)) + '%'; });
+    clock.textContent = clockText();
+    const el = phase === 'HT' ? HALF_MS : Math.min(HALF_MS, performance.now() - halfStart);
+    const frac = (half - 1) * 0.5 + (el / HALF_MS) * 0.5;
+    players.forEach(p => { if (p.row) p.row.querySelector('.ms-fit i').style.width = Math.max(30, 100 - p.drain * frac) + '%'; });
     requestAnimationFrame(clockTick);
   }
   requestAnimationFrame(clockTick);
@@ -1496,104 +1665,171 @@ async function screenMatchSim(A, B, m, opts = {}) {
   const tagRow = (p, txt) => { if (p && p.row) p.row.querySelector('.ms-tag').textContent += ' ' + txt; };
 
   const events = m.events.slice().sort((a, b) => a.min - b.min);
-  const CHAINS = 14, used = new Set();
-  commentary.innerHTML = m.weather ? `Kick-off. ${WEATHER[m.weather].icon} ${esc(WEATHER[m.weather].line)}` : 'Kick-off.';
-  SFX.crowdStart(); SFX.whistle(1, true);
-  await ballTo(50, 50, pickDot('home'), null);
+  const used = new Set();
+  const varBan = v.querySelector('#varban');
+  const VAR_TEXT = { offside: 'Checking a possible offside', handball: 'Possible handball in the build-up', foul: 'Checking for a foul in the build-up' };
+  const VAR_OUT = { offside: 'Offside', handball: 'Handball', foul: 'Foul in the build-up' };
 
-  for (let c = 0; c < CHAINS; c++) {
+  // Everyone back into shape, ball on the spot, whistle, off we go.
+  async function kickOff(side, caption) {
+    lineUp = true; poss = null; carrier = null;
+    ball.style.transitionDuration = '0.9s'; bL = 50; bW = 50; place(ball, 50, 50); tick();
+    if (caption) commentary.innerHTML = caption;
+    await sleep(1300);
     if (skipped) return;
-    if (c === CHAINS / 2) { commentary.innerHTML = 'Half-time.'; SFX.whistle(2, true); await sleep(900); }
-    const slotEnd = t0 + REAL_MS * (c + 1) / CHAINS;
-    const chainMin = Math.round(((c + 0.5) / CHAINS) * 90);
-    const ev = events.find(e => !used.has(e) && e.min <= chainMin + 5); // overdue events still get played
+    SFX.whistle(1);
+    const taker = players.filter(p => p.side === side && !p.gk).sort((a, b) => b.adv - a.adv)[0];
+    await ballTo(50, 50, taker);
+    lineUp = false;
+    const deep = players.filter(p => p.side === side && !p.gk && p.adv < 0.6);
+    await ballTo(side === 'home' ? 40 : 60, clampW(35 + Math.random() * 30), deep[Math.floor(Math.random() * deep.length)] || taker);
+  }
 
-    if (ev) {
-      used.add(ev);
-      const side = ev.side, team = teams[side];
-      const scorer = byName(side, ev.player) || pickDot(side);
-      const shotW = 44 + Math.random() * 12;
-      if (ev.type === 'goal') {
-        if (ev.method === 'penalty') {
-          await ballTo(advanceTo(side, 0.6), clampW(30 + Math.random() * 40), pickDot(side));
-          await ballTo(side === 'home' ? 88.5 : 11.5, 50, scorer, `Penalty to ${esc(team.label)}!`, 900);
-        } else if (ev.method === 'freekick') {
-          await ballTo(advanceTo(side, 0.5), clampW(30 + Math.random() * 40), pickDot(side));
-          await ballTo(side === 'home' ? 76 : 24, clampW(35 + Math.random() * 30), scorer, 'Free-kick, dangerous position…', 800);
-        } else {
-          commentary.innerHTML = `${esc(team.label)} build an attack…`;
-          for (let i = 0; i < 3; i++) await ballTo(advanceTo(side, 0.28), clampW(scorer.lane + (Math.random() * 40 - 20)), pickDot(side));
-          await ballTo(advanceTo(side, 0.45), clampW(40 + Math.random() * 20), scorer, `${esc(ev.player)} takes it on…`, 450);
-        }
-        await ballTo(side === 'home' ? 99.5 : 0.5, shotW, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1300);
-        if (side === 'home') scoreA++; else scoreB++;
-        scoreEl.textContent = `${scoreA} – ${scoreB}`;
-        tagRow(scorer, '⚽'); SFX.roar();
-        poss = null;
-        const restart = side === 'home' ? 'away' : 'home';
-        await ballTo(50, 50, pickDot(restart), `Kick-off, ${esc(teams[restart].label)} to restart.`, 600);
-      } else {
-        const other = side === 'home' ? 'away' : 'home';
-        await ballTo(advanceTo(other, 0.3), clampW(20 + Math.random() * 60), pickDot(other));
-        await ballTo(bL + (Math.random() * 8 - 4), clampW(bW + (Math.random() * 16 - 8)), scorer,
-          `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 900);
-        tagRow(scorer, '🟨'); SFX.whistle(1);
-        await ballTo(bL, bW, pickDot(other));
-      }
+  // The tense bit: freeze, banner, wait… then the call.
+  async function varCheck(reason, ruledOut) {
+    commentary.innerHTML = '📺 VAR is taking a look…';
+    varBan.innerHTML = `📺 VAR CHECK<small>${VAR_TEXT[reason]}</small>`;
+    varBan.classList.add('on');
+    await sleep(2400 + Math.random() * 1000);
+    if (skipped) return;
+    varBan.classList.remove('on');
+    await sleep(200);
+    varBan.innerHTML = ruledOut ? `❌ NO GOAL<small>${VAR_OUT[reason]}</small>` : '✅ GOAL STANDS';
+    varBan.classList.add('on');
+    varBan.style.animation = 'none';
+    await sleep(1500);
+    varBan.classList.remove('on'); varBan.style.animation = '';
+  }
+
+  async function buildUpTo(side, scorer, ev) {
+    const team = teams[side];
+    if (ev.method === 'penalty') {
+      await ballTo(advanceTo(side, 0.6), clampW(30 + Math.random() * 40), pickDot(side));
+      await ballTo(side === 'home' ? 88.5 : 11.5, 50, scorer, `Penalty to ${esc(team.label)}!`, 900);
+    } else if (ev.method === 'freekick') {
+      await ballTo(advanceTo(side, 0.5), clampW(30 + Math.random() * 40), pickDot(side));
+      await ballTo(side === 'home' ? 76 : 24, clampW(35 + Math.random() * 30), scorer, 'Free-kick, dangerous position…', 800);
     } else {
-      const side = Math.random() < (m.xgA / ((m.xgA + m.xgB) || 1)) ? 'home' : 'away';
-      const other = side === 'home' ? 'away' : 'home';
-      const passes = 2 + Math.floor(Math.random() * 3);
-      for (let i = 0; i < passes; i++) {
-        const p = pickDot(side);
-        const fwd = Math.random() < 0.25 ? -0.12 : 0.12 + Math.random() * 0.14; // not every pass goes forward
-        await ballTo(Math.max(6, Math.min(94, advanceTo(side, fwd))), clampW(p.lane + (Math.random() * 24 - 12)), p);
-      }
-      const o = Math.random();
-      if (o < 0.13) {
-        await ballTo(side === 'home' ? 99 : 1, 44 + Math.random() * 12, null, '🧤 Saved by the keeper', 600);
-        const gk = players.find(p => p.side === other && p.gk);
-        await ballTo(side === 'home' ? 95 : 5, 50, gk);
-        await ballTo(50 + (Math.random() * 20 - 10), clampW(20 + Math.random() * 60), pickDot(other));
-      } else if (o < 0.22) {
-        await ballTo(side === 'home' ? 100 : 0, Math.random() < 0.5 ? 36 : 64, null, '🥅 Off target — goal kick', 600);
-        const gk = players.find(p => p.side === other && p.gk);
-        await ballTo(side === 'home' ? 94 : 6, 50, gk);
-        await ballTo(50, clampW(25 + Math.random() * 50), pickDot(other));
-      } else if (o < 0.32) {
-        const cw = Math.random() < 0.5 ? 1 : 99;
-        await ballTo(side === 'home' ? 99.5 : 0.5, cw, pickDot(side), '🚩 Corner', 550);
-        await ballTo(side === 'home' ? 91 : 9, clampW(40 + Math.random() * 20), null, 'Swung into the box…', 500);
-        await ballTo(side === 'home' ? 75 : 25, clampW(30 + Math.random() * 40), pickDot(other), 'Headed clear.', 450);
-      } else if (o < 0.45) {
-        await ballTo(bL + (side === 'home' ? -3 : 3), bW, pickDot(other), '🛡️ Won back in midfield', 450);
-      } else {
-        await ballTo(bL, clampW(bW + (Math.random() * 30 - 15)), pickDot(other)); // loose pass, possession turns over
-      }
+      commentary.innerHTML = `${esc(team.label)} build an attack…`;
+      for (let i = 0; i < 3; i++) await ballTo(advanceTo(side, 0.28), clampW(scorer.lane + (Math.random() * 40 - 20)), pickDot(side));
+      await ballTo(advanceTo(side, 0.45), clampW(40 + Math.random() * 20), scorer, `${esc(ev.player)} takes it on…`, 450);
     }
-    // Keep the play in step with the clock: if this spell finished early,
-    // keep the ball moving around at the back until its slot is up.
-    while (!skipped && performance.now() < slotEnd - 900) {
+  }
+
+  async function playEvent(ev) {
+    used.add(ev);
+    const side = ev.side, other = side === 'home' ? 'away' : 'home';
+    const scorer = byName(side, ev.player) || pickDot(side);
+    if (ev.type === 'goal') {
+      await buildUpTo(side, scorer, ev);
+      if (ev.var) {
+        await ballTo(side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}… but wait!`, 900);
+        SFX.roar(0.5);
+        await varCheck(ev.var, false);
+      } else {
+        await ballTo(side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1300);
+      }
+      if (side === 'home') scoreA++; else scoreB++;
+      scoreEl.textContent = `${scoreA} – ${scoreB}`;
+      tagRow(scorer, '⚽'); SFX.roar();
+      await kickOff(other, `Kick-off, ${esc(teams[other].label)} to restart.`);
+    } else if (ev.type === 'noGoal') {
+      await buildUpTo(side, scorer, { method: 'open', player: ev.player });
+      await ballTo(side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> puts it in!`, 700);
+      SFX.roar(0.8);
+      await varCheck(ev.reason, true);
+      SFX.groan();
+      commentary.innerHTML = `❌ Goal ruled out — ${VAR_OUT[ev.reason].toLowerCase()}. ${esc(teams[other].label)} restart.`;
+      const gk = players.find(p => p.side === other && p.gk);
+      await ballTo(side === 'home' ? 90 : 10, 50, gk, null);
+      await ballTo(50, clampW(25 + Math.random() * 50), pickDot(other));
+    } else {
+      await ballTo(advanceTo(other, 0.3), clampW(20 + Math.random() * 60), pickDot(other));
+      await ballTo(bL + (Math.random() * 8 - 4), clampW(bW + (Math.random() * 16 - 8)), scorer,
+        `🟨 <b>${esc(ev.player)}</b> booked for a foul`, 900);
+      tagRow(scorer, '🟨'); SFX.whistle(1);
+      await ballTo(bL, bW, pickDot(other));
+    }
+  }
+
+  async function playFiller() {
+    const side = Math.random() < (m.xgA / ((m.xgA + m.xgB) || 1)) ? 'home' : 'away';
+    const other = side === 'home' ? 'away' : 'home';
+    const passes = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < passes; i++) {
+      const p = pickDot(side);
+      const fwd = Math.random() < 0.25 ? -0.12 : 0.12 + Math.random() * 0.14; // not every pass goes forward
+      await ballTo(Math.max(6, Math.min(94, advanceTo(side, fwd))), clampW(p.lane + (Math.random() * 24 - 12)), p);
+    }
+    const o = Math.random();
+    if (o < 0.13) {
+      await ballTo(side === 'home' ? 99 : 1, 44 + Math.random() * 12, null, '🧤 Saved by the keeper', 600);
+      const gk = players.find(p => p.side === other && p.gk);
+      await ballTo(side === 'home' ? 95 : 5, 50, gk);
+      await ballTo(50 + (Math.random() * 20 - 10), clampW(20 + Math.random() * 60), pickDot(other));
+    } else if (o < 0.22) {
+      await ballTo(side === 'home' ? 100 : 0, Math.random() < 0.5 ? 36 : 64, null, '🥅 Off target — goal kick', 600);
+      const gk = players.find(p => p.side === other && p.gk);
+      await ballTo(side === 'home' ? 94 : 6, 50, gk);
+      await ballTo(50, clampW(25 + Math.random() * 50), pickDot(other));
+    } else if (o < 0.32) {
+      const cw = Math.random() < 0.5 ? 1 : 99;
+      await ballTo(side === 'home' ? 99.5 : 0.5, cw, pickDot(side), '🚩 Corner', 550);
+      await ballTo(side === 'home' ? 91 : 9, clampW(40 + Math.random() * 20), null, 'Swung into the box…', 500);
+      await ballTo(side === 'home' ? 75 : 25, clampW(30 + Math.random() * 40), pickDot(other), 'Headed clear.', 450);
+    } else if (o < 0.45) {
+      await ballTo(bL + (side === 'home' ? -3 : 3), bW, pickDot(other), '🛡️ Won back in midfield', 450);
+    } else {
+      await ballTo(bL, clampW(bW + (Math.random() * 30 - 15)), pickDot(other)); // loose pass, possession turns over
+    }
+  }
+  // keep the ball moving about until a moment in time
+  async function passAboutUntil(t) {
+    while (!skipped && performance.now() < t) {
       const p = pickDot(poss || 'home');
       await ballTo(Math.max(8, Math.min(92, bL + (Math.random() * 16 - 8))), clampW(p.lane + (Math.random() * 20 - 10)), p);
     }
-    if (performance.now() < slotEnd) await sleep(slotEnd - performance.now());
+  }
+
+  SFX.crowdStart();
+  commentary.innerHTML = 'The teams walk out…';
+  await sleep(2600);
+  await kickOff('home', m.weather ? `${WEATHER[m.weather].icon} ${esc(WEATHER[m.weather].line)}` : 'Teams are out…');
+  commentary.innerHTML = 'And we\'re under way!';
+
+  // How long before an event's minute its build-up has to start.
+  const LEAD = e => e.type === 'card' ? 1500 : e.method === 'penalty' || e.method === 'freekick' ? 3500 : 5500;
+  async function fillUntil(t) {
+    while (!skipped && performance.now() < t - 4500) await playFiller();
+    await passAboutUntil(t);
+  }
+  for (const h of [1, 2]) {
+    const base = (h - 1) * 45;
+    for (const ev of events.filter(e => halfOf(e) === h)) {
+      if (skipped) return;
+      await fillUntil(halfStart + ((Math.min(ev.min, base + 45) - base) / 45) * HALF_MS - LEAD(ev));
+      await playEvent(ev);
+    }
+    await fillUntil(halfStart + HALF_MS);
+    // a little added time on the clock, then the whistle
+    await passAboutUntil(halfStart + HALF_MS + Math.min(added[h - 1], 3) * PER_MIN);
+    if (skipped) return;
+    if (h === 1) {
+      phase = 'HT';
+      SFX.whistle(2, true);
+      lineUp = true; poss = null; carrier = null;
+      ball.style.transitionDuration = '0.9s'; bL = 50; bW = 50; place(ball, 50, 50); tick();
+      commentary.innerHTML = `<b>Half-time.</b> ${esc(A.label)} ${scoreA}–${scoreB} ${esc(B.label)}`;
+      await sleep(3000);
+      if (skipped) return;
+      HALF_MS = halfMs[1]; PER_MIN = HALF_MS / 45;
+      phase = 'play'; half = 2; halfStart = performance.now();
+      await kickOff('away', `Second half — ${esc(B.label)} get us going.`);
+      commentary.innerHTML = 'Second half under way.';
+    }
   }
 
   if (skipped) return;
-  // Any goal that never found a spell (several close together) still
-  // goes in before the whistle, so the board always matches the result.
-  for (const ev of events.filter(e => !used.has(e) && e.type === 'goal')) {
-    if (skipped) return;
-    const scorer = byName(ev.side, ev.player) || pickDot(ev.side);
-    await ballTo(advanceTo(ev.side, 0.6), clampW(35 + Math.random() * 30), scorer);
-    await ballTo(ev.side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> ${esc(ev.desc)}!`, 1200);
-    if (ev.side === 'home') scoreA++; else scoreB++;
-    scoreEl.textContent = `${scoreA} – ${scoreB}`;
-    tagRow(scorer, '⚽'); SFX.roar();
-  }
-  // stoppage time plays out on the clock before the whistle
-  await sleep(1500);
   finished = true; stop();
   clock.textContent = 'FT';
   commentary.innerHTML = '<b>Full time.</b>';
@@ -1749,9 +1985,11 @@ function screenResult(A, B, m) {
   setCrumb('Full time');
 
   const evRows = m.events.map(e => {
-    const icon = e.type === 'goal' ? '⚽' : '🟨';
+    const icon = e.type === 'goal' ? '⚽' : e.type === 'noGoal' ? '🚫' : '🟨';
+    const why = { offside: 'offside', handball: 'handball', foul: 'foul in the build-up' };
     const label = e.type === 'goal'
-      ? `${esc(e.player)} ${esc(e.desc)}`
+      ? `${esc(e.player)} ${esc(e.desc)}${e.var ? ' <small>(📺 VAR checked — stands)</small>' : ''}`
+      : e.type === 'noGoal' ? `${esc(e.player)} — goal ruled out by VAR <small>(${why[e.reason]})</small>`
       : esc(e.player);
     return e.side === 'home'
       ? `<div class="ev"><span class="min">${e.min}'</span><span>${icon} ${label}</span></div>`
@@ -1787,6 +2025,7 @@ function screenResult(A, B, m) {
           <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}${p.goals ? ' ' + '⚽'.repeat(p.goals) : ''}</span>${ratingChip(p.r)}</div>`).join('')}</div>`;
       return `${m.weather ? `<p style="text-align:center;margin:6px 0"><small>${WEATHER[m.weather].icon} ${WEATHER[m.weather].label}</small></p>` : ''}
         <div class="card"><h3>🎙️ Pundit's verdict</h3><p style="margin:0;line-height:1.5">${esc(punditReport(A, B, m))}</p></div>
+        ${S.room && (S.mode === 'online' || S.mode === 'spectate') ? '<div id="predbox"></div>' : ''}
         ${h2h ? `<div class="card"><h3>Head-to-head vs ${esc(h2h.name)}</h3><p style="margin:0">${h2hLine(h2h)}</p></div>` : ''}
         <div class="card"><h3>Player of the match</h3>
         <div style="display:flex;align-items:center;gap:12px">${ratingChip(mo.r, true)}
@@ -1812,6 +2051,7 @@ function screenResult(A, B, m) {
   v.querySelector('#share').onclick = () => { clearTimeout(autoT); shareResultCard(A, B, m); };
   v.querySelector('#again').onclick = () => { clearTimeout(autoT); S.players = []; S.turn = 0; S.room = null; screenMode(); };
   show(v);
+  if (v.querySelector('#predbox')) fillPredictions(v.querySelector('#predbox'), m, A, B);
   // One-time auto-advance only — navigating back to the scoresheet
   // after visiting the table never re-triggers it.
   let autoT = null;
@@ -1841,22 +2081,27 @@ function slideToTable(A, B, fromEl) {
  * XIs are guaranteed a place in the field even if their rating didn't
  * technically crack the top 16, since the point is seeing how far YOUR
  * team goes, not a strict simulation of the other 34 clubs. */
-function knockoutOutcome(sa, sb) {
+function knockoutOutcome(sa, sb, rng = Math.random) {
   const pa = 1 / (1 + Math.pow(10, -(sa - sb) / 12));
-  return Math.random() < pa; // true = side A wins
+  return rng() < pa; // true = side A wins
 }
+// In online games (and for spectators) every tie gets its own seed, built
+// from the match everyone watched plus the tie itself — so each phone draws
+// the identical bracket, in any order, whether ties are played or simulated.
+const koSeed = (k, x, y) => { const s = S.lastMatch && S.lastMatch.m && S.lastMatch.m.seed; return s ? `${s}|ko|${k}|${x.name}|${y.name}` : null; };
+const koRng = (k, x, y) => { const s = koSeed(k, x, y); return s ? seededRng(s) : Math.random; };
 
 /* --- knockout: instant simulation, or play your own run ------------- */
 // Resolve a tie instantly with a believable scoreline (and sometimes pens).
-function resolveTie(x, y) {
-  const xWins = knockoutOutcome(x.strength, y.strength);
-  const pens = Math.random() < 0.16;
+function resolveTie(x, y, rng = Math.random) {
+  const xWins = knockoutOutcome(x.strength, y.strength, rng);
+  const pens = rng() < 0.16;
   let w, l;
-  if (pens) { w = l = Math.floor(Math.random() * 3); }
-  else { l = [0, 0, 0, 1, 1, 2][Math.floor(Math.random() * 6)]; w = l + 1 + (Math.random() < 0.35 ? 1 : 0); }
+  if (pens) { w = l = Math.floor(rng() * 3); }
+  else { l = [0, 0, 0, 1, 1, 2][Math.floor(rng() * 6)]; w = l + 1 + (rng() < 0.35 ? 1 : 0); }
   const mt = { x, y, winner: xWins ? x : y, sx: xWins ? w : l, sy: xWins ? l : w };
   if (pens) {
-    const a = 3 + Math.floor(Math.random() * 3), b = Math.max(0, a - 1 - Math.floor(Math.random() * 2));
+    const a = 3 + Math.floor(rng() * 3), b = Math.max(0, a - 1 - Math.floor(rng() * 2));
     mt.px = xWins ? a : b; mt.py = xWins ? b : a;
   }
   return mt;
@@ -1891,14 +2136,29 @@ function nextPairs(st, k) {
   return out;
 }
 // Ties with one of your XIs wait to be played; everything else resolves now.
-const makeStage = pairs => pairs.map(([x, y]) => (x.mine || y.mine) ? { x, y, winner: null } : resolveTie(x, y));
-function simulateAll(st) {
-  if (!st.stages.length) st.stages.push(st.first.map(([x, y]) => resolveTie(x, y)));
+const makeStage = (pairs, k) => pairs.map(([x, y]) => (x.mine || y.mine) ? { x, y, winner: null } : resolveTie(x, y, koRng(k, x, y)));
+
+// One of your ties decided without watching it. In a shared (online) game
+// this runs the very same seeded match + shootout the board would have
+// shown, so "Simulate" and "Play" can never give different answers.
+async function decideTie(A, B, mt, k) {
+  const seed = koSeed(k, mt.x, mt.y);
+  if (!seed) return resolveTie(mt.x, mt.y);
+  const home = await teamForRow(A, B, mt.x), away = await teamForRow(A, B, mt.y);
+  if (!home || !away) return resolveTie(mt.x, mt.y, seededRng(seed));
+  const m = simulate(home, away, seed);
+  const out = { x: mt.x, y: mt.y, sx: m.gA, sy: m.gB };
+  if (m.gA === m.gB) { const so = shootout(home, away, seededRng(seed + '|pens')); out.px = so.a; out.py = so.b; }
+  out.winner = (m.gA > m.gB || (out.px != null && out.px > out.py)) ? mt.x : mt.y;
+  return out;
+}
+async function simulateAll(A, B, st) {
+  if (!st.stages.length) st.stages.push(makeStage(st.first, 0));
   for (;;) {
     const k = st.stages.length - 1;
-    st.stages[k].forEach((mt, i) => { if (!mt.winner) st.stages[k][i] = resolveTie(mt.x, mt.y); });
+    for (let i = 0; i < st.stages[k].length; i++) if (!st.stages[k][i].winner) st.stages[k][i] = await decideTie(A, B, st.stages[k][i], k);
     if (st.stages.length >= st.names.length) break;
-    st.stages.push(nextPairs(st, k).map(([x, y]) => resolveTie(x, y)));
+    st.stages.push(makeStage(nextPairs(st, k), k + 1));
   }
   st.champ = st.stages[st.stages.length - 1][0].winner;
 }
@@ -1913,7 +2173,7 @@ async function screenKnockout(A, B, tableRows) {
   const st = knockoutField(tableRows);
   st.stages = [];
   if (!mineInField(st).length) {
-    simulateAll(st); lm.ko = st;
+    await simulateAll(A, B, st); lm.ko = st;
     return renderKnockout(A, B, st).catch(e => knockoutError(A, B, e));
   }
   const v = el(`<section>
@@ -1923,8 +2183,8 @@ async function screenKnockout(A, B, tableRows) {
     <button class="btn" id="sim">Simulate instantly<span class="sub">See the whole bracket right away</span></button>
     <button class="btn ghost" id="back">Back to the table</button>
   </section>`);
-  v.querySelector('#play').onclick = () => { st.stages.push(makeStage(st.first)); lm.ko = st; screenRun(A, B); };
-  v.querySelector('#sim').onclick = () => { simulateAll(st); lm.ko = st; renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); };
+  v.querySelector('#play').onclick = () => { st.stages.push(makeStage(st.first, 0)); lm.ko = st; screenRun(A, B); };
+  v.querySelector('#sim').onclick = async () => { await simulateAll(A, B, st); lm.ko = st; renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); };
   v.querySelector('#back').onclick = () => screenTable(A, B);
   show(v);
 }
@@ -1944,15 +2204,15 @@ function screenRun(A, B) {
 
   if (pending.length) {
     const mt = pending[0];
-    acts.push({ label: `Kick off · ${st.names[k]}`, sub: `${mt.x.name} v ${mt.y.name}`, primary: true, fn: () => playTie(A, B, mt, st.names[k]) });
-    acts.push({ label: 'Simulate the rest instantly', fn: () => { simulateAll(st); renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); } });
+    acts.push({ label: `Kick off · ${st.names[k]}`, sub: `${mt.x.name} v ${mt.y.name}`, primary: true, fn: () => playTie(A, B, mt, st.names[k], k) });
+    acts.push({ label: 'Simulate the rest instantly', fn: async () => { await simulateAll(A, B, st); renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); } });
   } else if (k === st.names.length - 1) {
     st.champ = cur[0].winner;
     if (st.champ.mine) SFX.roar(1.2);
   } else if (alive.length) {
-    acts.push({ label: `On to the ${st.names[k + 1]}`, primary: true, fn: () => { st.stages.push(makeStage(nextPairs(st, k))); st.note = ''; screenRun(A, B); } });
+    acts.push({ label: `On to the ${st.names[k + 1]}`, primary: true, fn: () => { st.stages.push(makeStage(nextPairs(st, k), k + 1)); st.note = ''; screenRun(A, B); } });
   } else {
-    acts.push({ label: 'See how the rest plays out', primary: true, fn: () => { simulateAll(st); renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); } });
+    acts.push({ label: 'See how the rest plays out', primary: true, fn: async () => { await simulateAll(A, B, st); renderKnockout(A, B, st).catch(e => knockoutError(A, B, e)); } });
   }
   return renderKnockout(A, B, st, { note, actions: acts }).catch(e => knockoutError(A, B, e));
 }
@@ -1986,15 +2246,16 @@ async function teamForRow(A, B, row) {
   return buildClubXI(row.name);
 }
 
-async function playTie(A, B, mt, stageName) {
+async function playTie(A, B, mt, stageName, k) {
   const st = S.lastMatch.ko;
+  const seed = koSeed(k, mt.x, mt.y);
   const home = await teamForRow(A, B, mt.x), away = await teamForRow(A, B, mt.y);
   if (!home || !away) {
-    Object.assign(mt, resolveTie(mt.x, mt.y));
+    Object.assign(mt, resolveTie(mt.x, mt.y, seed ? seededRng(seed) : Math.random));
     st.note = `No real squad on file for ${esc((home ? mt.y : mt.x).name)}, so that tie was simulated: ${esc(mt.x.name)} ${mt.sx}–${mt.sy} ${esc(mt.y.name)}.`;
     return screenRun(A, B);
   }
-  const m = simulate(home, away);
+  const m = simulate(home, away, seed || undefined);
   screenMatchSim(home, away, m, { crumb: stageName, onDone: () => {
     const finish = (px, py) => {
       mt.sx = m.gA; mt.sy = m.gB;
@@ -2013,6 +2274,32 @@ async function playTie(A, B, mt, stageName) {
 }
 
 /* --- penalty shootout ------------------------------------------------ */
+// The whole shootout, kick by kick: five each, then sudden death.
+function shootout(H, Aw, rng) {
+  const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 75);
+  const order = { FWD: 0, ATT_MID: 1, MID: 2, DEF: 3 };
+  const takers = t => t.xi.filter(s => GROUP[s.role] !== 'GK')
+    .sort((a, b) => (order[GROUP[a.role]] - order[GROUP[b.role]]) || (rating(b) - rating(a)));
+  const keeper = t => t.xi.find(s => GROUP[s.role] === 'GK') || t.xi[0];
+  const T = { home: { t: takers(H), gk: keeper(H), k: [] }, away: { t: takers(Aw), gk: keeper(Aw), k: [] } };
+  const sum = s => T[s].k.filter(Boolean).length;
+  const decided = () => {
+    const a = sum('home'), b = sum('away'), na = T.home.k.length, nb = T.away.k.length;
+    if (na <= 5 && nb <= 5 && (na < 5 || nb < 5)) return a + (5 - na) < b || b + (5 - nb) < a;
+    return na === nb && a !== b;
+  };
+  const kicks = [];
+  while (!decided() && kicks.length < 60) {
+    const side = T.home.k.length <= T.away.k.length ? 'home' : 'away', other = side === 'home' ? 'away' : 'home';
+    const taker = T[side].t[T[side].k.length % T[side].t.length];
+    const p = Math.max(0.6, Math.min(0.9, 0.76 + (rating(taker) - rating(T[other].gk)) * 0.005));
+    const scored = rng() < p, saved = rng() < 0.6;
+    T[side].k.push(scored);
+    kicks.push({ side, taker, scored, saved });
+  }
+  return { kicks, a: sum('home'), b: sum('away') };
+}
+
 function screenPenalties(H, Aw, m, onDone) {
   setCrumb('Penalties');
   const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 75);
@@ -2039,6 +2326,8 @@ function screenPenalties(H, Aw, m, onDone) {
   const circle = () => el('<span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--line,#ccc);display:inline-block"></span>');
   ['home', 'away'].forEach(s => { for (let i = 0; i < 5; i++) v.querySelector('#pk-' + s).appendChild(circle()); });
   const comm = v.querySelector('#pcomm'), pscore = v.querySelector('#pscore');
+  // decide every kick up front (seeded in shared games), then animate it
+  const plan = shootout(H, Aw, m.seed ? seededRng(m.seed + '|pens') : Math.random).kicks;
   let fast = false;
   v.querySelector('#pskip').onclick = () => { fast = true; };
   const wait = ms => fast ? Promise.resolve() : sleep(ms);
@@ -2054,12 +2343,12 @@ function screenPenalties(H, Aw, m, onDone) {
       const side = T.home.kicks.length <= T.away.kicks.length ? 'home' : 'away';
       const other = side === 'home' ? 'away' : 'home';
       const n = T[side].kicks.length;
-      const taker = T[side].takers[n % T[side].takers.length];
-      const p = Math.max(0.6, Math.min(0.9, 0.76 + (rating(taker) - rating(T[other].gk)) * 0.005));
+      const kick = plan[T.home.kicks.length + T.away.kicks.length];
+      const taker = kick.taker;
       comm.innerHTML = `<b>${esc(taker.player.name)}</b> steps up…`;
       if (!fast) SFX.whistle(1);
       await wait(1100);
-      const scored = Math.random() < p;
+      const scored = kick.scored;
       if (!fast) SFX.thump();
       T[side].kicks.push(scored);
       const row = v.querySelector('#pk-' + side);
@@ -2069,7 +2358,7 @@ function screenPenalties(H, Aw, m, onDone) {
       c.style.borderColor = scored ? '#22C55E' : '#E5484D';
       pscore.textContent = `${sum('home')} – ${sum('away')}`;
       comm.innerHTML = scored ? `⚽ <b>${esc(taker.player.name)}</b> scores!`
-        : Math.random() < 0.6 ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
+        : kick.saved ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
       if (!fast) { if (scored) SFX.roar(0.55); else SFX.groan(); }
       await wait(1200);
     }
@@ -2604,6 +2893,31 @@ const SFX = (() => {
   return { whistle, crowdStart, crowdStop, roar, thump, groan, setMuted, get muted() { return muted; } };
 })();
 
+// Dark mode: a charcoal version of the cream theme (World Cup, menus,
+// quiz…). The Premier League and Champions League keep their own looks.
+(function darkModeStyles() {
+  const css = `
+  body.dark-mode:not(.pl-mode):not(.ucl-mode){
+    --cream:#15120F; --cream-2:#221D18; --ink:#F3ECE0; --ink-soft:#A99D8D; --line:#3A322A;
+    background:radial-gradient(ellipse at 50% -10%,rgba(228,118,43,.10),transparent 55%),#15120F;color:#F3ECE0}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .top{background:#15120F}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .brand{color:#F3ECE0}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) h1,body.dark-mode:not(.pl-mode):not(.ucl-mode) h2,
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) h3{color:#FFF6EA}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .plyr,body.dark-mode:not(.pl-mode):not(.ucl-mode) .sheet,
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .league-btn[aria-pressed="true"],
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) tr.me td{background:#2A241E}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .reel{background:#221D18}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .reel::after{background:linear-gradient(#221D18,rgba(34,29,24,0) 28%,rgba(34,29,24,0) 72%,#221D18)}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .btn{background:#2A241E;color:#F3ECE0;border-color:#40372E}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .btn.primary{background:var(--orange);border-color:var(--orange);color:#fff}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .btn.ghost{background:transparent}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) input{background:#2A241E !important;color:#F3ECE0;border-color:#40372E}
+  body.dark-mode:not(.pl-mode):not(.ucl-mode) .foot{color:#7D7265}`;
+  const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+  try { if (JSON.parse(localStorage.getItem('sp1nxi-dark'))) document.body.classList.add('dark-mode'); } catch (e) {}
+})();
+
 // Mute toggle, top-right next to the page label.
 (function addMuteButton() {
   const hdr = document.querySelector('header.top'), cr = document.getElementById('crumb');
@@ -2617,6 +2931,17 @@ const SFX = (() => {
   const paint = () => { b.textContent = SFX.muted ? '🔇' : '🔊'; };
   paint();
   b.onclick = () => { SFX.setMuted(!SFX.muted); paint(); if (!SFX.muted && document.querySelector('.ms')) SFX.crowdStart(); };
+  const d = b.cloneNode();
+  d.setAttribute('aria-label', 'Dark mode on/off');
+  const paintD = () => { d.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙'; };
+  paintD();
+  d.onclick = () => {
+    const on = document.body.classList.toggle('dark-mode');
+    store.set('sp1nxi-dark', on); paintD();
+    if (document.body.classList.contains('pl-mode') || document.body.classList.contains('ucl-mode'))
+      toast(on ? 'Dark mode on — it shows on the World Cup, menus and quizzes.' : 'Dark mode off.');
+  };
+  box.appendChild(d);
   box.appendChild(b);
 })();
 
@@ -2710,6 +3035,9 @@ function punditReport(A, B, m) {
   if (!draw && xgL - xgW > 0.4) out.push(`Mind you, ${L} created the better chances — a real smash-and-grab from ${W}.`);
   else if (draw && Math.abs(m.xgA - m.xgB) > 0.6) out.push(`${m.xgA > m.xgB ? nameOf('home') : nameOf('away')} will feel they left two points out there on the chances they had.`);
 
+  const chalked = m.events.find(e => e.type === 'noGoal');
+  if (chalked) out.push(pick([`VAR had its say too — ${chalked.player}'s goal was chalked off${chalked.reason === 'offside' ? ' for offside' : ''}. Big moment.`,
+    `Spare a thought for ${chalked.player}: wheeled away celebrating, then VAR took it off him.`]));
   if (cards.length >= 3) out.push(pick([`${cards.length} bookings — the referee's arm got a workout tonight.`, `Feisty, too: ${cards.length} yellow cards and plenty of needle.`]));
   if (m.weather && m.weather !== 'clear') out.push({
     rain: 'The rain made it a slippery, scrappy night — mistakes were always coming.',
@@ -2897,6 +3225,290 @@ async function shareHofCard(e) {
     if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'My Sp1nXI' }); return; } catch (err) {} }
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sp1nxi-xi.png'; a.click();
   }, 'image/png');
+}
+
+/* ------------------------------------------------------------------ *
+ * GUESS THE XI — famous club line-ups, shown as a formation where each
+ * shirt only tells you the player's country. Type names to fill it in.
+ * Line-ups are real (mostly the side that started a famous final);
+ * lines run keeper → attack, and left → right as the team attacks up.
+ * ------------------------------------------------------------------ */
+const NATIONS = {
+  ARG: ['Argentina', '🇦🇷'], AUS: ['Australia', '🇦🇺'], AUT: ['Austria', '🇦🇹'], BEL: ['Belgium', '🇧🇪'], BRA: ['Brazil', '🇧🇷'],
+  CIV: ['Ivory Coast', '🇨🇮'], CMR: ['Cameroon', '🇨🇲'], CRC: ['Costa Rica', '🇨🇷'], CRO: ['Croatia', '🇭🇷'], CZE: ['Czechia', '🇨🇿'],
+  DEN: ['Denmark', '🇩🇰'], EGY: ['Egypt', '🇪🇬'], ENG: ['England', '🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}'],
+  ESP: ['Spain', '🇪🇸'], FIN: ['Finland', '🇫🇮'], FRA: ['France', '🇫🇷'], GER: ['Germany', '🇩🇪'], IRL: ['Ireland', '🇮🇪'],
+  ISL: ['Iceland', '🇮🇸'], ITA: ['Italy', '🇮🇹'], MKD: ['North Macedonia', '🇲🇰'], MLI: ['Mali', '🇲🇱'], NED: ['Netherlands', '🇳🇱'],
+  NOR: ['Norway', '🇳🇴'], POL: ['Poland', '🇵🇱'], POR: ['Portugal', '🇵🇹'], ROU: ['Romania', '🇷🇴'],
+  SCO: ['Scotland', '🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}'], SEN: ['Senegal', '🇸🇳'], SRB: ['Serbia', '🇷🇸'],
+  SWE: ['Sweden', '🇸🇪'], SVN: ['Slovenia', '🇸🇮'], USA: ['USA', '🇺🇸'], ALG: ['Algeria', '🇩🇿'], QAT: ['Qatar', '🇶🇦'], TTO: ['Trinidad & Tobago', '🇹🇹'], URU: ['Uruguay', '🇺🇾'],
+  WAL: ['Wales', '🏴\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}']
+};
+// [name, nation, extra accepted answers]
+const QUIZ_XIS = [
+  { team: 'Barcelona 2014–15', note: 'Champions League final, Berlin', shape: '4-3-3', color: '#A50044', lines: [
+    [['Marc-André ter Stegen', 'GER', ['ter stegen']]],
+    [['Jordi Alba', 'ESP'], ['Gerard Piqué', 'ESP'], ['Javier Mascherano', 'ARG'], ['Dani Alves', 'BRA']],
+    [['Andrés Iniesta', 'ESP'], ['Sergio Busquets', 'ESP'], ['Ivan Rakitić', 'CRO']],
+    [['Neymar', 'BRA', ['neymar jr', 'ney']], ['Luis Suárez', 'URU'], ['Lionel Messi', 'ARG']] ] },
+  { team: 'Barcelona 2010–11', note: 'Champions League final, Wembley', shape: '4-3-3', color: '#A50044', lines: [
+    [['Víctor Valdés', 'ESP']],
+    [['Éric Abidal', 'FRA'], ['Javier Mascherano', 'ARG'], ['Gerard Piqué', 'ESP'], ['Dani Alves', 'BRA']],
+    [['Andrés Iniesta', 'ESP'], ['Sergio Busquets', 'ESP'], ['Xavi', 'ESP', ['xavi hernandez']]],
+    [['David Villa', 'ESP'], ['Lionel Messi', 'ARG'], ['Pedro', 'ESP']] ] },
+  { team: 'Barcelona 2008–09', note: 'Champions League final, Rome', shape: '4-3-3', color: '#A50044', lines: [
+    [['Víctor Valdés', 'ESP']],
+    [['Sylvinho', 'BRA'], ['Yaya Touré', 'CIV', ['yaya']], ['Gerard Piqué', 'ESP'], ['Carles Puyol', 'ESP']],
+    [['Andrés Iniesta', 'ESP'], ['Sergio Busquets', 'ESP'], ['Xavi', 'ESP', ['xavi hernandez']]],
+    [['Thierry Henry', 'FRA'], ['Lionel Messi', 'ARG'], ["Samuel Eto'o", 'CMR', ['etoo']]] ] },
+  { team: 'Man United 1998–99', note: 'The treble season', shape: '4-4-2', color: '#DA291C', lines: [
+    [['Peter Schmeichel', 'DEN']],
+    [['Denis Irwin', 'IRL'], ['Ronny Johnsen', 'NOR'], ['Jaap Stam', 'NED'], ['Gary Neville', 'ENG']],
+    [['Ryan Giggs', 'WAL'], ['Paul Scholes', 'ENG'], ['Roy Keane', 'IRL'], ['David Beckham', 'ENG']],
+    [['Andy Cole', 'ENG', ['andrew cole']], ['Dwight Yorke', 'TTO']] ] },
+  { team: 'Man United 2007–08', note: 'Champions League final, Moscow', shape: '4-4-2', color: '#DA291C', lines: [
+    [['Edwin van der Sar', 'NED']],
+    [['Patrice Evra', 'FRA'], ['Nemanja Vidić', 'SRB'], ['Rio Ferdinand', 'ENG'], ['Wes Brown', 'ENG']],
+    [['Cristiano Ronaldo', 'POR', ['ronaldo', 'cr7']], ['Michael Carrick', 'ENG'], ['Paul Scholes', 'ENG'], ['Owen Hargreaves', 'ENG']],
+    [['Carlos Tevez', 'ARG'], ['Wayne Rooney', 'ENG']] ] },
+  { team: 'Arsenal 2003–04', note: 'The Invincibles', shape: '4-4-2', color: '#EF0107', lines: [
+    [['Jens Lehmann', 'GER']],
+    [['Ashley Cole', 'ENG'], ['Sol Campbell', 'ENG'], ['Kolo Touré', 'CIV', ['kolo']], ['Lauren', 'CMR']],
+    [['Robert Pires', 'FRA'], ['Gilberto Silva', 'BRA', ['gilberto']], ['Patrick Vieira', 'FRA'], ['Freddie Ljungberg', 'SWE']],
+    [['Thierry Henry', 'FRA'], ['Dennis Bergkamp', 'NED']] ] },
+  { team: 'Liverpool 2004–05', note: 'Champions League final, Istanbul', shape: '4-4-1-1', color: '#C8102E', lines: [
+    [['Jerzy Dudek', 'POL']],
+    [['Djimi Traoré', 'MLI'], ['Sami Hyypiä', 'FIN'], ['Jamie Carragher', 'ENG'], ['Steve Finnan', 'IRL']],
+    [['John Arne Riise', 'NOR', ['riise']], ['Xabi Alonso', 'ESP', ['alonso']], ['Steven Gerrard', 'ENG'], ['Luis García', 'ESP', ['luis garcia']]],
+    [['Harry Kewell', 'AUS']],
+    [['Milan Baroš', 'CZE']] ] },
+  { team: 'Liverpool 2019–20', note: 'Premier League champions', shape: '4-3-3', color: '#C8102E', lines: [
+    [['Alisson', 'BRA', ['alisson becker']]],
+    [['Andrew Robertson', 'SCO', ['andy robertson', 'robbo']], ['Virgil van Dijk', 'NED', ['vvd']], ['Joe Gomez', 'ENG'], ['Trent Alexander-Arnold', 'ENG', ['trent', 'taa']]],
+    [['Georginio Wijnaldum', 'NED', ['gini']], ['Fabinho', 'BRA'], ['Jordan Henderson', 'ENG', ['hendo']]],
+    [['Sadio Mané', 'SEN'], ['Roberto Firmino', 'BRA', ['bobby']], ['Mohamed Salah', 'EGY', ['mo salah']]] ] },
+  { team: 'Real Madrid 2016–17', note: 'Champions League final, Cardiff', shape: '4-4-2 diamond', color: '#FEBE10', lines: [
+    [['Keylor Navas', 'CRC']],
+    [['Marcelo', 'BRA'], ['Sergio Ramos', 'ESP'], ['Raphaël Varane', 'FRA'], ['Dani Carvajal', 'ESP']],
+    [['Toni Kroos', 'GER'], ['Casemiro', 'BRA'], ['Luka Modrić', 'CRO']],
+    [['Isco', 'ESP']],
+    [['Cristiano Ronaldo', 'POR', ['ronaldo', 'cr7']], ['Karim Benzema', 'FRA']] ] },
+  { team: 'Bayern 2012–13', note: 'Champions League final, Wembley', shape: '4-2-3-1', color: '#DC052D', lines: [
+    [['Manuel Neuer', 'GER']],
+    [['David Alaba', 'AUT'], ['Dante', 'BRA'], ['Jérôme Boateng', 'GER'], ['Philipp Lahm', 'GER']],
+    [['Bastian Schweinsteiger', 'GER', ['schweini']], ['Javi Martínez', 'ESP']],
+    [['Franck Ribéry', 'FRA'], ['Thomas Müller', 'GER'], ['Arjen Robben', 'NED']],
+    [['Mario Mandžukić', 'CRO']] ] },
+  { team: 'Chelsea 2004–05', note: "Mourinho's first title", shape: '4-3-3', color: '#034694', lines: [
+    [['Petr Čech', 'CZE']],
+    [['William Gallas', 'FRA'], ['John Terry', 'ENG'], ['Ricardo Carvalho', 'POR'], ['Paulo Ferreira', 'POR']],
+    [['Frank Lampard', 'ENG'], ['Claude Makélélé', 'FRA'], ['Eiður Guðjohnsen', 'ISL', ['gudjohnsen', 'eidur']]],
+    [['Arjen Robben', 'NED'], ['Didier Drogba', 'CIV'], ['Damien Duff', 'IRL']] ] },
+  { team: 'Man City 2017–18', note: 'The Centurions', shape: '4-3-3', color: '#6CABDD', lines: [
+    [['Ederson', 'BRA']],
+    [['Fabian Delph', 'ENG'], ['Nicolás Otamendi', 'ARG'], ['John Stones', 'ENG'], ['Kyle Walker', 'ENG']],
+    [['David Silva', 'ESP'], ['Fernandinho', 'BRA'], ['Kevin De Bruyne', 'BEL', ['kdb']]],
+    [['Leroy Sané', 'GER'], ['Sergio Agüero', 'ARG', ['kun']], ['Raheem Sterling', 'ENG']] ] },
+  { team: 'Inter 2009–10', note: 'Champions League final, Madrid', shape: '4-2-3-1', color: '#0068A8', lines: [
+    [['Júlio César', 'BRA']],
+    [['Cristian Chivu', 'ROU'], ['Walter Samuel', 'ARG'], ['Lúcio', 'BRA'], ['Maicon', 'BRA']],
+    [['Esteban Cambiasso', 'ARG'], ['Javier Zanetti', 'ARG']],
+    [['Goran Pandev', 'MKD'], ['Wesley Sneijder', 'NED'], ["Samuel Eto'o", 'CMR', ['etoo']]],
+    [['Diego Milito', 'ARG']] ] },
+  { team: 'AC Milan 2006–07', note: 'Champions League final, Athens', shape: '4-3-2-1', color: '#FB090B', lines: [
+    [['Dida', 'BRA']],
+    [['Marek Jankulovski', 'CZE'], ['Paolo Maldini', 'ITA'], ['Alessandro Nesta', 'ITA'], ['Massimo Oddo', 'ITA']],
+    [['Massimo Ambrosini', 'ITA'], ['Andrea Pirlo', 'ITA'], ['Gennaro Gattuso', 'ITA']],
+    [['Clarence Seedorf', 'NED'], ['Kaká', 'BRA']],
+    [['Filippo Inzaghi', 'ITA', ['pippo']]] ] }
+];
+
+// Where each shirt sits on the pitch: keeper at the bottom, lines up to attack.
+function quizSpots(q) {
+  const n = q.lines.length, spots = [];
+  q.lines.forEach((line, li) => line.forEach((pl, pi) => {
+    spots.push({ pl, x: (100 / (line.length + 1)) * (pi + 1), y: 88 - li * (76 / (n - 1)),
+      w: Math.min(24, 100 / (line.length + 1) - 1.5), id: spots.length });
+  }));
+  return spots;
+}
+const QUIZ_PITCH = `<div class="markings">
+  <div style="left:20%;right:20%;top:-1px;height:12%;border-top:none"></div>
+  <div style="left:20%;right:20%;bottom:-1px;height:12%;border-bottom:none"></div>
+  <div style="left:-1px;right:-1px;top:50%;height:0"></div>
+  <div style="left:35%;right:35%;top:43.5%;height:13%;border-radius:50%"></div></div>`;
+const flagSpot = s => {
+  const [cname, flag] = NATIONS[s.pl[1]] || [s.pl[1], '🏳️'];
+  return el(`<div style="position:absolute;left:${s.x}%;top:${s.y}%;transform:translate(-50%,-50%);text-align:center;width:${s.w}%;
+    transition:transform .25s">
+    <div style="font-size:1.7rem;line-height:1">${flag}</div>
+    <div class="qn" style="font-size:.66rem;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:6px;padding:2px 4px;margin-top:2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cname)}</div></div>`);
+};
+
+// Surname for tight labels, keeping particles: "van der Sar", "ter Stegen", "De Bruyne".
+function shortName(nm) {
+  if (nm.length <= 11) return nm;
+  const w = nm.split(' ');
+  let i = w.length - 1;
+  while (i > 0 && (/^[a-z]/.test(w[i - 1]) || /^(De|Van|Di|Da|Le|La)$/.test(w[i - 1]))) i--;
+  return w.slice(i).join(' ');
+}
+
+/* --- NAME THE TEAM: the reverse quiz. A line-up of flags, four famous
+ * sides to choose from. Streak counts until your first wrong answer. */
+function screenNameTeam(streak = 0, lastTeam) {
+  theme(null); setCrumb('Name the team'); setLeagueTheme(null);
+  const pool = QUIZ_XIS.filter(q => q.team !== lastTeam);
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  // three wrong answers — same club in another season when we have one (harder)
+  const others = QUIZ_XIS.filter(x => x !== q).sort(() => Math.random() - 0.5);
+  const club = t => t.team.replace(/\s+\d{4}.*$/, '');
+  const near = others.filter(x => club(x) === club(q));
+  const opts = [q, ...near.slice(0, 1), ...others.filter(x => !near.slice(0, 1).includes(x))].slice(0, 4).sort(() => Math.random() - 0.5);
+  const best = store.get('sp1nxi-nameteam-best', 0);
+  const v = el(`<section>
+    <h2>Name the team</h2>
+    <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+      <div style="flex:1"><b>Which famous side is this?</b><br><small>${esc(q.shape)} · every shirt shows the player's country</small></div>
+      <div style="text-align:right"><b style="font-family:'Bricolage Grotesque';font-size:1.5rem">🔥 ${streak}</b><br><small>best ${best}</small></div>
+    </div>
+    <div class="pitch" style="position:relative">${QUIZ_PITCH}</div>
+    <div id="nopts"></div>
+    <button class="btn ghost" id="nback">Back</button>
+  </section>`);
+  const pitch = v.querySelector('.pitch');
+  quizSpots(q).forEach(s => pitch.appendChild(flagSpot(s)));
+  const box = v.querySelector('#nopts');
+  opts.forEach(o => {
+    const b = el(`<button class="btn">${esc(o.team)}<span class="sub">${esc(o.note)}</span></button>`);
+    b.onclick = () => {
+      box.querySelectorAll('button').forEach(x => { x.disabled = true; });
+      const right = o === q;
+      b.style.background = right ? '#16A34A' : '#E5484D'; b.style.color = '#fff'; b.style.borderColor = 'transparent';
+      if (!right) {
+        const correct = [...box.children][opts.indexOf(q)];
+        correct.style.background = '#16A34A'; correct.style.color = '#fff'; correct.style.borderColor = 'transparent';
+      }
+      const s = right ? streak + 1 : 0;
+      if (s > best) store.set('sp1nxi-nameteam-best', s);
+      if (right) SFX.roar(0.5); else SFX.groan();
+      // show who they were
+      pitch.querySelectorAll('.qn').forEach((n, i) => {
+        n.textContent = shortName(quizSpots(q)[i].pl[0]);
+        n.style.background = right ? '#16A34A' : 'rgba(0,0,0,.6)';
+      });
+      const next = el(`<button class="btn primary">${right ? `Next (streak ${s})` : 'Try another'}</button>`);
+      next.onclick = () => screenNameTeam(s, q.team);
+      box.appendChild(next);
+    };
+    box.appendChild(b);
+  });
+  v.querySelector('#nback').onclick = screenMode;
+  show(v);
+}
+
+// Lower-case, strip accents and punctuation, keep word gaps.
+const qnorm = s => s.toLowerCase().replace(/ð/g, 'd').replace(/ø/g, 'o').replace(/æ/g, 'ae').replace(/ı/g, 'i')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[-'’.]/g, ' ').replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+const lev = (a, b) => {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+};
+// Accept the full name, any ending of it ("messi", "van dijk"), nicknames,
+// and one typo on longer answers.
+function quizAnswers([name, , extra = []]) {
+  const words = qnorm(name).split(' ');
+  const out = new Set([qnorm(name), ...extra.map(qnorm)]);
+  for (let i = 1; i < words.length; i++) out.add(words.slice(i).join(' '));
+  return [...out];
+}
+const quizMatch = (guess, player) => {
+  const g = qnorm(guess);
+  if (!g) return false;
+  return quizAnswers(player).some(a => a === g || (a.length >= 5 && lev(a, g) <= 1));
+};
+
+function screenQuiz(lastTeam) {
+  theme(null); setCrumb('Guess the XI'); setLeagueTheme(null);
+  const pool = QUIZ_XIS.filter(q => q.team !== lastTeam);
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  const found = new Set();
+  let hints = 3;
+  const spots = quizSpots(q);
+  const v = el(`<section>
+    <h2>Guess the XI</h2>
+    <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-left:6px solid ${q.color}">
+      <div style="flex:1"><b>${esc(q.team)}</b><br><small>${esc(q.note)} · ${esc(q.shape)}</small></div>
+      <b id="qscore" style="font-family:'Bricolage Grotesque';font-size:1.5rem">0/11</b>
+    </div>
+    <div class="pitch" id="qpitch" style="position:relative">${QUIZ_PITCH}</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input id="qin" placeholder="Type a player's name" autocomplete="off" autocapitalize="words"
+        style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);font-size:1rem">
+      <button class="btn primary" id="qgo" style="width:auto;margin:0">Guess</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn ghost" id="qhint" style="flex:1;width:auto">💡 Hint (3)</button>
+      <button class="btn ghost" id="qgive" style="flex:1;width:auto">Give up</button>
+    </div>
+    <button class="btn ghost" id="qnext">Next team</button>
+    <button class="btn ghost" id="qback">Back</button>
+  </section>`);
+  const pitch = v.querySelector('#qpitch'), input = v.querySelector('#qin');
+  spots.forEach(s => { s.el = flagSpot(s); pitch.appendChild(s.el); });
+  const reveal = (s, how) => {
+    const box = s.el.querySelector('.qn');
+    // short form so a back four fits: "Piqué", "van Dijk", "ter Stegen"
+    box.textContent = shortName(s.pl[0]);
+    box.title = s.pl[0];
+    box.style.background = how === 'given' ? 'rgba(229,72,77,.85)' : '#16A34A';
+    s.el.style.transform = 'translate(-50%,-50%) scale(1.12)';
+    setTimeout(() => { s.el.style.transform = 'translate(-50%,-50%)'; }, 250);
+  };
+  const score = () => { v.querySelector('#qscore').textContent = `${found.size}/11`; };
+  const finish = msg => {
+    input.disabled = true; v.querySelector('#qgo').disabled = true; v.querySelector('#qhint').disabled = true;
+    v.querySelector('#qgive').disabled = true;
+    const best = store.get('sp1nxi-quiz', {});
+    if (!best[q.team] || found.size > best[q.team]) { best[q.team] = found.size; store.set('sp1nxi-quiz', best); }
+    toast(msg);
+  };
+  const guess = () => {
+    const g = input.value;
+    if (!g.trim()) return;
+    const hit = spots.find(s => !found.has(s.id) && quizMatch(g, s.pl));
+    if (hit) {
+      found.add(hit.id); reveal(hit); score(); input.value = '';
+      if (found.size === 11) { SFX.roar(0.8); finish('🏆 Full XI! Brilliant.'); }
+    } else {
+      const again = spots.find(s => found.has(s.id) && quizMatch(g, s.pl));
+      toast(again ? 'Already got that one.' : 'Not in this XI.');
+      input.style.borderColor = '#E5484D'; setTimeout(() => { input.style.borderColor = ''; }, 600);
+    }
+    input.focus();
+  };
+  v.querySelector('#qgo').onclick = guess;
+  input.onkeydown = e => { if (e.key === 'Enter') guess(); };
+  v.querySelector('#qhint').onclick = () => {
+    const left = spots.filter(s => !found.has(s.id) && !s.hinted);
+    if (!hints || !left.length) return;
+    const s = left[Math.floor(Math.random() * left.length)];
+    s.hinted = true; hints--;
+    const initials = s.pl[0].split(' ').map(w => w[0] + '…').join(' ');
+    s.el.querySelector('.qn').textContent = initials;
+    v.querySelector('#qhint').textContent = `💡 Hint (${hints})`;
+  };
+  v.querySelector('#qgive').onclick = () => {
+    spots.filter(s => !found.has(s.id)).forEach(s => reveal(s, 'given'));
+    finish(`You got ${found.size} of 11.`);
+  };
+  v.querySelector('#qnext').onclick = () => screenQuiz(q.team);
+  v.querySelector('#qback').onclick = screenMode;
+  show(v);
 }
 
 /* QR encoder — Kazuhiko Arase's QRCode for JavaScript (MIT licence,
