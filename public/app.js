@@ -527,19 +527,21 @@ const WC_GROUPS = {
   Portugal: 'K', Colombia: 'K',
   England: 'L', Croatia: 'L'
 };
+// Each non-curated nation appears in exactly one group. Strengths are
+// estimates — these teams have no real squads here, so they never spin.
 const WC_GROUP_FILLERS = {
-  A: [{name:'Poland', strength:73}, {name:'Ecuador', strength:71}],
-  B: [{name:'Australia', strength:72}, {name:'Austria', strength:74}],
-  C: [{name:'Chile', strength:72}, {name:'Serbia', strength:74}],
-  D: [{name:'Paraguay', strength:70}, {name:'Iran', strength:71}],
-  E: [{name:'Turkey', strength:73}, {name:'Romania', strength:70}],
-  F: [{name:'Ivory Coast', strength:72}, {name:'Iraq', strength:68}],
-  G: [{name:'Morocco', strength:76}, {name:'Scotland', strength:72}],
-  H: [{name:'Colombia', strength:76}, {name:'Panama', strength:69}],
-  I: [{name:'Algeria', strength:72}, {name:'Egypt', strength:71}],
-  J: [{name:'Ecuador', strength:71}, {name:'Bolivia', strength:68}],
-  K: [{name:'Mexico', strength:74}, {name:'Canada', strength:76}],
-  L: [{name:'USA', strength:76}, {name:'Switzerland', strength:75}]
+  A: [{name:'Qatar', strength:68}, {name:'Haiti', strength:62}],
+  B: [{name:'Australia', strength:71}, {name:'Curaçao', strength:61}],
+  C: [{name:'Scotland', strength:71}, {name:'Cape Verde', strength:65}],
+  D: [{name:'Paraguay', strength:71}, {name:'Iran', strength:70}, {name:'New Zealand', strength:62}],
+  E: [{name:'Ivory Coast', strength:72}, {name:'Ecuador', strength:72}, {name:'Jamaica', strength:63}],
+  F: [{name:'Tunisia', strength:68}, {name:'Sweden', strength:72}],
+  G: [{name:'Egypt', strength:71}, {name:'Norway', strength:74}, {name:'Iraq', strength:65}],
+  H: [{name:'Saudi Arabia', strength:67}, {name:'South Africa', strength:66}],
+  I: [{name:'Turkey', strength:73}, {name:'DR Congo', strength:67}],
+  J: [{name:'Austria', strength:73}, {name:'Algeria', strength:70}, {name:'Jordan', strength:65}],
+  K: [{name:'Uzbekistan', strength:66}, {name:'Czechia', strength:70}],
+  L: [{name:'Ghana', strength:69}, {name:'Panama', strength:66}]
 };
 // Which real nation an XI "represents" — whichever nation contributed the
 // most players to it, since a built XI is a cross-nation squad, not one
@@ -1768,43 +1770,6 @@ async function drawBracket(rounds, backFn) {
   };
 }
 
-async function renderKnockout(A, B, { top8, playoffMatches, playoffWinners, mainRounds, champ, missed }) {
-  const myInPlayoff = playoffMatches.some(m => m.x.mine || m.y.mine);
-  const myInTop8 = top8.some(r => r.mine);
-
-  const v = el(`<section>
-    <h2>Knockout stage</h2>
-    ${missed.map(r => `<p><small>⚠️ ${esc(r.name)} finished 25th or lower — eliminated in the league phase.</small></p>`).join('')}
-    ${myInPlayoff ? '<p><small>Your XI is in the knockout playoff round — win this to reach the Round of 16.</small></p>' : ''}
-    ${myInTop8 ? '<p><small>Your XI qualified directly for the Round of 16.</small></p>' : ''}
-
-    <h3 style="margin-top:14px">Knockout playoff round</h3>
-    <p><small>Teams finishing 9th–24th · 9 v 24, 10 v 23 … 16 v 17</small></p>
-    <div id="playoff-wrap"></div>
-
-    <h3 style="margin-top:18px">Round of 16 onwards</h3>
-    <p><small>Top 8 + 8 playoff winners</small></p>
-    <div id="main-wrap"></div>
-
-    <div class="card" id="champCard" style="text-align:center;opacity:0;transition:opacity .4s ease;margin-top:14px">
-      <h3>Champions</h3>
-      <p style="font-family:'Bricolage Grotesque';font-weight:800;font-size:1.5rem">${champ.mine ? '🏆 ' : ''}${esc(champ.name)}</p>
-    </div>
-    <button class="btn ghost" id="back" style="margin-top:10px">Back to the table</button>
-  </section>`);
-  v.querySelector('#back').onclick = () => screenTable(A, B);
-  show(v);
-
-  const playoffBkt = await drawBracket([ playoffMatches ]);
-  v.querySelector('#playoff-wrap').appendChild(playoffBkt.wrap);
-  await playoffBkt.reveal();
-
-  const mainBkt = await drawBracket(mainRounds);
-  v.querySelector('#main-wrap').appendChild(mainBkt.wrap);
-  await mainBkt.reveal();
-
-  v.querySelector('#champCard').style.opacity = 1;
-}
 
 async function screenTable(A, B) {
   setCrumb(S.leagueKey === 'WC' ? 'Group stage' : 'Predicted table');
@@ -1927,7 +1892,14 @@ async function screenGroupTable(A, B) {
       t.appendChild(tr);
     });
   }
-  v.querySelector('#toko').onclick = () => screenKnockout(A, B, rows.filter(r => r.real || r.mine));
+  v.querySelector('#toko').onclick = () => {
+    const seen = new Set(rows.map(r => r.name));
+    const fill = [];
+    Object.values(WC_GROUP_FILLERS).flat().forEach(f => {
+      if (!seen.has(f.name)) { seen.add(f.name); fill.push({ name: f.name, strength: f.strength }); }
+    });
+    screenKnockout(A, B, [...rows, ...fill]);
+  };
 }
 
 // Left-edge status colour for a table row — mirrors how real league and
