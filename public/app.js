@@ -2782,6 +2782,41 @@ function screenPenalties(H, Aw, m, onDone) {
         <div id="pk-${s}" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>`).join('')}
     </div>
     <p id="pcomm" style="text-align:center;min-height:2.8em"></p>
+
+    <div id="pgoal-wrap" style="display:none;margin:14px 0">
+      <p id="pgoal-status" style="text-align:center;font-weight:700;margin:0 0 8px"></p>
+      <div id="pgoal-field" style="position:relative;width:100%;max-width:340px;margin:0 auto;aspect-ratio:4/3;
+        border-radius:var(--r);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15);
+        background:linear-gradient(#dff0e3,#dff0e3 62%,#5fa86b 62%,#5fa86b)">
+        <div id="pgoal-box" style="position:absolute;left:8%;right:8%;top:10%;height:52%;border:6px solid #fff;border-bottom:none;
+          background:repeating-linear-gradient(0deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px),
+          repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px);cursor:crosshair;touch-action:none"></div>
+        <div id="pgoal-keeper" style="position:absolute;width:13%;aspect-ratio:1/1.5;left:50%;top:68%;transform:translate(-50%,-50%);
+          transition:left .45s cubic-bezier(.2,.7,.3,1),top .45s cubic-bezier(.2,.7,.3,1),transform .45s;
+          filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))">
+          <svg viewBox="0 0 60 90" style="width:100%;height:100%;overflow:visible">
+            <path d="M30 55 L18 88" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            <path d="M30 55 L42 88" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            <path d="M30 30 L8 14" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            <path d="M30 30 L52 14" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            <rect x="18" y="26" width="24" height="32" rx="7" style="fill:var(--orange);stroke:var(--ink);stroke-width:4"/>
+            <circle cx="30" cy="14" r="11" style="fill:#e8b98a;stroke:var(--ink);stroke-width:4"/>
+          </svg>
+        </div>
+        <div id="pgoal-ball" style="position:absolute;width:9%;aspect-ratio:1/1;left:50%;bottom:-6%;transform:translate(-50%,0);
+          font-size:1.3rem;transition:left 1s cubic-bezier(.3,.55,.25,1),top 1s cubic-bezier(.3,.55,.25,1),bottom 1s cubic-bezier(.3,.55,.25,1)">⚽</div>
+      </div>
+      <button class="btn primary" id="pgoal-confirm" disabled style="max-width:340px;margin:10px auto 0">Confirm</button>
+    </div>
+    <div id="pgoal-pass" style="display:none;position:fixed;inset:0;background:rgba(36,31,25,.75);
+      align-items:center;justify-content:center;z-index:60;padding:20px">
+      <div class="card" style="text-align:center;max-width:300px">
+        <h3>Pass the phone</h3>
+        <p id="pgoal-pass-sub" style="margin:6px 0 16px"></p>
+        <button class="btn primary" id="pgoal-pass-go">Continue</button>
+      </div>
+    </div>
+
     <div id="pend"></div>
     <button class="btn ghost" id="pskip">Skip to the result</button>
   </section>`);
@@ -2789,7 +2824,8 @@ function screenPenalties(H, Aw, m, onDone) {
   const circle = () => el('<span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--line,#ccc);display:inline-block"></span>');
   ['home', 'away'].forEach(s => { for (let i = 0; i < 5; i++) v.querySelector('#pk-' + s).appendChild(circle()); });
   const comm = v.querySelector('#pcomm'), pscore = v.querySelector('#pscore');
-  // decide every kick up front (seeded in shared games), then animate it
+  // decide every kick up front (seeded in shared games), then animate it —
+  // this is also what "skip" and online/spectate games fall back to
   const plan = (m.pens && m.pens.kicks) || shootout(H, Aw, m.seed ? seededRng(m.seed + '|pens') : Math.random).kicks;
   let fast = false;
   v.querySelector('#pskip').onclick = () => { fast = true; };
@@ -2801,6 +2837,109 @@ function screenPenalties(H, Aw, m, onDone) {
     return na === nb && a !== b;
   };
 
+  /* -- interactive taking: local pass-and-play and vs-AI kicks are played
+     out by tapping the goal, instead of purely simulated. Online/spectate
+     games stay on the seeded plan above so both phones see the same result. */
+  const humanSide = side => S.mode === 'pass' ? true : S.mode === 'ai' ? side === 'home' : false;
+
+  const gWrap = v.querySelector('#pgoal-wrap'), gStatus = v.querySelector('#pgoal-status'),
+    gBox = v.querySelector('#pgoal-box'), gKeeper = v.querySelector('#pgoal-keeper'),
+    gBall = v.querySelector('#pgoal-ball'), gConfirm = v.querySelector('#pgoal-confirm'),
+    gPass = v.querySelector('#pgoal-pass'), gPassSub = v.querySelector('#pgoal-pass-sub'),
+    gPassGo = v.querySelector('#pgoal-pass-go');
+
+  function moveKeeper(x, y) {
+    const deg = Math.max(-38, Math.min(38, (x - 50) / 50 * 38));
+    gKeeper.style.left = x + '%'; gKeeper.style.top = y + '%';
+    gKeeper.style.transform = `translate(-50%,-50%) rotate(${deg}deg)`;
+  }
+  function resetPitch() {
+    moveKeeper(50, 68);
+    gBall.style.left = '50%'; gBall.style.bottom = '-6%'; gBall.style.top = '';
+    gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
+  }
+  function markAt(x, y, color) {
+    gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
+    const d = el(`<div class="pmark" style="position:absolute;width:24px;height:24px;border-radius:50%;
+      transform:translate(-50%,-50%);border:3px solid ${color};background:${color}33;pointer-events:none"></div>`);
+    d.style.left = x + '%'; d.style.top = y + '%';
+    gBox.appendChild(d);
+  }
+  function pointFromEvent(e) {
+    const r = gBox.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: Math.max(4, Math.min(96, cx / r.width * 100)), y: Math.max(4, Math.min(96, cy / r.height * 100)) };
+  }
+  function passOver(msg) {
+    return new Promise(res => {
+      gPassSub.textContent = msg;
+      gPass.style.display = 'flex';
+      gPassGo.onclick = () => { gPass.style.display = 'none'; res(); };
+    });
+  }
+  function humanTap(promptText) {
+    return new Promise(res => {
+      resetPitch();
+      gStatus.textContent = promptText;
+      gConfirm.disabled = true;
+      let pt = null;
+      const onDown = e => {
+        e.preventDefault();
+        pt = pointFromEvent(e);
+        markAt(pt.x, pt.y, 'var(--orange)');
+        gConfirm.disabled = false;
+      };
+      gBox.addEventListener('pointerdown', onDown);
+      gConfirm.onclick = () => {
+        if (!pt) return;
+        gBox.removeEventListener('pointerdown', onDown);
+        res(pt);
+      };
+    });
+  }
+  function aiTap(spreadX, spreadY) {
+    const zones = [[22, 30], [50, 25], [78, 30], [22, 60], [50, 55], [78, 60]];
+    const base = zones[Math.floor(Math.random() * zones.length)];
+    return {
+      x: Math.max(4, Math.min(96, base[0] + (Math.random() * spreadX - spreadX / 2))),
+      y: Math.max(4, Math.min(96, base[1] + (Math.random() * spreadY - spreadY / 2)))
+    };
+  }
+  async function interactiveKick(taker, gk, shooterHuman, keeperHuman) {
+    gWrap.style.display = 'block';
+    let shot;
+    if (shooterHuman) {
+      shot = await humanTap(`${taker.player.name}: tap where you want to shoot`);
+    } else {
+      resetPitch();
+      gStatus.textContent = `${taker.player.name} is placing the ball…`;
+      gConfirm.disabled = true;
+      await sleep(500);
+      shot = aiTap(14, 10);
+    }
+    resetPitch();   // clears the shot marker — the keeper always guesses blind
+    if (shooterHuman && keeperHuman) await passOver(`Hand the phone over — ${gk.player.name} is in goal.`);
+    let save;
+    if (keeperHuman) {
+      save = await humanTap(`${gk.player.name}: tap where you want to dive`);
+    } else {
+      gStatus.textContent = `${gk.player.name} is watching the run-up…`;
+      gConfirm.disabled = true;
+      await sleep(500);
+      save = aiTap(16, 12);
+    }
+    moveKeeper(save.x, save.y);
+    gBall.style.left = shot.x + '%'; gBall.style.top = shot.y + '%'; gBall.style.bottom = '';
+    const dx = shot.x - save.x, dy = shot.y - save.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // a sharper keeper covers a little more ground — the dive doesn't have to land exactly on the shot
+    const tol = Math.max(16, Math.min(32, 24 + (rating(gk) - 75) * 0.15));
+    await sleep(550);
+    gWrap.style.display = 'none';
+    return { scored: dist > tol };
+  }
+
   (async () => {
     while (!decided()) {
       const side = T.home.kicks.length <= T.away.kicks.length ? 'home' : 'away';
@@ -2811,7 +2950,16 @@ function screenPenalties(H, Aw, m, onDone) {
       comm.innerHTML = `<b>${esc(taker.player.name)}</b> steps up…`;
       if (!fast) SFX.whistle(1);
       await wait(1100);
-      const scored = kick.scored;
+
+      let scored, saved;
+      const shooterHuman = humanSide(side), keeperHuman = humanSide(other);
+      if (!fast && (shooterHuman || keeperHuman)) {
+        const res = await interactiveKick(taker, T[other].gk, shooterHuman, keeperHuman);
+        scored = res.scored; saved = !res.scored;
+      } else {
+        scored = kick.scored; saved = kick.saved;
+      }
+
       if (!fast) SFX.thump();
       T[side].kicks.push(scored);
       const row = v.querySelector('#pk-' + side);
@@ -2821,7 +2969,7 @@ function screenPenalties(H, Aw, m, onDone) {
       c.style.borderColor = scored ? '#22C55E' : '#E5484D';
       pscore.textContent = `${sum('home')} – ${sum('away')}`;
       comm.innerHTML = scored ? `⚽ <b>${esc(taker.player.name)}</b> scores!`
-        : kick.saved ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
+        : saved ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
       if (!fast) { if (scored) SFX.roar(0.55); else SFX.groan(); }
       await wait(1200);
     }
@@ -3157,7 +3305,7 @@ function stopPoll() { if (S.poll) clearInterval(S.poll); S.poll = null; }
 // A squad as sent to the server (players may still be empty mid-draft).
 function squadPayload(p) {
   return {
-    label: p.label, formation: p.formation,
+    label: p.label, formation: p.formation, deviceId: deviceId(),
     badge: p.badge ? { home: p.badge.home, away: p.badge.away, name: p.badge.name } : null,
     strength: p.strength,
     bench: (p.bench || []).map(b => ({ name:b.name, number:b.number, rating:b.rating, position:b.position,
@@ -3171,7 +3319,7 @@ function squadPayload(p) {
 // and any spectators) goes through this, so they all simulate the same match.
 function hydrateSquad(sq, fallbackLabel) {
   return {
-    label: sq.label || fallbackLabel, formation: sq.formation, strength: sq.strength,
+    label: sq.label || fallbackLabel, formation: sq.formation, strength: sq.strength, deviceId: sq.deviceId || null,
     badge: sq.badge || { home:'#888', away:'#fff', name:'' },
     bench: sq.bench || [],
     xi: sq.xi.map(s => ({ ...s, player: { ...s.player, club: s.player.club || { name:'', home:'#888', away:'#fff' } } }))
@@ -3539,15 +3687,29 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 
-// Head-to-head: your online record against each friend, by nickname.
+// A random ID generated once per device/browser and kept in localStorage —
+// this is what head-to-head is now keyed on, instead of the nickname
+// someone happened to type in that game.
+function deviceId() {
+  let id = store.get('sp1nxi-device', null);
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : 'd-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
+    store.set('sp1nxi-device', id);
+  }
+  return id;
+}
+
+// Head-to-head: your online record against each opponent DEVICE (falls
+// back to their nickname for older matches recorded before this existed).
 function recordH2H(A, B, m) {
   if (S.mode !== 'online' || !S.room || m.h2hDone) return null;
   m.h2hDone = true;
   const mine = S.room.seat === 0 ? 'home' : 'away';
-  const opp = (mine === 'home' ? B : A).label, gf = mine === 'home' ? m.gA : m.gB, ga = mine === 'home' ? m.gB : m.gA;
+  const oppTeam = mine === 'home' ? B : A;
+  const opp = oppTeam.label, gf = mine === 'home' ? m.gA : m.gB, ga = mine === 'home' ? m.gB : m.gA;
   const won = m.winSide ? m.winSide === mine : gf > ga, lost = m.winSide ? m.winSide !== mine : gf < ga;
   const all = store.get('sp1nxi-h2h', {});
-  const key = opp.trim().toLowerCase();
+  const key = oppTeam.deviceId ? ('dev:' + oppTeam.deviceId) : ('name:' + opp.trim().toLowerCase());
   const r = all[key] || { name: opp, w: 0, d: 0, l: 0, gf: 0, ga: 0, best: null };
   r.name = opp; r.gf += gf; r.ga += ga;
   if (won) r.w++; else if (lost) r.l++; else r.d++;
