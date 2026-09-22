@@ -805,7 +805,7 @@ function representedNation(p) {
  * ------------------------------------------------------------------ */
 const app = document.getElementById('app');
 const crumb = document.getElementById('crumb');
-const S = { mode:null, leagueKey:null, players:[], turn:0, room:null, poll:null, lastMatch:null };
+const S = { mode:null, leagueKey:null, players:[], turn:0, room:null, poll:null, lastMatch:null, penaltyOnly:false };
 
 const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
@@ -857,18 +857,108 @@ function screenMode() {
       <button class="btn ghost" id="hof" style="flex:1;width:auto">🏆 Hall of fame</button>
       <button class="btn ghost" id="h2h" style="flex:1;width:auto">🤝 Head-to-head</button>
     </div>
+    <button class="btn ghost" id="pens">🥅 Penalty Shootout<span class="sub">Skip straight to spot-kicks — vs AI, pass and play, or a room code</span></button>
     <button class="btn ghost" id="howto">How to play</button>
   </section>`);
   v.querySelector('#hof').onclick = screenHallOfFame;
   v.querySelector('#quiz').onclick = () => screenQuiz();
   v.querySelector('#nameteam').onclick = () => screenNameTeam();
   v.querySelector('#h2h').onclick = screenH2H;
+  v.querySelector('#pens').onclick = screenPenaltyMode;
   v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+    S.penaltyOnly = false;
     S.mode = b.dataset.m;
     if (b.dataset.m === 'join') return screenJoin();
     screenLeague();
   });
   v.querySelector('#howto').onclick = screenTutorial;
+  show(v);
+}
+
+/* --- penalty shootout mode: same code system and squad-build flow as a
+ * full match, just no 90 minutes first — build (or auto-fill) an XI on
+ * each side, then go straight to the spot-kicks. */
+function screenPenaltyMode() {
+  theme(null); setCrumb('Penalty Shootout');
+  const v = el(`<section>
+    <h1>🥅 Penalty Shootout</h1>
+    <p>Spin a quick XI each — or skip that too — then it's straight to the spot: tap to aim, tap to guess the save.</p>
+    <button class="btn primary" data-m="ai">Play the AI<span class="sub">You build an XI, the AI builds its own</span></button>
+    <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
+    <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
+    <button class="btn ghost" data-m="join">Join with a code</button>
+    <button class="btn ghost" id="simulate">⚡ Simulate a shootout<span class="sub">Two random XIs, straight to the final score</span></button>
+    <button class="btn ghost" id="back">Back</button>
+  </section>`);
+  v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+    S.penaltyOnly = true;
+    S.mode = b.dataset.m;
+    if (b.dataset.m === 'join') return screenJoin();
+    screenLeague();
+  });
+  v.querySelector('#simulate').onclick = () => simulatePenaltyShootout();
+  v.querySelector('#back').onclick = screenMode;
+  show(v);
+}
+
+// Two instantly-built random XIs, straight to a shootout result — no
+// spinning, no taps, just the outcome.
+async function simulatePenaltyShootout() {
+  theme(null); setCrumb('Penalty Shootout');
+  show(el('<section><h2>Simulating…</h2><p>Building two random XIs…</p></section>'));
+  const keys = Object.keys(LEAGUES);
+  const leagueKey = keys[Math.floor(Math.random() * keys.length)];
+  await useLeague(leagueKey);
+  const A = mkPlayer('Side A'), B = mkPlayer('Side B');
+  await buildAI(A, async () => {});
+  await buildAI(B, async () => {});
+  const so = shootout(A, B, Math.random);
+  const win = so.a > so.b ? A : B;
+  const v = el(`<section>
+    <h2>${esc(win.label)} win it!</h2>
+    <p style="text-align:center"><small>${esc(A.label)} ${so.a}–${so.b} ${esc(B.label)} on penalties.</small></p>
+    <div class="card" style="text-align:center">
+      <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">${so.a} – ${so.b}</div>
+    </div>
+    <button class="btn primary" id="again">Simulate another</button>
+    <button class="btn ghost" id="home">Home</button>
+  </section>`);
+  v.querySelector('#again').onclick = () => simulatePenaltyShootout();
+  v.querySelector('#home').onclick = screenMode;
+  show(v);
+}
+
+// The shootout-only match: builds finish as normal, then this runs
+// instead of a 90-minute simulation. Online/spectate stay on the same
+// seeded, non-interactive plan a full match's penalties would use (no
+// real-time tap syncing between two devices yet) — vs AI and pass and
+// play are fully interactive.
+function startPenaltyOnly(A, B, seed) {
+  setCrumb('Penalty Shootout');
+  const m = { seed, gA: 0, gB: 0, ft: { a: 0, b: 0 }, et: true, pens: null, penaltyOnly: true };
+  const humanSide = side => S.mode === 'online' ? side === (S.room && S.room.seat === 1 ? 'away' : 'home')
+    : S.mode === 'spectate' ? false
+    : S.mode === 'ai' ? side === 'home' : true;
+  screenPenalties(A, B, m, (a, b) => screenPenaltyOnlyResult(A, B, a, b, m), humanSide);
+}
+
+function screenPenaltyOnlyResult(A, B, a, b, m) {
+  setCrumb('Penalty Shootout');
+  m.gA = a; m.gB = b; m.winSide = a > b ? 'home' : 'away';
+  const win = a > b ? A : B;
+  const h2h = recordH2H(A, B, m);
+  const v = el(`<section>
+    <h2>${esc(win.label)} win it!</h2>
+    <p style="text-align:center"><small>${esc(A.label)} ${a}–${b} ${esc(B.label)} on penalties.</small></p>
+    <div class="card" style="text-align:center">
+      <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">${a} – ${b}</div>
+    </div>
+    ${h2h ? `<div class="card"><h3>Head-to-head vs ${esc(h2h.name)}</h3><p style="margin:0">${h2hLine(h2h)}</p></div>` : ''}
+    <button class="btn primary" id="again">Another shootout</button>
+    <button class="btn ghost" id="home">Home</button>
+  </section>`);
+  v.querySelector('#again').onclick = () => { S.penaltyOnly = true; screenLeague(); };
+  v.querySelector('#home').onclick = () => { S.penaltyOnly = false; screenMode(); };
   show(v);
 }
 
@@ -1597,6 +1687,7 @@ function screenAIBuild(done) {
  * the actual player who caused them, both XIs shown as a real formation
  * shape rather than a flat list. */
 function startMatch(A, B, seed, roomRig) {
+  if (S.penaltyOnly) return startPenaltyOnly(A, B, seed);
   const m = simulate(A, B, seed);
   if (roomRig) applyRig(m, A, B, roomRig);
   else if (S.mode !== 'online' && S.mode !== 'spectate' && S.admin && S.admin.rig) { applyRig(m, A, B, rigBySeat(S.admin.rig)); S.admin.rig = null; }
@@ -1921,7 +2012,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
     playerRatings(A, B, m);
     orig.forEach(o => { o.t.xi = o.xi; o.t.bench = o.bench; o.t.strength = o.strength; o.t.subsMade = 0; });
     const done = () => { if (opts.onDone) opts.onDone(m); else screenResult(A, B, m); };
-    if (m.pens) screenPenalties(A, B, m, done); else done();
+    if (m.pens) screenPenalties(A, B, m, done, humanSide); else done();
   };
   v.querySelector('#skip').onclick = () => { skipped = true; stop(); finishMatch(); };
   if (shared && !opts.onDone) v.querySelector('#skip').remove();   // the shared head-to-head can't be skipped
@@ -2133,8 +2224,46 @@ async function screenMatchSim(A, B, m, opts = {}) {
     : S.mode === 'ai' ? side === 'home' : true;
   const BREAK_NAME = { 45: 'Half-time', 90: 'End of 90 minutes', 105: 'Half-time in extra time' };
   async function subsWindow(fromMin) {
-    if (!subsOn || skipped) return;
+    if (skipped) return;
     const min = fromMin === 45 ? 46 : fromMin === 90 ? 91 : 106;
+
+    // Admin changes now register mid-match too: whatever's been saved in the
+    // admin panel since kickoff gets folded into the game at the next break,
+    // instead of waiting for an entirely new match. The final score itself
+    // still can't be rewritten retroactively (you already watched those
+    // goals go in), but forced VAR drama, red cards and snow can still land.
+    if (S.mode !== 'online' && S.mode !== 'spectate' && S.admin) {
+      const live = rigBySeat(S.admin.rig);
+      if (live && (live.var || live.red || live.snow)) {
+        const rnd = m.seed ? seededRng(`${m.seed}|adminlive|${fromMin}`) : Math.random;
+        const scorer = makeScorer(rnd);
+        const usedMins = new Set(m.events.map(e => e.min));
+        const minIn = (lo, hi) => { let x, n = 0; do { x = lo + Math.floor(rnd() * (hi - lo + 1)); } while (usedMins.has(x) && ++n < 60); usedMins.add(x); return x; };
+        const teamOf = side => side === 'home' ? A : B;
+        if (live.var) {
+          const side = rnd() < 0.5 ? 'home' : 'away';
+          m.events.push({ side, min: minIn(min, min + 34), type: 'noGoal', player: scorer(teamOf(side)).player.name, reason: ['offside', 'handball', 'foul'][Math.floor(rnd() * 3)] });
+        }
+        if (live.red) {
+          const t = teamOf(live.red), outfield = t.xi.filter(s => GROUP[s.role] !== 'GK');
+          m.events.push({ side: live.red, min: minIn(min, min + 34), type: 'red', player: outfield[Math.floor(rnd() * outfield.length)].player.name });
+        }
+        if (live.snow) {
+          m.weather = 'snow';
+          const pitchEl = v.querySelector('#matchpitch');
+          if (pitchEl && !pitchEl.querySelector('.wx')) {
+            pitchEl.insertAdjacentHTML('beforeend', `<div class="wx wx-snow"></div><span class="wx-tag">${WEATHER.snow.icon} ${WEATHER.snow.label}</span>`);
+          }
+        }
+        m.events.sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
+        events = m.events.slice();
+        S.admin.rig.var = S.admin.rig.red = S.admin.rig.snow = false;
+        if (!S.admin.rig.fixed) S.admin.rig = null;
+        toast('⚙️ Admin change applied to the rest of this match.');
+      }
+    }
+
+    if (!subsOn) return;
     const changes = { home: [], away: [] };
     if (shared) {
       const mine = S.mode === 'online' ? (S.room.seat === 1 ? 'away' : 'home') : null;
@@ -2763,7 +2892,7 @@ function shootout(H, Aw, rng) {
   return { kicks, a: sum('home'), b: sum('away') };
 }
 
-function screenPenalties(H, Aw, m, onDone) {
+function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
   setCrumb('Penalties');
   const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 75);
   const order = { FWD: 0, ATT_MID: 1, MID: 2, DEF: 3 };
@@ -2774,7 +2903,7 @@ function screenPenalties(H, Aw, m, onDone) {
 
   const v = el(`<section>
     <h2>Penalties</h2>
-    <p><small>${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after ${m.et ? 'extra time' : '90 minutes'}.</small></p>
+    <p><small>${m.penaltyOnly ? 'Straight to the spot — no messing about.' : `${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after ${m.et ? 'extra time' : '90 minutes'}.`}</small></p>
     <div class="card" style="text-align:center">
       <div id="pscore" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">0 – 0</div>
       ${['home', 'away'].map(s => `<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
@@ -2840,7 +2969,13 @@ function screenPenalties(H, Aw, m, onDone) {
   /* -- interactive taking: local pass-and-play and vs-AI kicks are played
      out by tapping the goal, instead of purely simulated. Online/spectate
      games stay on the seeded plan above so both phones see the same result. */
-  const humanSide = side => S.mode === 'pass' ? true : S.mode === 'ai' ? side === 'home' : false;
+  // Online/spectate always stay on the seeded plan below (no real-time tap
+  // syncing between two devices yet). Everywhere else, defer to the same
+  // "is this actually your team" check the live match screen used — so a
+  // knockout-run tie where you're drawn away still gets the interactive goal.
+  const humanSide = side => (S.mode === 'online' || S.mode === 'spectate') ? false
+    : humanSideOuter ? humanSideOuter(side)
+    : S.mode === 'pass' ? true : S.mode === 'ai' ? side === 'home' : false;
 
   const gWrap = v.querySelector('#pgoal-wrap'), gStatus = v.querySelector('#pgoal-status'),
     gBox = v.querySelector('#pgoal-box'), gKeeper = v.querySelector('#pgoal-keeper'),
@@ -4217,7 +4352,7 @@ function adminPanel() {
         .adm .chip.on{background:#E4762B;border-color:#E4762B;color:#fff}</style>
       <div class="adm">
         <h3 style="margin:0;color:#fff">🛠️ Admin</h3>
-        <p style="margin:4px 0 0"><small style="color:#A99D8D">Applies to your next spin / next match only.</small></p>
+        <p style="margin:4px 0 0"><small style="color:#A99D8D">The spin and scoreline apply to your next match. VAR/red card/snow now also land in a match already in progress, from the next break onward.</small></p>
 
         <h4>Force the spin</h4>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -4234,8 +4369,7 @@ function adminPanel() {
           <span style="flex:1">You</span><input type="number" id="rme" min="0" max="9" value="${rig.me ?? 2}" style="width:4em;text-align:center">
           <b>–</b><input type="number" id="rthem" min="0" max="9" value="${rig.them ?? 1}" style="width:4em;text-align:center"><span style="flex:1;text-align:right">Them</span>
         </div>
-        <label>If it's level, shootout goes to
-          <select id="rpens"><option value="me" ${rig.pens !== 'them' ? 'selected' : ''}>You</option><option value="them" ${rig.pens === 'them' ? 'selected' : ''}>Them</option></select></label>
+        <p style="margin:2px 0 8px"><small style="color:#A99D8D">If that scoreline is level, the shootout plays out for real — either side can win it.</small></p>
         <p style="margin:6px 0 2px"><small style="color:#A99D8D">Your scorers (tap in order — optional):</small></p>
         <div id="rsc">${myXI.length ? myXI.filter(s => GROUP[s.role] !== 'GK').map(s =>
           `<span class="chip ${(rig.scorers || []).includes(s.player.name) ? 'on' : ''}" data-n="${esc(s.player.name)}">${esc(s.player.name)}</span>`).join('')
@@ -4264,7 +4398,7 @@ function adminPanel() {
     const ev = { var: ov.querySelector('#evar').checked, red: ov.querySelector('#ered').checked ? ov.querySelector('#eredside').value : null, snow: ov.querySelector('#esnow').checked };
     a.rig = (fixed || ev.var || ev.red || ev.snow) ? {
       fixed, me: Math.max(0, Math.min(9, +ov.querySelector('#rme').value || 0)), them: Math.max(0, Math.min(9, +ov.querySelector('#rthem').value || 0)),
-      pens: ov.querySelector('#rpens').value, scorers: scorers.slice(), ...ev } : null;
+      scorers: scorers.slice(), ...ev } : null;
     await pushRig();
     ov.remove(); toast('Saved.');
   };
@@ -4280,7 +4414,7 @@ function rigBySeat(r) {
   if (!r) return null;
   const mine = mySideForRig(), theirs = mine === 'home' ? 'away' : 'home';
   const out = { var: r.var, snow: r.snow, red: r.red ? (r.red === 'me' ? mine : theirs) : null };
-  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, pens: r.pens === 'me' ? mine : theirs, scorers: { [mine]: r.scorers || [] } });
+  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, scorers: { [mine]: r.scorers || [] } });
   return out;
 }
 async function pushRig() {
@@ -4325,11 +4459,9 @@ function applyRig(m, A, B, rig) {
   if (rig.fixed) {
     m.gA = rig.home || 0; m.gB = rig.away || 0; m.ft = { a: m.gA, b: m.gB };
     m.et = m.gA === m.gB; m.pens = null;
-    if (m.et) {                                   // level: a real shootout, won by the chosen side
-      for (let k = 0; k < 200; k++) {
-        const so = shootout(A, B, seededRng(`${m.seed || 'local'}|rigpens|${k}`));
-        if ((so.a > so.b ? 'home' : 'away') === rig.pens) { m.pens = { a: so.a, b: so.b, kicks: so.kicks }; break; }
-      }
+    if (m.et) {                                   // level: a real, unbiased shootout — either side can win it
+      const so = shootout(A, B, m.seed ? seededRng(`${m.seed}|rigpens`) : Math.random);
+      m.pens = { a: so.a, b: so.b, kicks: so.kicks };
     }
     m.winSide = m.gA > m.gB ? 'home' : m.gA < m.gB ? 'away' : m.pens ? (m.pens.a > m.pens.b ? 'home' : 'away') : null;
     m.rig = true;
