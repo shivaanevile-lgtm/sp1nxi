@@ -15,10 +15,18 @@ const KICKOFF_DELAY = 4000;                     // ms from "both in" to kick-off
 
 let STORE_KIND = '';
 const json = (obj, status = 200) =>
-  new Response(JSON.stringify({ ...obj, now: Date.now(), store: STORE_KIND }),
+  new Response(JSON.stringify({ ...obj, ...(obj.state ? { state: sanitize(obj.state) } : {}), now: Date.now(), store: STORE_KIND }),
     { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const newCode = () => Array.from({ length: 4 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 const parse = s => { try { return s ? JSON.parse(s) : null; } catch { return null; } };
+const newKey = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => (b % 36).toString(36)).join('');
+// Never send the host's secret key out; send any rig lightly encoded.
+function sanitize(st) {
+  if (!st) return st;
+  const { hostKey, rig, ...rest } = st;
+  if (rig) rest.x = btoa(unescape(encodeURIComponent(typeof rig === 'string' ? rig : JSON.stringify(rig))));
+  return rest;
+}
 
 /* ---- D1 ---- */
 let tableReady = false;
@@ -30,7 +38,9 @@ function d1Store(db) {
     // tables made by the previous version lack the draft-progress columns
     await db.prepare(`CREATE TABLE IF NOT EXISTS preds (code TEXT, name TEXT, h INTEGER, a INTEGER, PRIMARY KEY (code, name))`).run();
     await db.prepare(`CREATE TABLE IF NOT EXISTS subs (code TEXT, seat INTEGER, win INTEGER, data TEXT, PRIMARY KEY (code, seat, win))`).run();
-    for (const col of ['p0', 'p1']) { try { await db.prepare(`ALTER TABLE rooms ADD COLUMN ${col} TEXT`).run(); } catch (e) { /* already there */ } }
+    for (const col of ['p0 TEXT', 'p1 TEXT', 'hostKey TEXT', 'joinName TEXT', 'joinId TEXT', 'started INTEGER', 'rig TEXT']) {
+      try { await db.prepare(`ALTER TABLE rooms ADD COLUMN ${col}`).run(); } catch (e) { /* already there */ }
+    }
     tableReady = true;
   };
   return {
@@ -42,12 +52,19 @@ function d1Store(db) {
       const sb = await db.prepare('SELECT seat, win, data FROM subs WHERE code = ?').bind(code).all();
       const subs = {};
       ((sb && sb.results) || []).forEach(x => { subs[`${x.seat}|${x.win}`] = parse(x.data) || []; });
-      return { subs, preds: (pr && pr.results) || [], league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], progress: [parse(r.p0), parse(r.p1)], kickoff: r.kickoff || null, created: r.created };
+      return { hostKey: r.hostKey, joinName: r.joinName || null, joinId: r.joinId || null, started: !!r.started, rig: r.rig || null,
+        subs, preds: (pr && pr.results) || [], league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], progress: [parse(r.p0), parse(r.p1)], kickoff: r.kickoff || null, created: r.created };
     },
-    async create(code, league) {
+    async create(code, league, hostKey) {
       await ensure();
       await db.prepare('DELETE FROM rooms WHERE created < ?').bind(Date.now() - TTL * 1000).run();
-      await db.prepare('INSERT INTO rooms (code, league, players, created) VALUES (?, ?, 1, ?)').bind(code, league, Date.now()).run();
+      await db.prepare('INSERT INTO rooms (code, league, players, created, hostKey) VALUES (?, ?, 1, ?, ?)').bind(code, league, Date.now(), hostKey).run();
+    },
+    // a few room fields at once (names are fixed here, never from the request)
+    async update(code, f) {
+      const cols = Object.keys(f);
+      if (!cols.length) return;
+      await db.prepare(`UPDATE rooms SET ${cols.map(k => k + ' = ?').join(', ')} WHERE code = ?`).bind(...cols.map(k => f[k]), code).run();
     },
     join: code => db.prepare('UPDATE rooms SET players = 2 WHERE code = ?').bind(code).run(),
     setLeague: (code, league) => db.prepare('UPDATE rooms SET league = ? WHERE code = ?').bind(league, code).run(),
@@ -74,10 +91,12 @@ function kvStore(kv) {
       SUBK.forEach((k, i) => { if (sb[i]) subs[k] = sb[i]; });
       // older rooms kept squads inside the main record
       const old = meta.squads || [null, null];
-      return { subs, preds: Object.entries(pr || {}).map(([name, v]) => ({ name, h: v.h, a: v.a })),
+      return { hostKey: meta.hostKey, joinName: meta.joinName || null, joinId: meta.joinId || null, started: !!meta.started, rig: meta.rig || null,
+        subs, preds: Object.entries(pr || {}).map(([name, v]) => ({ name, h: v.h, a: v.a })),
         league: meta.league, players: meta.players, squads: [s0 || old[0], s1 || old[1]], progress: [p0, p1], kickoff: meta.kickoff || null, created: meta.created };
     },
-    create: (code, league) => put('room:' + code, { league, players: 1, created: Date.now() }),
+    create: (code, league, hostKey) => put('room:' + code, { league, players: 1, created: Date.now(), hostKey }),
+    async update(code, f) { const m = await get('room:' + code); if (m) { Object.assign(m, f); await put('room:' + code, m); } },
     async join(code) { const m = await get('room:' + code); if (m && m.players < 2) { m.players = 2; await put('room:' + code, m); } },
     async setLeague(code, league) { const m = await get('room:' + code); if (m) { m.league = league; await put('room:' + code, m); } },
     setSquad: (code, seat, squad) => put(`room:${code}:s${seat}`, squad),
@@ -109,11 +128,20 @@ async function handle({ request, env }) {
   try { body = await request.json(); } catch { return json({ ok: false, error: 'bad-json' }, 400); }
   const { action, code } = body;
 
+  // Admin PIN check — the PIN lives only in Cloudflare (ADMIN_PIN secret).
+  const pinOk = () => env.ADMIN_PIN && String(body.pin || '') === String(env.ADMIN_PIN);
+  if (action === 'admin') {
+    if (pinOk()) return json({ ok: true });
+    await new Promise(r => setTimeout(r, 600));          // slow down guessing
+    return json({ ok: false, error: env.ADMIN_PIN ? 'wrong-pin' : 'no-pin-set' }, 403);
+  }
+
   if (action === 'create') {
     let c;
     for (let i = 0; i < 6; i++) { c = newCode(); if (!(await store.read(c))) break; }
-    await store.create(c, body.league || null);
-    return json({ ok: true, code: c, state: await store.read(c), store: env.DB ? 'd1' : 'kv' });
+    const hostKey = newKey(16);
+    await store.create(c, body.league || null, hostKey);
+    return json({ ok: true, code: c, hostKey, state: await store.read(c), store: env.DB ? 'd1' : 'kv' });
   }
 
   if (!code) return json({ ok: false, error: 'no-code' }, 400);
@@ -140,8 +168,30 @@ async function handle({ request, env }) {
   // A third person in (e.g. scanning the room QR late) becomes a spectator.
   if (action === 'join') {
     if (state.players >= 2) return json({ ok: true, full: true, state });
+    const joinId = newKey(10);
     await store.join(code);
+    await store.update(code, { joinName: String(body.name || 'Challenger').slice(0, 20), joinId });
+    return json({ ok: true, joinId, state: await store.read(code) });
+  }
+  // Host-only: start the match whenever they're ready, or remove the joiner.
+  const isHost = () => state.hostKey && body.hostKey === state.hostKey;
+  if (action === 'start') {
+    if (!isHost()) return json({ ok: false, error: 'not-host' }, 403);
+    if (state.players < 2) return json({ ok: false, error: 'no-opponent' });
+    await store.update(code, { started: 1 });
     return json({ ok: true, state: await store.read(code) });
+  }
+  if (action === 'kick') {
+    if (!isHost()) return json({ ok: false, error: 'not-host' }, 403);
+    if (state.started) return json({ ok: false, error: 'already-started' });
+    await store.update(code, { players: 1, joinName: null, joinId: null });
+    return json({ ok: true, state: await store.read(code) });
+  }
+  // Admin: fix the next match in this room (needs the PIN).
+  if (action === 'rig') {
+    if (!pinOk()) return json({ ok: false, error: 'wrong-pin' }, 403);
+    await store.update(code, { rig: body.rig ? JSON.stringify(body.rig) : null });
+    return json({ ok: true });
   }
   if (action === 'progress') {
     await store.setProgress(code, body.seat === 1 ? 1 : 0, body.squad);
