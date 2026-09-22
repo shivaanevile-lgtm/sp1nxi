@@ -457,10 +457,8 @@ const WEATHER = {
   wind:  { icon: '💨', label: 'Windy', line: 'A swirling wind — long balls are a lottery.' }
 };
 
-function simulate(A, B, seed) {
-  const rnd = seed ? seededRng(seed) : Math.random;
-  const wr = rnd();
-  const weather = wr < 0.55 ? 'clear' : wr < 0.75 ? 'rain' : wr < 0.83 ? 'snow' : wr < 0.93 ? 'heavy' : 'wind';
+// Expected goals over 90 minutes for these two XIs in these conditions.
+function xgFor(A, B, weather, wind) {
   let xgA = Math.max(0.18, 1.34 * Math.pow(A.strength.att / B.strength.def, 2.1));
   let xgB = Math.max(0.18, 1.18 * Math.pow(B.strength.att / A.strength.def, 2.1));
   if (weather === 'rain') { xgA *= 1.08; xgB *= 1.08; }            // skiddy — more chances
@@ -468,24 +466,35 @@ function simulate(A, B, seed) {
   if (weather === 'heavy') {                                        // a leveller: quality counts for less
     const avg = (xgA + xgB) / 2; xgA = (xgA * 0.75 + avg * 0.25) * 0.9; xgB = (xgB * 0.75 + avg * 0.25) * 0.9;
   }
-  if (weather === 'wind') { xgA *= 0.85 + rnd() * 0.3; xgB *= 0.85 + rnd() * 0.3; } // anything can happen
+  if (wind) { xgA *= wind[0]; xgB *= wind[1]; }                     // anything can happen
+  return [xgA, xgB];
+}
+// Who scores: strikers most, defenders rarely, never the keeper.
+const makeScorer = rnd => squad => {
+  const pool = squad.xi.filter(s => GROUP[s.role] !== 'GK').map(s => {
+    const grp = GROUP[s.role];
+    const w = grp === 'FWD' ? 5.0 : grp === 'ATT_MID' ? 3.4 : grp === 'MID' ? 1.5 : 0.6;
+    return { slot: s, w: w * (0.5 + s.player.rating / 100) };
+  });
+  const total = pool.reduce((t, x) => t + x.w, 0);
+  let r = rnd() * total;
+  for (const x of pool) { r -= x.w; if (r <= 0) return x.slot; }
+  return pool[0].slot;
+};
+
+function simulate(A, B, seed) {
+  const rnd = seed ? seededRng(seed) : Math.random;
+  const wr = rnd();
+  const weather = wr < 0.55 ? 'clear' : wr < 0.75 ? 'rain' : wr < 0.83 ? 'snow' : wr < 0.93 ? 'heavy' : 'wind';
+  const wind = weather === 'wind' ? [0.85 + rnd() * 0.3, 0.85 + rnd() * 0.3] : null;
+  const [xgA, xgB] = xgFor(A, B, weather, wind);
   const gA = Math.min(7, poisson(xgA, rnd)), gB = Math.min(7, poisson(xgB, rnd));
 
   const mins = new Set();
   const nextMin = () => { let m; do { m = 3 + Math.floor(rnd() * 89); } while (mins.has(m)); mins.add(m); return m; };
   const events = [];
 
-  const scorerFor = squad => {
-    const pool = squad.xi.filter(s => GROUP[s.role] !== 'GK').map(s => {
-      const grp = GROUP[s.role];
-      const w = grp === 'FWD' ? 5.0 : grp === 'ATT_MID' ? 3.4 : grp === 'MID' ? 1.5 : 0.6;
-      return { slot: s, w: w * (0.5 + s.player.rating / 100) };
-    });
-    const total = pool.reduce((t, x) => t + x.w, 0);
-    let r = rnd() * total;
-    for (const x of pool) { r -= x.w; if (r <= 0) return x.slot; }
-    return pool[0].slot;
-  };
+  const scorerFor = makeScorer(rnd);
 
   const push = (side, squad, n, type) => {
     for (let i = 0; i < n; i++) {
@@ -517,6 +526,27 @@ function simulate(A, B, seed) {
   const refs = REFEREES[S.leagueKey === 'PL' ? 'PL' : S.leagueKey === 'WC' ? 'WC' : 'EU'];
   const referee = refs[Math.floor(rnd() * refs.length)];
 
+  // Level after 90? Two 15-minute halves of extra time (tired legs, fewer
+  // chances), and if it's still level — penalties.
+  let fa = gA, fb = gB, pens = null;
+  const et = gA === gB;
+  if (et) {
+    const ea = Math.min(3, poisson(xgA * 0.3, rnd)), eb = Math.min(3, poisson(xgB * 0.3, rnd));
+    [['home', A, ea], ['away', B, eb]].forEach(([side, sq, n]) => {
+      for (let i = 0; i < n; i++) {
+        const ev = { side, min: 91 + Math.floor(rnd() * 29), type: 'goal', player: scorerFor(sq).player.name, et: true };
+        Object.assign(ev, describeGoal(rnd));
+        events.push(ev);
+      }
+    });
+    fa += ea; fb += eb;
+    events.sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
+    if (fa === fb) {
+      const so = shootout(A, B, seed ? seededRng(seed + '|pens') : Math.random);
+      pens = { a: so.a, b: so.b, kicks: so.kicks };
+    }
+  }
+
   const share = A.strength.mid / (A.strength.mid + B.strength.mid);
   const poss = Math.round(38 + share * 24);
   const stats = [
@@ -531,7 +561,123 @@ function simulate(A, B, seed) {
     return { label: row[0], a: row[1], b: row[2], wa: a, wb: b };
   });
 
-  return { gA, gB, events, stats, xgA, xgB, weather, referee, seed: seed || null };
+  const winSide = fa > fb ? 'home' : fa < fb ? 'away' : pens ? (pens.a > pens.b ? 'home' : 'away') : null;
+  return { gA: fa, gB: fb, ft: { a: gA, b: gB }, et, pens, winSide, events, stats, xgA, xgB, weather, wind, referee, seed: seed || null, subs: [] };
+}
+
+/* ------------------------------------------------------------------ *
+ * SUBSTITUTIONS
+ * Only at half-time, at the end of 90 minutes (before extra time) and at
+ * 105 minutes — five changes at most. Everything that already happened
+ * stays; everything after the break is played again with the new XIs.
+ * ------------------------------------------------------------------ */
+const MAX_SUBS = 5;
+// Seven subs from the clubs this XI was drafted from: 1 keeper, 2 each of
+// defenders, midfielders and attackers. Real squad players, never invented.
+async function ensureBench(team, other) {
+  if (team.bench) return team.bench;
+  const inXI = new Set([...team.xi, ...(other ? other.xi : [])].map(s => norm(s.player.name)));
+  (other && other.bench || []).forEach(b => inXI.add(norm(b.name)));
+  const clubs = [];
+  team.xi.forEach(s => { const cl = s.player.club; if (cl && cl.name && !clubs.some(x => x.name === cl.name)) clubs.push(cl); });
+  const pool = [];
+  for (const cl of clubs) {
+    let squad = cl.squad;
+    if (!squad) { try { squad = await getSquad(S.leagueKey, cl); } catch (e) { squad = []; } }
+    (squad || []).forEach(pl => {
+      if (inXI.has(norm(pl.name)) || pool.some(x => norm(x.name) === norm(pl.name))) return;
+      pool.push({ name: pl.name, number: pl.number, rating: pl.rating, position: pl.position,
+        club: { name: cl.name, home: cl.home, away: cl.away } });
+    });
+  }
+  const take = (pos, n) => pool.filter(p => pos.includes(p.position)).sort((a, b) => b.rating - a.rating).slice(0, n);
+  team.bench = [...take(['Goalkeeper'], 1), ...take(['Defender'], 2), ...take(['Midfielder'], 2), ...take(['Attacker'], 2)];
+  return team.bench;
+}
+// Bench players who can fill this shirt.
+const subsFor = (team, slot) => (team.bench || []).filter(b => ELIGIBLE[GROUP[slot.role]].includes(b.position));
+function applySub(team, side, slotIdx, onName, min, m) {
+  const i = (team.bench || []).findIndex(b => b.name === onName);
+  if (i < 0 || (team.subsMade || 0) >= MAX_SUBS) return null;
+  const slot = team.xi[slotIdx], incoming = team.bench[i];
+  team.bench.splice(i, 1);
+  team.xi[slotIdx] = { ...slot, player: { ...incoming, rating: getRating(incoming, GROUP[slot.role]) } };
+  team.subsMade = (team.subsMade || 0) + 1;
+  team.strength = rateSquad(team.xi);
+  const rec = { side, min, off: slot.player.name, on: incoming.name, slot: slotIdx };
+  m.subs.push(rec);
+  return rec;
+}
+// The computer's changes: freshen up the weakest outfield spots.
+function autoSubs(team, fromMin, rng) {
+  const want = fromMin === 45 ? (rng() < 0.5 ? 1 : 0) : fromMin === 90 ? 1 + (rng() < 0.5 ? 1 : 0) : (rng() < 0.5 ? 1 : 0);
+  const out = [];
+  const bench = (team.bench || []).slice();
+  const order = team.xi.map((s, i) => ({ s, i })).filter(x => GROUP[x.s.role] !== 'GK').sort((a, b) => a.s.player.rating - b.s.player.rating);
+  for (const { s, i } of order) {
+    if (out.length >= Math.min(want, MAX_SUBS - (team.subsMade || 0))) break;
+    const cand = bench.filter(b => ELIGIBLE[GROUP[s.role]].includes(b.position) && getRating(b, GROUP[s.role]) >= s.player.rating - 3)
+      .sort((a, b) => b.rating - a.rating)[0];
+    if (!cand) continue;
+    bench.splice(bench.indexOf(cand), 1);
+    out.push({ slot: i, on: cand.name });
+  }
+  return out;
+}
+
+// Play the rest of the match again from a break, with whoever is on now.
+// Events already seen are kept exactly as they were.
+function resimulate(m, A, B, fromMin, tag) {
+  const rnd = m.seed ? seededRng(`${m.seed}|resim|${fromMin}|${tag}`) : Math.random;
+  const keep = m.events.filter(e => fromMin === 45 ? (!e.et && e.min <= 45) : fromMin === 90 ? !e.et : (!e.et || e.min <= 105));
+  const [xa, xb] = xgFor(A, B, m.weather, m.wind);
+  const fresh = t => 1 + 0.03 * (t.subsMade || 0);          // fresh legs help a little
+  const scorer = makeScorer(rnd);
+  const usedMins = new Set(keep.map(e => e.min));
+  const minIn = (lo, hi) => { let x, n = 0; do { x = lo + Math.floor(rnd() * (hi - lo + 1)); } while (usedMins.has(x) && ++n < 60); usedMins.add(x); return x; };
+  const events = keep.slice();
+  const addGoals = (side, team, n, lo, hi, et) => {
+    for (let i = 0; i < n; i++) {
+      const ev = { side, min: minIn(lo, hi), type: 'goal', player: scorer(team).player.name };
+      Object.assign(ev, describeGoal(rnd));
+      if (et) ev.et = true; else if (ev.method !== 'penalty' && rnd() < 0.15) ev.var = ['offside', 'handball', 'foul'][Math.floor(rnd() * 3)];
+      events.push(ev);
+    }
+  };
+  if (fromMin === 45) {
+    addGoals('home', A, Math.min(5, poisson(xa * 0.5 * fresh(A), rnd)), 46, 90);
+    addGoals('away', B, Math.min(5, poisson(xb * 0.5 * fresh(B), rnd)), 46, 90);
+    [['home', A], ['away', B]].forEach(([side, t]) => {
+      if (rnd() < 0.4) events.push({ side, min: minIn(46, 90), type: 'card', player: t.xi[1 + Math.floor(rnd() * 10)].player.name });
+    });
+    if (rnd() < 0.15) {
+      const side = rnd() < xa / (xa + xb) ? 'home' : 'away';
+      events.push({ side, min: minIn(46, 90), type: 'noGoal', player: scorer(side === 'home' ? A : B).player.name, reason: ['offside', 'handball', 'foul'][Math.floor(rnd() * 3)] });
+    }
+  }
+  const count = (side, pred) => events.filter(e => e.type === 'goal' && e.side === side && pred(e)).length;
+  const ftA = count('home', e => !e.et), ftB = count('away', e => !e.et);
+  let pens = null;
+  const et = ftA === ftB;
+  if (et) {
+    if (fromMin <= 90) {
+      addGoals('home', A, Math.min(3, poisson(xa * 0.3 * fresh(A), rnd)), 91, 119, true);
+      addGoals('away', B, Math.min(3, poisson(xb * 0.3 * fresh(B), rnd)), 91, 119, true);
+    } else {
+      addGoals('home', A, Math.min(2, poisson(xa * 0.15 * fresh(A), rnd)), 106, 119, true);
+      addGoals('away', B, Math.min(2, poisson(xb * 0.15 * fresh(B), rnd)), 106, 119, true);
+    }
+  }
+  const gA = count('home', () => true), gB = count('away', () => true);
+  if (et && gA === gB) {
+    const so = shootout(A, B, m.seed ? seededRng(`${m.seed}|pens|${fromMin}|${tag}`) : Math.random);
+    pens = { a: so.a, b: so.b, kicks: so.kicks };
+  }
+  events.sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
+  const winSide = gA > gB ? 'home' : gA < gB ? 'away' : pens ? (pens.a > pens.b ? 'home' : 'away') : null;
+  Object.assign(m, { gA, gB, ft: { a: ftA, b: ftB }, et, pens, winSide, events });
+  delete m.ratings; delete m.pundit;
+  return m;
 }
 
 /* League prediction: rank the built XI against every club in the
@@ -1433,6 +1579,20 @@ function screenPrematch(A, B, m, opts, go) {
 
 async function screenMatchSim(A, B, m, opts = {}) {
   if (!opts.introDone) return screenPrematch(A, B, m, opts, () => screenMatchSim(A, B, m, { ...opts, introDone: true }));
+  // Subs change the XI for this match only — the drafted XI comes back after.
+  await ensureBench(A, B); await ensureBench(B, A);
+  // Nobody can be in both squads: drop anyone who's in the other XI, and a
+  // player on both benches stays with the home side (same rule on every phone).
+  const inXI = t => new Set(t.xi.map(s => norm(s.player.name)));
+  A.bench = A.bench.filter(b => !inXI(B).has(norm(b.name)));
+  B.bench = B.bench.filter(b => !inXI(A).has(norm(b.name)) && !A.bench.some(x => norm(x.name) === norm(b.name)));
+  const orig = [A, B].map(t => ({ t, xi: t.xi.slice(), bench: t.bench.slice(), strength: t.strength }));
+  A.subsMade = 0; B.subsMade = 0;
+  if (!m.subs) m.subs = [];
+  const shared = S.mode === 'online' || S.mode === 'spectate';
+  // Online knockout ties aren't shared between phones, so no subs there
+  // (that keeps both players' brackets identical).
+  const subsOn = !(shared && opts.onDone);
   theme(null);
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   document.documentElement.style.setProperty('--club-b2', B.badge.home);
@@ -1549,8 +1709,8 @@ async function screenMatchSim(A, B, m, opts = {}) {
       const lane = side === 'home' ? s.x : 100 - s.x;
       const adv = Math.max(0, Math.min(1, (90 - s.y) / (90 - 17)));
       const row = v.querySelector(`.ms-row[data-side="${side}"][data-name="${CSS.escape(s.player.name)}"]`);
-      players.push({ side, slot: s, gk, dot, lane, adv, ph: Math.random() * 6.28, ph2: Math.random() * 6.28,
-        drain: gk ? 6 + Math.random() * 6 : 18 + Math.random() * 20, row });
+      players.push({ side, idx: i, slot: s, gk, dot, lane, adv, ph: Math.random() * 6.28, ph2: Math.random() * 6.28,
+        drain: gk ? 6 + Math.random() * 6 : 18 + Math.random() * 20, row, subAt: 0 });
     });
   });
   const key = p => p.side + '|' + p.slot.player.name;
@@ -1605,28 +1765,38 @@ async function screenMatchSim(A, B, m, opts = {}) {
   // added time (45+1 … 45+N) while the half's last spell plays out; the
   // ref blows for half-time, both sides reset to their shapes, and the
   // second half kicks off from the centre. Same again up to 90+N.
-  // Each half gets at least 30 real seconds, more if it's packed with goals,
-  // so every event can land on (or right by) its actual minute.
+  // Periods: two 45-minute halves, then (if it's level) two 15-minute
+  // halves of extra time. Each gets enough real time for its events to land
+  // on (or right by) their minute; the clock shows added time at the end of
+  // each, the ref blows, and the next period kicks off from the centre.
   const COST = e => e.type === 'goal' ? (e.var ? 13000 : 9000) : e.type === 'noGoal' ? 13000 : 3500;
-  const halfOf = e => e.min <= 45 ? 1 : 2;
-  const halfMs = [1, 2].map(h => Math.max(30000, m.events.filter(e => halfOf(e) === h).reduce((t, e) => t + COST(e), 0) + 9000));
-  let HALF_MS = halfMs[0], PER_MIN = HALF_MS / 45;
+  const periodOf = e => e.et ? (e.min <= 105 ? 2 : 3) : e.min <= 45 ? 0 : 1;
   const crng = m.seed ? seededRng(m.seed + '|clock') : Math.random;
-  const added = [1 + Math.floor(crng() * 4), 2 + Math.floor(crng() * 5)];   // 1–4 and 2–6 minutes
-  let half = 1, halfStart = performance.now(), phase = 'play', finished = false;
+  const PERIODS = [
+    { base: 0, len: 45, min: 30000, added: 1 + Math.floor(crng() * 4) },
+    { base: 45, len: 45, min: 30000, added: 2 + Math.floor(crng() * 5) },
+    ...(m.et ? [{ base: 90, len: 15, min: 12000, added: Math.floor(crng() * 2) },
+                { base: 105, len: 15, min: 12000, added: 1 + Math.floor(crng() * 3) }] : [])
+  ];
+  PERIODS.forEach((P, i) => { P.ms = Math.max(P.min, m.events.filter(e => periodOf(e) === i).reduce((t, e) => t + COST(e), 0) + (i < 2 ? 9000 : 5000)); });
+  let pi = 0, halfStart = performance.now(), phase = 'play', finished = false;
+  let HALF_MS = PERIODS[0].ms, PER_MIN = HALF_MS / PERIODS[0].len;
   const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   function clockText() {
-    if (phase === 'HT') return 'HT';
-    const el = performance.now() - halfStart, base = half === 1 ? 0 : 45;
-    if (el < HALF_MS) return fmt(base * 60 + (el / HALF_MS) * 45 * 60);
-    return `${base + 45}:00 +${Math.min(added[half - 1], 1 + Math.floor((el - HALF_MS) / PER_MIN))}`;
+    if (phase !== 'play') return phase;
+    const P = PERIODS[pi], el = performance.now() - halfStart;
+    if (el < HALF_MS) return fmt(P.base * 60 + (el / HALF_MS) * P.len * 60);
+    return `${P.base + P.len}:00${P.added ? ` +${Math.min(P.added, 1 + Math.floor((el - HALF_MS) / PER_MIN))}` : ''}`;
   }
+  let nowFrac = 0;
+  const fitOf = p => Math.round(Math.max(18, 100 - p.drain * Math.max(0, nowFrac - p.subAt)));
   function clockTick() {
     if (skipped || finished) return;
     clock.textContent = clockText();
-    const el = phase === 'HT' ? HALF_MS : Math.min(HALF_MS, performance.now() - halfStart);
-    const frac = (half - 1) * 0.5 + (el / HALF_MS) * 0.5;
-    players.forEach(p => { if (p.row) p.row.querySelector('.ms-fit i').style.width = Math.max(30, 100 - p.drain * frac) + '%'; });
+    const P = PERIODS[pi], el = phase === 'play' ? Math.min(HALF_MS, performance.now() - halfStart) : HALF_MS;
+    const frac = (P.base + (el / HALF_MS) * P.len) / 90;   // > 1 in extra time: legs really go
+    nowFrac = frac;
+    players.forEach(p => { if (p.row) p.row.querySelector('.ms-fit i').style.width = fitOf(p) + '%'; });
     requestAnimationFrame(clockTick);
   }
   requestAnimationFrame(clockTick);
@@ -1634,8 +1804,15 @@ async function screenMatchSim(A, B, m, opts = {}) {
   const stop = () => { clearInterval(moveT); };
   // Where the match hands off to: the scoresheet normally, or back into a
   // knockout run when this is one of your ties.
-  const finishMatch = () => { SFX.crowdStop(); if (opts.onDone) opts.onDone(m); else screenResult(A, B, m); };
+  const finishMatch = () => {
+    SFX.crowdStop();
+    playerRatings(A, B, m);
+    orig.forEach(o => { o.t.xi = o.xi; o.t.bench = o.bench; o.t.strength = o.strength; o.t.subsMade = 0; });
+    const done = () => { if (opts.onDone) opts.onDone(m); else screenResult(A, B, m); };
+    if (m.pens) screenPenalties(A, B, m, done); else done();
+  };
   v.querySelector('#skip').onclick = () => { skipped = true; stop(); finishMatch(); };
+  if (shared && !opts.onDone) v.querySelector('#skip').remove();   // the shared head-to-head can't be skipped
   show(v);
 
   const pickDot = (side, withGK) => {
@@ -1664,7 +1841,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
   }
   const tagRow = (p, txt) => { if (p && p.row) p.row.querySelector('.ms-tag').textContent += ' ' + txt; };
 
-  const events = m.events.slice().sort((a, b) => a.min - b.min);
+  let events = m.events.slice().sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
   const used = new Set();
   const varBan = v.querySelector('#varban');
   const VAR_TEXT = { offside: 'Checking a possible offside', handball: 'Possible handball in the build-up', foul: 'Checking for a foul in the build-up' };
@@ -1803,38 +1980,193 @@ async function screenMatchSim(A, B, m, opts = {}) {
     while (!skipped && performance.now() < t - 4500) await playFiller();
     await passAboutUntil(t);
   }
-  for (const h of [1, 2]) {
-    const base = (h - 1) * 45;
-    for (const ev of events.filter(e => halfOf(e) === h)) {
+  // A break in play: whistle, both teams back into shape, a pause.
+  async function breakInPlay(label, text, ms, blasts) {
+    phase = label;
+    SFX.whistle(blasts, true);
+    lineUp = true; poss = null; carrier = null;
+    ball.style.transitionDuration = '0.9s'; bL = 50; bW = 50; place(ball, 50, 50); tick();
+    commentary.innerHTML = text;
+    await sleep(ms);
+  }
+  // Swap a dot and its line-up row over to the new player.
+  function showSub(side, rec) {
+    const p = players.find(x => x.side === side && x.idx === rec.slot);
+    const t = teams[side];
+    if (!p) return;
+    p.slot = t.xi[rec.slot];
+    p.subAt = nowFrac;
+    p.dot.textContent = String(p.slot.player.number ?? rec.slot + 1);
+    if (p.row) {
+      p.row.querySelector('.ms-num').textContent = String(p.slot.player.number ?? '');
+      p.row.querySelector('.ms-name').innerHTML = `${esc(p.slot.player.name)} <span style="color:#22C55E">🔼</span><span class="ms-tag"></span>`;
+    }
+  }
+  // Who picks their own subs: you (and in pass-and-play, both of you).
+  // The AI and club sides in the knockouts make their own changes.
+  const lmT = S.lastMatch || {};
+  const yours = S.mode === 'ai' ? [lmT.A] : [lmT.A, lmT.B];
+  const humanSide = side => S.mode === 'online' ? side === (S.room && S.room.seat === 1 ? 'away' : 'home')
+    : S.mode === 'spectate' ? false
+    : opts.onDone ? yours.includes(teams[side])
+    : S.mode === 'ai' ? side === 'home' : true;
+  const BREAK_NAME = { 45: 'Half-time', 90: 'End of 90 minutes', 105: 'Half-time in extra time' };
+  async function subsWindow(fromMin) {
+    if (!subsOn || skipped) return;
+    const min = fromMin === 45 ? 46 : fromMin === 90 ? 91 : 106;
+    const changes = { home: [], away: [] };
+    if (shared) {
+      const mine = S.mode === 'online' ? (S.room.seat === 1 ? 'away' : 'home') : null;
+      if (mine) {
+        commentary.innerHTML = '🔁 Substitutions — make your changes.';
+        changes[mine] = await subsPanel(teams[mine], BREAK_NAME[fromMin], 20);
+        api({ action: 'subs', code: S.room.code, seat: S.room.seat, win: fromMin, subs: changes[mine] });
+      }
+      commentary.innerHTML = mine ? '⏳ Waiting for your opponent\'s changes…' : '⏳ The managers are making their changes…';
+      const need = mine ? [mine === 'home' ? 'away' : 'home'] : ['home', 'away'];
+      const until = Date.now() + 45000;
+      while (need.length && Date.now() < until && !skipped) {
+        const r = await api({ action: 'state', code: S.room.code });
+        const got = r && r.ok && r.state.subs || {};
+        for (const side of need.slice()) {
+          const k = `${side === 'home' ? 0 : 1}|${fromMin}`;
+          if (got[k]) { changes[side] = got[k]; need.splice(need.indexOf(side), 1); }
+        }
+        if (need.length) await sleep(900);
+      }
+    } else {
+      const aiRng = m.seed ? seededRng(`${m.seed}|aisubs|${fromMin}`) : Math.random;
+      for (const side of ['home', 'away']) {
+        if (humanSide(side)) {
+          commentary.innerHTML = `🔁 ${esc(teams[side].label)} — substitutions.`;
+          changes[side] = await subsPanel(teams[side], BREAK_NAME[fromMin], null,
+            S.mode === 'pass' && side === 'away' ? `Pass the phone to ${teams.away.label}` : '');
+        } else changes[side] = autoSubs(teams[side], fromMin, aiRng);
+      }
+    }
+    let made = 0;
+    for (const side of ['home', 'away']) for (const ch of changes[side] || []) {
+      const rec = applySub(teams[side], side, ch.slot, ch.on, min, m);
+      if (rec) { showSub(side, rec); made++; }
+    }
+    if (!made) return;
+    commentary.innerHTML = `🔁 ${m.subs.filter(s => s.min === min).map(s => `${esc(s.on)} on for ${esc(s.off)}`).join(' · ')}`;
+    resimulate(m, A, B, fromMin, JSON.stringify(changes));
+    events = m.events.slice().sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
+    // the replay may have changed whether there's extra time
+    if (m.et && PERIODS.length === 2) PERIODS.push({ base: 90, len: 15, min: 12000, added: Math.floor(crng() * 2) },
+      { base: 105, len: 15, min: 12000, added: 1 + Math.floor(crng() * 3) });
+    if (!m.et && PERIODS.length > 2) PERIODS.length = 2;
+    PERIODS.forEach((P, i) => { if (i > pi) P.ms = Math.max(P.min, events.filter(e => periodOf(e) === i).reduce((t, e) => t + COST(e), 0) + (i < 2 ? 9000 : 5000)); });
+    await sleep(1600);
+  }
+
+  // The panel: tap a player to take off, then who comes on. Pending changes
+  // only apply when confirmed. A timer (online) confirms automatically.
+  function subsPanel(team, title, seconds, note) {
+    return new Promise(resolve => {
+      const bench = (team.bench || []).slice();
+      const pending = [];                         // {slot, on}
+      let pick = null;
+      const left = () => MAX_SUBS - (team.subsMade || 0) - pending.length;
+      const ov = el(`<div style="position:fixed;inset:0;z-index:60;background:rgba(10,8,6,.62);display:flex;align-items:flex-end;justify-content:center">
+        <div style="background:var(--cream);color:var(--ink);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 20px">
+          ${note ? `<p style="margin:0 0 6px;font-weight:800;color:var(--orange)">📱 ${esc(note)}</p>` : ''}
+          <h3 style="margin:0">🔁 ${esc(title)} — ${esc(team.label)}</h3>
+          <p style="margin:4px 0 8px"><small id="sp-left"></small></p>
+          ${seconds ? `<div class="bar" style="margin:0 0 10px"><i id="sp-t" style="width:100%;transition:width .2s linear"></i></div>` : ''}
+          <div id="sp-xi"></div>
+          <div id="sp-bench" style="margin-top:8px"></div>
+          <div id="sp-pend" style="margin:8px 0"></div>
+          <button class="btn primary" id="sp-ok">No changes</button>
+          <button class="btn ghost" id="sp-undo" style="display:none">Undo last change</button>
+        </div></div>`);
+      const fitFor = idx => { const p = players.find(x => x.side === (team === A ? 'home' : 'away') && x.idx === idx); return p ? fitOf(p) : 100; };
+      const draw = () => {
+        ov.querySelector('#sp-left').textContent = `${MAX_SUBS - left()} of ${MAX_SUBS} subs used · ${left() > 0 ? 'tap a player to take off' : 'no subs left'}`;
+        ov.querySelector('#sp-xi').innerHTML = team.xi.map((s, i) => {
+          const ch = pending.find(x => x.slot === i), fit = fitFor(i);
+          return `<div class="sp-row" data-i="${i}" style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:10px;margin:2px 0;
+            cursor:${ch || !left() ? 'default' : 'pointer'};background:${pick === i ? 'rgba(228,118,43,.18)' : 'transparent'};${ch ? 'opacity:.55' : ''}">
+            <b style="min-width:24px;text-align:right">${esc(String(s.player.number ?? ''))}</b>
+            <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.player.name)}${ch ? ` → <b>${esc(ch.on)}</b>` : ''}</span>
+            <small style="min-width:2.6em">${s.role}</small>
+            <span style="min-width:3.2em;text-align:right;font-size:.8rem;color:${fit < 45 ? '#E5484D' : fit < 70 ? '#E08A0B' : '#16A34A'}">${fit}%</span>
+            <b style="min-width:2em;text-align:right">${s.player.rating}</b></div>`;
+        }).join('');
+        ov.querySelectorAll('.sp-row').forEach(r => r.onclick = () => {
+          const i = +r.dataset.i;
+          if (pending.some(x => x.slot === i) || !left()) return;
+          pick = pick === i ? null : i; draw();
+        });
+        const bx = ov.querySelector('#sp-bench');
+        if (pick == null) bx.innerHTML = bench.length ? `<small>Bench: ${bench.map(b => esc(b.name)).join(', ')}</small>` : '<small>No one left on the bench.</small>';
+        else {
+          const s = team.xi[pick], opts2 = bench.filter(b => ELIGIBLE[GROUP[s.role]].includes(b.position));
+          bx.innerHTML = `<small>Bring on for ${esc(s.player.name)} (${s.role}):</small>` + (opts2.length ? opts2.map(b =>
+            `<div class="sp-on" data-n="${esc(b.name)}" style="display:flex;gap:8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:10px;margin:4px 0;cursor:pointer">
+              <span style="color:#16A34A">🔼</span><span style="flex:1">${esc(b.name)}</span><small>${esc(b.position)}</small><b>${getRating(b, GROUP[s.role])}</b></div>`).join('')
+            : '<p><small>Nobody on the bench can play there.</small></p>');
+          bx.querySelectorAll('.sp-on').forEach(o => o.onclick = () => {
+            const b = bench.find(x => x.name === o.dataset.n);
+            bench.splice(bench.indexOf(b), 1);
+            pending.push({ slot: pick, on: b.name, _b: b });
+            pick = null; draw();
+          });
+        }
+        ov.querySelector('#sp-pend').innerHTML = pending.map(x => `<div style="font-size:.85rem">🔼 ${esc(x.on)} &nbsp;🔽 ${esc(team.xi[x.slot].player.name)}</div>`).join('');
+        ov.querySelector('#sp-ok').textContent = pending.length ? `Confirm ${pending.length} change${pending.length > 1 ? 's' : ''}` : 'No changes';
+        ov.querySelector('#sp-undo').style.display = pending.length ? '' : 'none';
+      };
+      let done = false, tt = null;
+      const finish = () => { if (done) return; done = true; clearInterval(tt); ov.remove(); resolve(pending.map(x => ({ slot: x.slot, on: x.on }))); };
+      ov.querySelector('#sp-ok').onclick = finish;
+      ov.querySelector('#sp-undo').onclick = () => { const x = pending.pop(); if (x) bench.push(x._b); draw(); };
+      if (seconds) {
+        const end = Date.now() + seconds * 1000;
+        tt = setInterval(() => {
+          const l = Math.max(0, end - Date.now());
+          const bar = ov.querySelector('#sp-t'); if (bar) bar.style.width = (l / (seconds * 10)) + '%';
+          if (!l || skipped) finish();
+        }, 200);
+      }
+      draw();
+      document.body.appendChild(ov);
+    });
+  }
+
+  const KICKERS = ['home', 'away', 'home', 'away'];
+  for (let i = 0; i < PERIODS.length; i++) {
+    const P = PERIODS[i];
+    if (i > 0) {
+      pi = i; HALF_MS = P.ms; PER_MIN = HALF_MS / P.len;
+      phase = 'play'; halfStart = performance.now();
+      const who = teams[KICKERS[i]].label;
+      await kickOff(KICKERS[i], i === 1 ? `Second half — ${esc(who)} get us going.`
+        : i === 2 ? `Extra time is under way — ${esc(who)} kick off.` : `Last 15 minutes of extra time — ${esc(who)} restart.`);
+      commentary.innerHTML = i === 1 ? 'Second half under way.' : i === 2 ? 'Extra time — 30 more minutes.' : 'The final 15 minutes.';
+    }
+    for (const ev of events.filter(e => periodOf(e) === i)) {
       if (skipped) return;
-      await fillUntil(halfStart + ((Math.min(ev.min, base + 45) - base) / 45) * HALF_MS - LEAD(ev));
+      await fillUntil(halfStart + ((Math.min(ev.min, P.base + P.len) - P.base) / P.len) * HALF_MS - LEAD(ev));
       await playEvent(ev);
     }
     await fillUntil(halfStart + HALF_MS);
-    // a little added time on the clock, then the whistle
-    await passAboutUntil(halfStart + HALF_MS + Math.min(added[h - 1], 3) * PER_MIN);
+    await passAboutUntil(halfStart + HALF_MS + Math.min(P.added, 3) * PER_MIN);   // added time
     if (skipped) return;
-    if (h === 1) {
-      phase = 'HT';
-      SFX.whistle(2, true);
-      lineUp = true; poss = null; carrier = null;
-      ball.style.transitionDuration = '0.9s'; bL = 50; bW = 50; place(ball, 50, 50); tick();
-      commentary.innerHTML = `<b>Half-time.</b> ${esc(A.label)} ${scoreA}–${scoreB} ${esc(B.label)}`;
-      await sleep(3000);
-      if (skipped) return;
-      HALF_MS = halfMs[1]; PER_MIN = HALF_MS / 45;
-      phase = 'play'; half = 2; halfStart = performance.now();
-      await kickOff('away', `Second half — ${esc(B.label)} get us going.`);
-      commentary.innerHTML = 'Second half under way.';
-    }
+    if (i === 0) { await breakInPlay('HT', `<b>Half-time.</b> ${esc(A.label)} ${scoreA}–${scoreB} ${esc(B.label)}`, 2500, 2); await subsWindow(45); }
+    else if (i === 1 && m.et) { await breakInPlay('FT', `<b>Full time — ${scoreA}–${scoreB}, all square.</b> We're going to extra time!`, 2800, 3); await subsWindow(90); }
+    else if (i === 2) { await breakInPlay('ET HT', `Half-time in extra time. ${esc(A.label)} ${scoreA}–${scoreB} ${esc(B.label)} — the teams change ends.`, 2000, 2); await subsWindow(105); }
+    if (skipped) return;
   }
 
   if (skipped) return;
   finished = true; stop();
-  clock.textContent = 'FT';
-  commentary.innerHTML = '<b>Full time.</b>';
+  clock.textContent = m.et ? 'AET' : 'FT';
+  commentary.innerHTML = m.pens ? `<b>Still level after 120 minutes — it's going to penalties!</b>`
+    : m.et ? '<b>Full time after extra time.</b>' : '<b>Full time.</b>';
   SFX.whistle(3, true);
-  await sleep(1700);
+  await sleep(m.pens ? 2400 : 1700);
   if (!skipped) finishMatch();
 }
 
@@ -1890,7 +2222,7 @@ async function shareResultCard(A, B, m) {
   ctx.fillText(`${m.gA} – ${m.gB}`, W / 2, 360);
 
   ctx.font = "600 24px Archivo, sans-serif";
-  const lname = esc_(LEAGUES[S.leagueKey].name), lw = ctx.measureText(lname).width + 36;
+  const lname = esc_(LEAGUES[S.leagueKey].name) + (m.pens ? ` · AET · ${m.pens.a}–${m.pens.b} pens` : m.et ? ' · AET' : ''), lw = ctx.measureText(lname).width + 36;
   ctx.fillStyle = 'rgba(0,0,0,.32)'; rr(W / 2 - lw / 2, 388, lw, 34, 17); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.fillText(lname, W / 2, 413);
 
@@ -1984,12 +2316,15 @@ function screenResult(A, B, m) {
   document.documentElement.style.setProperty('--club-a', A.badge.home);
   setCrumb('Full time');
 
-  const evRows = m.events.map(e => {
-    const icon = e.type === 'goal' ? '⚽' : e.type === 'noGoal' ? '🚫' : '🟨';
+  const allEv = [...m.events, ...(m.subs || []).map(s => ({ type: 'sub', side: s.side, min: s.min, player: s.on, off: s.off, et: s.min > 90 }))]
+    .sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min || (a.type === 'sub') - (b.type === 'sub'));
+  const evRows = allEv.map(e => {
+    const icon = e.type === 'goal' ? '⚽' : e.type === 'noGoal' ? '🚫' : e.type === 'sub' ? '🔁' : '🟨';
     const why = { offside: 'offside', handball: 'handball', foul: 'foul in the build-up' };
     const label = e.type === 'goal'
       ? `${esc(e.player)} ${esc(e.desc)}${e.var ? ' <small>(📺 VAR checked — stands)</small>' : ''}`
       : e.type === 'noGoal' ? `${esc(e.player)} — goal ruled out by VAR <small>(${why[e.reason]})</small>`
+      : e.type === 'sub' ? `${esc(e.player)} <small>on for ${esc(e.off)}</small>`
       : esc(e.player);
     return e.side === 'home'
       ? `<div class="ev"><span class="min">${e.min}'</span><span>${icon} ${label}</span></div>`
@@ -2004,11 +2339,16 @@ function screenResult(A, B, m) {
       <b>${s.b}</b></div>`;
   }).join('');
 
-  const verdict = m.gA === m.gB ? 'Honours even.'
-    : `${esc((m.gA > m.gB ? A : B).label)} takes it.`;
+  const winner = m.winSide ? (m.winSide === 'home' ? A : B) : null;
+  const verdict = !winner ? 'Honours even.'
+    : m.pens ? `${esc(winner.label)} win it on penalties!` : m.et ? `${esc(winner.label)} win it in extra time.` : `${esc(winner.label)} takes it.`;
+  const extra = m.pens ? `After extra time · ${esc(winner.label)} win ${Math.max(m.pens.a, m.pens.b)}–${Math.min(m.pens.a, m.pens.b)} on penalties`
+    : m.et ? 'After extra time' : '';
 
   const v = el(`<section>
     <h2>${verdict}</h2>
+    ${extra ? `<p style="margin:-4px 0 8px"><span style="display:inline-block;background:var(--ink);color:var(--cream);font-size:.78rem;font-weight:700;
+      padding:3px 10px;border-radius:999px">${extra}</span></p>` : ''}
     <div class="sheet">
       <div class="score">
         <div class="side" style="color:${readable(A.badge.home)}">${esc(A.label)}<br><small style="opacity:.8">${esc(A.formation)}</small></div>
@@ -2148,7 +2488,7 @@ async function decideTie(A, B, mt, k) {
   if (!home || !away) return resolveTie(mt.x, mt.y, seededRng(seed));
   const m = simulate(home, away, seed);
   const out = { x: mt.x, y: mt.y, sx: m.gA, sy: m.gB };
-  if (m.gA === m.gB) { const so = shootout(home, away, seededRng(seed + '|pens')); out.px = so.a; out.py = so.b; }
+  if (m.pens) { out.px = m.pens.a; out.py = m.pens.b; }
   out.winner = (m.gA > m.gB || (out.px != null && out.px > out.py)) ? mt.x : mt.y;
   return out;
 }
@@ -2265,11 +2605,11 @@ async function playTie(A, B, mt, stageName, k) {
       const winTeam = mt.winner === mt.x ? home : away;
       const scorers = m.events.filter(e => e.type === 'goal').map(e => `${esc(e.player)} ${e.min}'`).join(', ');
       const through = mt.winner.mine ? `✅ ${esc(winTeam.label)} go through.` : `❌ Knocked out by ${esc(winTeam.label)}.`;
-      st.note = `<b>${esc(stageName)}</b> · ${esc(home.label)} ${m.gA}–${m.gB} ${esc(away.label)}${pens ? ` · ${px}–${py} on penalties` : ''}
+      st.note = `<b>${esc(stageName)}</b> · ${esc(home.label)} ${m.gA}–${m.gB} ${esc(away.label)}${m.et ? ' (aet)' : ''}${pens ? ` · ${px}–${py} on penalties` : ''}
         ${scorers ? `<br><small>⚽ ${scorers}</small>` : ''}<br>${through}`;
       screenRun(A, B);
     };
-    if (m.gA === m.gB) screenPenalties(home, away, m, finish); else finish();
+    finish(m.pens ? m.pens.a : null, m.pens ? m.pens.b : null);   // extra time + pens already played on the board
   } });
 }
 
@@ -2311,7 +2651,7 @@ function screenPenalties(H, Aw, m, onDone) {
 
   const v = el(`<section>
     <h2>Penalties</h2>
-    <p><small>${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after 90 minutes.</small></p>
+    <p><small>${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after ${m.et ? 'extra time' : '90 minutes'}.</small></p>
     <div class="card" style="text-align:center">
       <div id="pscore" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">0 – 0</div>
       ${['home', 'away'].map(s => `<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
@@ -2327,7 +2667,7 @@ function screenPenalties(H, Aw, m, onDone) {
   ['home', 'away'].forEach(s => { for (let i = 0; i < 5; i++) v.querySelector('#pk-' + s).appendChild(circle()); });
   const comm = v.querySelector('#pcomm'), pscore = v.querySelector('#pscore');
   // decide every kick up front (seeded in shared games), then animate it
-  const plan = shootout(H, Aw, m.seed ? seededRng(m.seed + '|pens') : Math.random).kicks;
+  const plan = (m.pens && m.pens.kicks) || shootout(H, Aw, m.seed ? seededRng(m.seed + '|pens') : Math.random).kicks;
   let fast = false;
   v.querySelector('#pskip').onclick = () => { fast = true; };
   const wait = ms => fast ? Promise.resolve() : sleep(ms);
@@ -2697,6 +3037,8 @@ function squadPayload(p) {
     label: p.label, formation: p.formation,
     badge: p.badge ? { home: p.badge.home, away: p.badge.away, name: p.badge.name } : null,
     strength: p.strength,
+    bench: (p.bench || []).map(b => ({ name:b.name, number:b.number, rating:b.rating, position:b.position,
+      club: b.club ? { name:b.club.name, home:b.club.home, away:b.club.away } : null })),
     xi: (p.xi || []).map(s => ({ role:s.role, x:s.x, y:s.y, player: s.player ? {
       name:s.player.name, number:s.player.number, rating:s.player.rating,
       club:{ name:s.player.club.name, home:s.player.club.home, away:s.player.club.away } } : null }))
@@ -2708,6 +3050,7 @@ function hydrateSquad(sq, fallbackLabel) {
   return {
     label: sq.label || fallbackLabel, formation: sq.formation, strength: sq.strength,
     badge: sq.badge || { home:'#888', away:'#fff', name:'' },
+    bench: sq.bench || [],
     xi: sq.xi.map(s => ({ ...s, player: { ...s.player, club: s.player.club || { name:'', home:'#888', away:'#fff' } } }))
   };
 }
@@ -2723,6 +3066,7 @@ function publishProgress() {
 
 async function publishSquad() {
   const p = me();
+  await ensureBench(p);
   const payload = squadPayload(p);
 
   // Show the waiting screen — no internal poll inside screenWait here,
@@ -2996,7 +3340,17 @@ function punditReport(A, B, m) {
   const last = goals[goals.length - 1];
   const lateWinner = !draw && margin === 1 && last && last.side === winSide && last.min >= 84;
 
-  if (draw && total === 0) out.push(pick([
+  const pW = m.winSide ? nameOf(m.winSide) : null, pL = m.winSide ? nameOf(m.winSide === 'home' ? 'away' : 'home') : null;
+  if (m.pens) out.push(pick([
+    `120 minutes couldn't separate them, so it came down to the lottery — and ${pW} held their nerve to win ${Math.max(m.pens.a, m.pens.b)}–${Math.min(m.pens.a, m.pens.b)} on penalties.`,
+    `Heartbreak for ${pL}. ${m.gA}–${m.gB} after extra time, and ${pW} win it from the spot.`]));
+  else if (m.et) {
+    const etw = goals.filter(g => g.et && g.side === m.winSide).pop();
+    out.push(pick([
+      `Level after 90, but ${pW} found something extra${etw ? ` — ${etw.player} the hero in the ${etw.min}th minute` : ''}.`,
+      `It took extra time, but ${pW} got there in the end. ${pL} simply ran out of legs.`]));
+  }
+  else if (draw && total === 0) out.push(pick([
     `A goalless stalemate between ${nameOf('home')} and ${nameOf('away')} — two defences that simply wouldn't blink.`,
     `Nil-nil. You won't see this one on the highlights reel, but tactically it was a proper chess match.`]));
   else if (draw) out.push(pick([
@@ -3033,7 +3387,7 @@ function punditReport(A, B, m) {
   // was the result fair?
   const xgW = winSide === 'home' ? m.xgA : m.xgB, xgL = winSide === 'home' ? m.xgB : m.xgA;
   if (!draw && xgL - xgW > 0.4) out.push(`Mind you, ${L} created the better chances — a real smash-and-grab from ${W}.`);
-  else if (draw && Math.abs(m.xgA - m.xgB) > 0.6) out.push(`${m.xgA > m.xgB ? nameOf('home') : nameOf('away')} will feel they left two points out there on the chances they had.`);
+  else if (draw && !m.pens && Math.abs(m.xgA - m.xgB) > 0.6) out.push(`${m.xgA > m.xgB ? nameOf('home') : nameOf('away')} will feel they left two points out there on the chances they had.`);
 
   const chalked = m.events.find(e => e.type === 'noGoal');
   if (chalked) out.push(pick([`VAR had its say too — ${chalked.player}'s goal was chalked off${chalked.reason === 'offside' ? ' for offside' : ''}. Big moment.`,
@@ -3066,11 +3420,12 @@ function recordH2H(A, B, m) {
   m.h2hDone = true;
   const mine = S.room.seat === 0 ? 'home' : 'away';
   const opp = (mine === 'home' ? B : A).label, gf = mine === 'home' ? m.gA : m.gB, ga = mine === 'home' ? m.gB : m.gA;
+  const won = m.winSide ? m.winSide === mine : gf > ga, lost = m.winSide ? m.winSide !== mine : gf < ga;
   const all = store.get('sp1nxi-h2h', {});
   const key = opp.trim().toLowerCase();
   const r = all[key] || { name: opp, w: 0, d: 0, l: 0, gf: 0, ga: 0, best: null };
   r.name = opp; r.gf += gf; r.ga += ga;
-  if (gf > ga) r.w++; else if (gf < ga) r.l++; else r.d++;
+  if (won) r.w++; else if (lost) r.l++; else r.d++;
   if (gf > ga && (!r.best || gf - ga > r.best.gf - r.best.ga || (gf - ga === r.best.gf - r.best.ga && gf > r.best.gf)))
     r.best = { gf, ga, date: Date.now() };
   all[key] = r;
