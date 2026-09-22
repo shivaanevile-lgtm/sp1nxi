@@ -50,7 +50,17 @@ const LEAGUES = {
     ['Italy 2006','#0066CC','#FFFFFF',1],['Bayern 2012–13','#DC052D','#0066B2',1],
     ['Chelsea 2004–05','#034694','#FFFFFF',1],['Liverpool 2019–20','#C8102E','#00B2A9',1],
     ['Man City 2017–18','#6CABDD','#1C2C5B',1],['Inter 2009–10','#0068A8','#000000',1],
-    ['AC Milan 2006–07','#FB090B','#000000',1]
+    ['AC Milan 2006–07','#FB090B','#000000',1],
+    ['Real Madrid 2013–14','#FFFFFF','#00529F',1],
+    ['Barcelona 2014–15','#A50044','#004D98',1],
+    ['Brazil 1970','#FFDF00','#009C3B',1],
+    ['Argentina 1986','#75AADB','#FFFFFF',1],
+    ['Argentina 2022','#75AADB','#FFFFFF',1],
+    ['Man United 2007–08','#DA291C','#000000',1],
+    ['Liverpool 2004–05','#C8102E','#FFFFFF',1],
+    ['Arsenal 2005–06','#9C1C2E','#FFFFFF',1],
+    ['Tottenham 2018–19','#FFFFFF','#132257',1],
+    ['Tottenham 2016–17','#FFFFFF','#132257',1]
   ] },
 };
 
@@ -435,6 +445,35 @@ function describeGoal(rand = Math.random) {
   if (method === 'freekick') return { method, desc: `scores, ${corner}, direct free-kick from outside the box` };
   const origin = rand() < 0.32 ? 'from outside the box' : 'from inside the box';
   return { method, desc: `scores, ${corner}, ${origin}` };
+}
+
+// Rivalries: each side drafts only from its own history.
+const RIVALRIES = [
+  { id: 'nld', name: 'North London derby', sides: [
+    { label: 'Arsenal', color: '#EF0107', clubs: ['Arsenal 2003–04', 'Arsenal 2005–06'] },
+    { label: 'Tottenham', color: '#132257', clubs: ['Tottenham 2018–19', 'Tottenham 2016–17'] }] },
+  { id: 'clasico', name: 'El Clásico', sides: [
+    { label: 'Real Madrid', color: '#FEBE10', clubs: ['Real Madrid 2016–17', 'Real Madrid 2013–14'] },
+    { label: 'Barcelona', color: '#A50044', clubs: ['Barcelona 2010–11', 'Barcelona 2014–15'] }] },
+  { id: 'sa', name: 'Argentina v Brazil', sides: [
+    { label: 'Argentina', color: '#75AADB', clubs: ['Argentina 2022', 'Argentina 1986'] },
+    { label: 'Brazil', color: '#FFDF00', clubs: ['Brazil 2002', 'Brazil 1970'] }] },
+  { id: 'nwd', name: 'North West derby', sides: [
+    { label: 'Man United', color: '#DA291C', clubs: ['Man United 1998–99', 'Man United 2007–08'] },
+    { label: 'Liverpool', color: '#C8102E', clubs: ['Liverpool 2019–20', 'Liverpool 2004–05'] }] },
+  { id: 'milan', name: 'Derby della Madonnina', sides: [
+    { label: 'AC Milan', color: '#FB090B', clubs: ['AC Milan 2006–07'] },
+    { label: 'Inter', color: '#0068A8', clubs: ['Inter 2009–10'] }] }
+];
+const rivalry = () => RIVALRIES.find(r => r.id === S.rivalry) || null;
+// Which clubs this player can spin: their side of the rivalry, or the whole league.
+const clubsFor = i => { const r = rivalry(); return r ? (S.leagueClubs || []).filter(c => r.sides[i].clubs.includes(c.name)) : S.leagueClubs; };
+// A league "token" travels to the room: 'PL', 'WC' … or 'RIV:clasico'.
+const leagueToken = () => S.rivalry ? 'RIV:' + S.rivalry : S.leagueKey;
+async function useLeague(tok) {
+  if (tok && String(tok).startsWith('RIV:')) { S.rivalry = tok.slice(4); S.leagueKey = 'LEG'; }
+  else { S.rivalry = null; S.leagueKey = tok; }
+  if (S.leagueKey) { setLeagueTheme(S.leagueKey); S.leagueClubs = await getLeagueClubs(S.leagueKey); }
 }
 
 // Real elite referees, matched to the competition.
@@ -930,16 +969,64 @@ function screenJoin() {
 // Join a room by code — from the join screen, or straight from a scanned
 // QR code / invite link (?join=CODE).
 async function joinRoom(code) {
-    if (code.length !== 4) return toast('Codes are four letters.');
-    const r = await api({ action:'join', code });
+  if (code.length !== 4) return toast('Codes are four letters.');
+  const r0 = await api({ action:'state', code });
+  if (!r0 || !r0.ok) return toast('No room with that code.');
+  if (r0.state.players >= 2) { toast('That room is full — watching instead.'); return screenSpectate(code); }
+  screenNickname('Challenger', async name => {
+    const r = await api({ action:'join', code, name });
     if (!r || !r.ok) return toast('No room with that code.');
-    if (r.full) { toast('That room is full — watching instead.'); return screenSpectate(code); }
-    S.mode = 'online'; S.room = { code, seat: 1 }; S.leagueKey = r.state.league;
-    if (S.leagueKey) setLeagueTheme(S.leagueKey);
-    if (!S.leagueKey) { S.mode='online'; return screenWait('Waiting for the host to pick a league.', async st => {
-        if (st.league) { S.leagueKey = st.league; setLeagueTheme(st.league); S.leagueClubs = await getLeagueClubs(st.league); startTurns(); } }); }
-    S.leagueClubs = await getLeagueClubs(S.leagueKey);
-    startTurns();
+    if (r.full) { toast('That room just filled up — watching instead.'); return screenSpectate(code); }
+    S.mode = 'online'; S.room = { code, seat: 1, joinId: r.joinId }; S.myName = name;
+    S.players = [];
+    await useLeague(r.state.league);
+    screenLobbyWait();
+  });
+}
+
+// The joiner's lobby: in the room, waiting for the host to press Start.
+function screenLobbyWait() {
+  setCrumb(`Room ${S.room.code}`);
+  const r = rivalry();
+  const v = el(`<section><h2>You're in!</h2>
+    <p>Room <b>${esc(S.room.code)}</b> · ${esc(r ? r.name : (LEAGUES[S.leagueKey] || {}).name || '')}${r ? ` — you're <b>${esc(r.sides[1].label)}</b>` : ''}</p>
+    <div class="card" style="text-align:center"><div class="bar"><i style="width:40%;animation:pmcount 2s ease-in-out infinite alternate"></i></div>
+      <p style="margin:10px 0 0">Waiting for the host to start the match…</p></div>
+    <button class="btn ghost" id="leave">Leave room</button></section>`);
+  v.querySelector('#leave').onclick = () => { stopPoll(); S.room = null; S.mode = null; screenMode(); };
+  show(v);
+  poll(st => {
+    if (st.joinId !== S.room.joinId) {            // the host removed us
+      stopPoll(); toast('The host removed you from the room.'); S.room = null; S.mode = null; return screenMode();
+    }
+    if (st.started) { stopPoll(); startTurns(); }
+  });
+}
+
+async function afterLeaguePicked() {
+  if (S.mode === 'host') {
+    const r = await api({ action:'create', league: leagueToken() });
+    if (!r || !r.ok) return toast('Could not open a room. Check your connection.');
+    S.mode = 'online'; S.room = { code:r.code, seat:0, hostKey:r.hostKey };
+    return screenRoomCode();
+  }
+  startTurns();
+}
+
+function screenRivalry() {
+  setCrumb('Rivalry');
+  const v = el(`<section><h2>Pick a rivalry</h2>
+    <p>${S.mode === 'ai' ? "You take the first side, the AI the second." : 'Player 1 takes the first side, player 2 the second.'}
+      Each side spins only its own famous squads.</p>
+    <div id="rivs"></div><button class="btn ghost" id="back">Back</button></section>`);
+  RIVALRIES.forEach(r => {
+    const b = el(`<button class="league-btn"><span class="flagdot" style="background:linear-gradient(90deg,${r.sides[0].color} 50%,${r.sides[1].color} 50%)"></span>
+      <span><b>${esc(r.name)}</b><small>${esc(r.sides[0].label)} v ${esc(r.sides[1].label)} · ${[...r.sides[0].clubs, ...r.sides[1].clubs].map(c => c.replace(/^.* /, '')).join(', ')}</small></span></button>`);
+    b.onclick = async () => { await useLeague('RIV:' + r.id); afterLeaguePicked(); };
+    v.querySelector('#rivs').appendChild(b);
+  });
+  v.querySelector('#back').onclick = screenLeague;
+  show(v);
 }
 
 function screenLeague() {
@@ -953,20 +1040,13 @@ function screenLeague() {
   Object.entries(LEAGUES).forEach(([k, L]) => {
     const b = el(`<button class="league-btn"><span class="flagdot" style="background:${L.tint}"></span>
       <span><b>${esc(L.name)}</b><small>${esc(L.country)} · ${L.clubs.length} clubs</small></span></button>`);
-    b.onclick = async () => {
-      S.leagueKey = k;
-      setLeagueTheme(k);
-      S.leagueClubs = await getLeagueClubs(k);
-      if (S.mode === 'host') {
-        const r = await api({ action:'create', league:k });
-        if (!r || !r.ok) return toast('Could not open a room. Check your connection.');
-        S.mode = 'online'; S.room = { code:r.code, seat:0 };
-        return screenRoomCode();
-      }
-      startTurns();
-    };
+    b.onclick = async () => { await useLeague(k); afterLeaguePicked(); };
     wrap.appendChild(b);
   });
+  const rb = el(`<button class="league-btn"><span class="flagdot" style="background:linear-gradient(90deg,#EF0107 50%,#132257 50%)"></span>
+    <span><b>⚔️ Rivalry</b><small>Real rivalries · each side drafts from its own history</small></span></button>`);
+  rb.onclick = screenRivalry;
+  wrap.appendChild(rb);
   v.querySelector('#back').onclick = screenMode;
   show(v);
 }
@@ -1061,12 +1141,12 @@ function screenSpectate(code) {
     v.querySelector('#spstat').innerHTML = `<small>${st.squads[0] && st.squads[1] ? 'Both squads in — kick-off!' : 'The draft is live.'}</small>`;
     if (st.squads[0] && st.squads[1]) {
       started = true; stopPoll();
-      S.leagueKey = st.league; setLeagueTheme(st.league);
+      await useLeague(st.league);
       const A = hydrateSquad(st.squads[0], 'Host'), B = hydrateSquad(st.squads[1], 'Challenger');
       S.players = [A, B];
       const offset = (r.now || Date.now()) - Date.now();
       const kickAt = st.kickoff ? st.kickoff - offset : Date.now();
-      setTimeout(() => startMatch(A, B, matchSeed(code, A, B)), Math.max(0, kickAt - Date.now()));
+      setTimeout(() => startMatch(A, B, matchSeed(code, A, B), rigFromState(st)), Math.max(0, kickAt - Date.now()));
     }
   };
   tick();
@@ -1080,7 +1160,7 @@ function screenRoomCode() {
   const link = joinLink(S.room.code);
   const v = el(`<section>
     <h2>Room open</h2>
-    <p>Get your opponent to scan this with their phone camera, or send them the code. Both of you build at the same time.</p>
+    <p>Get your opponent to scan this with their phone camera, or send them the code. Once they're in, you choose when to start.</p>
     <div class="card" style="text-align:center">
       ${qrSVG(link, 220)}
       <p style="margin:10px 0 4px"><small>Scan to join</small></p>
@@ -1098,13 +1178,34 @@ function screenRoomCode() {
     navigator.clipboard?.writeText(link); toast('Invite link copied');
   };
   show(v);
-  poll(st => {
-    if (st.players >= 2) {
-      stopPoll();
-      v.querySelector('#roomstatus').innerHTML = '<small>Opponent joined — building now!</small>';
-      setTimeout(() => startTurns(), 600);
+  // Host's lobby: nothing starts until you press Start — and you can
+  // remove whoever joined before then.
+  const status = v.querySelector('#roomstatus');
+  let shownId = null;
+  const render = st => {
+    if (st.players >= 2 && st.joinId) {
+      if (shownId === st.joinId) return;
+      shownId = st.joinId;
+      status.innerHTML = `<div class="card" style="display:flex;align-items:center;gap:10px">
+        <span style="flex:1">✅ <b>${esc(st.joinName || 'A player')}</b> has joined</span>
+        <button class="btn ghost" id="kick" style="width:auto;margin:0">Remove</button></div>
+        <button class="btn primary" id="start">Start the match</button>`;
+      status.querySelector('#start').onclick = async () => {
+        const r = await api({ action:'start', code:S.room.code, hostKey:S.room.hostKey });
+        if (!r || !r.ok) return toast(r && r.error === 'no-opponent' ? 'Your opponent left.' : "Couldn't start — try again.");
+        stopPoll(); startTurns();
+      };
+      status.querySelector('#kick').onclick = async () => {
+        const r = await api({ action:'kick', code:S.room.code, hostKey:S.room.hostKey });
+        if (r && r.ok) { toast(`${st.joinName || 'Player'} removed.`); shownId = null; render(r.state); }
+        else toast("Couldn't remove them — try again.");
+      };
+    } else if (shownId !== 'none') {
+      shownId = 'none';
+      status.innerHTML = '<small>Waiting for your opponent to join…</small>';
     }
-  });
+  };
+  poll(render);
 }
 
 function screenWait(msg, onState) {
@@ -1134,6 +1235,7 @@ function startTurns() {
   }
   S.turn = S.room.seat;
   const myDefault = S.room.seat === 0 ? 'Host' : 'Challenger';
+  if (S.myName && S.room.seat === 1) { me().label = S.myName; return screenFormationSpin(); }   // gave it when joining
   screenNickname(myDefault, name => { me().label = name; screenFormationSpin(); });
 }
 const mkPlayer = (label, ai=false) => ({ label, ai, formation:null, club:null, squad:null, xi:null, strength:null });
@@ -1194,7 +1296,8 @@ function screenFormationSpin() {
   const box = v.querySelector('.reel'), btn = v.querySelector('#spin');
   btn.onclick = async () => {
     btn.disabled = true; btn.textContent = 'Spinning…';
-    const idx = Math.floor(Math.random() * FORMATION_NAMES.length);
+    let idx = Math.floor(Math.random() * FORMATION_NAMES.length);
+    if (S.admin && S.admin.forceFormation) { idx = Math.max(0, FORMATION_NAMES.indexOf(S.admin.forceFormation)); S.admin.forceFormation = null; }
     await reel(box, FORMATION_NAMES, idx, f => f);
     p.formation = FORMATION_NAMES[idx];
     btn.disabled = false; btn.textContent = `Build your ${p.formation}`;
@@ -1218,7 +1321,7 @@ function screenBuild() {
   p.xi = FORMATIONS[p.formation].map(s => ({ ...s, player: null }));
   p.rerollsLeft = 5; // whole-XI budget — a reroll discards the spun club, not a single player
 
-  const clubs = S.leagueClubs;
+  const clubs = clubsFor(S.turn);
   const usedClubs = new Set(), usedPlayers = new Set();
   let club = null, busy = false;
 
@@ -1317,8 +1420,14 @@ function screenBuild() {
     if (busy) return;
     busy = true; act.disabled = true; act.textContent = 'Spinning…';
     picker.replaceChildren();
-    const pool = clubs.filter(c => !usedClubs.has(c.name));
-    const idx = weightedClubIndex(pool, S.leagueKey);
+    // in a rivalry a side only has a couple of squads, so they can come up again
+    const pool = S.rivalry ? clubs.slice() : clubs.filter(c => !usedClubs.has(c.name));
+    let idx = weightedClubIndex(pool, S.leagueKey);
+    if (S.admin && S.admin.forceClub) {           // admin: this spin lands where you said
+      const f = pool.findIndex(c => c.name === S.admin.forceClub);
+      if (f >= 0) idx = f;
+      S.admin.forceClub = null;
+    }
     await reel(box, pool, idx, c =>
       `<span class="swatch" style="background:${c.home};box-shadow:inset 0 0 0 3px ${c.away}"></span>${esc(c.name)}`);
     club = pool[idx];
@@ -1411,7 +1520,8 @@ function screenBuild() {
 
 /* --- the AI opponent ---------------------------------------------- */
 async function buildAI(ai, onSlot) {
-  const clubs = S.leagueClubs;
+  const side = S.players.indexOf(ai);
+  const clubs = clubsFor(side >= 0 ? side : 1);
   ai.formation = FORMATION_NAMES[Math.floor(Math.random() * FORMATION_NAMES.length)];
   const pool = clubs.slice().sort(() => Math.random() - 0.5);
   const usedPlayers = new Set();
@@ -1486,8 +1596,10 @@ function screenAIBuild(done) {
  * board before the scoresheet — ball wandering, events highlighted on
  * the actual player who caused them, both XIs shown as a real formation
  * shape rather than a flat list. */
-function startMatch(A, B, seed) {
+function startMatch(A, B, seed, roomRig) {
   const m = simulate(A, B, seed);
+  if (roomRig) applyRig(m, A, B, roomRig);
+  else if (S.mode !== 'online' && S.mode !== 'spectate' && S.admin && S.admin.rig) { applyRig(m, A, B, rigBySeat(S.admin.rig)); S.admin.rig = null; }
   screenMatchSim(A, B, m);
 }
 
@@ -1816,7 +1928,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
   show(v);
 
   const pickDot = (side, withGK) => {
-    const pool = players.filter(p => p.side === side && (withGK || !p.gk));
+    const pool = players.filter(p => p.side === side && (withGK || !p.gk) && !p.sentOff);
     return pool[Math.floor(Math.random() * pool.length)];
   };
   const byName = (side, name) => players.find(p => p.side === side && p.slot.player.name === name);
@@ -1910,6 +2022,15 @@ async function screenMatchSim(A, B, m, opts = {}) {
       scoreEl.textContent = `${scoreA} – ${scoreB}`;
       tagRow(scorer, '⚽'); SFX.roar();
       await kickOff(other, `Kick-off, ${esc(teams[other].label)} to restart.`);
+    } else if (ev.type === 'red') {
+      await ballTo(advanceTo(other, 0.3), clampW(20 + Math.random() * 60), pickDot(other));
+      await ballTo(bL + (Math.random() * 8 - 4), clampW(bW + (Math.random() * 16 - 8)), scorer,
+        `🟥 <b>${esc(ev.player)}</b> is sent off!`, 1400);
+      SFX.whistle(2); SFX.groan();
+      tagRow(scorer, '🟥');
+      scorer.sentOff = true; scorer.dot.style.opacity = '0';
+      if (carrier === key(scorer)) carrier = null;
+      await ballTo(bL, bW, pickDot(other), `${esc(teams[side].label)} are down to ten.`, 700);
     } else if (ev.type === 'noGoal') {
       await buildUpTo(side, scorer, { method: 'open', player: ev.player });
       await ballTo(side === 'home' ? 99.5 : 0.5, 44 + Math.random() * 12, null, `⚽ <b>${esc(ev.player)}</b> puts it in!`, 700);
@@ -2051,7 +2172,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
     }
     if (!made) return;
     commentary.innerHTML = `🔁 ${m.subs.filter(s => s.min === min).map(s => `${esc(s.on)} on for ${esc(s.off)}`).join(' · ')}`;
-    resimulate(m, A, B, fromMin, JSON.stringify(changes));
+    if (!m.rig) resimulate(m, A, B, fromMin, JSON.stringify(changes));
     events = m.events.slice().sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
     // the replay may have changed whether there's extra time
     if (m.et && PERIODS.length === 2) PERIODS.push({ base: 90, len: 15, min: 12000, added: Math.floor(crng() * 2) },
@@ -2319,12 +2440,13 @@ function screenResult(A, B, m) {
   const allEv = [...m.events, ...(m.subs || []).map(s => ({ type: 'sub', side: s.side, min: s.min, player: s.on, off: s.off, et: s.min > 90 }))]
     .sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min || (a.type === 'sub') - (b.type === 'sub'));
   const evRows = allEv.map(e => {
-    const icon = e.type === 'goal' ? '⚽' : e.type === 'noGoal' ? '🚫' : e.type === 'sub' ? '🔁' : '🟨';
+    const icon = e.type === 'goal' ? '⚽' : e.type === 'noGoal' ? '🚫' : e.type === 'sub' ? '🔁' : e.type === 'red' ? '🟥' : '🟨';
     const why = { offside: 'offside', handball: 'handball', foul: 'foul in the build-up' };
     const label = e.type === 'goal'
       ? `${esc(e.player)} ${esc(e.desc)}${e.var ? ' <small>(📺 VAR checked — stands)</small>' : ''}`
       : e.type === 'noGoal' ? `${esc(e.player)} — goal ruled out by VAR <small>(${why[e.reason]})</small>`
       : e.type === 'sub' ? `${esc(e.player)} <small>on for ${esc(e.off)}</small>`
+      : e.type === 'red' ? `${esc(e.player)} <small>sent off</small>`
       : esc(e.player);
     return e.side === 'home'
       ? `<div class="ev"><span class="min">${e.min}'</span><span>${icon} ${label}</span></div>`
@@ -2387,6 +2509,7 @@ function screenResult(A, B, m) {
     <button class="btn ghost" id="again">Play again</button>
   </section>`);
   v.querySelector('#totable').onclick = () => { clearTimeout(autoT); S.lastMatch.autoShown = true; slideToTable(A, B, v); };
+  if (S.rivalry) { v.querySelector('#totable').remove(); S.lastMatch.autoShown = true; }   // a rivalry is one big game — no table
   v.querySelector('#xi').onclick = () => { clearTimeout(autoT); screenLineups(A, B); };
   v.querySelector('#share').onclick = () => { clearTimeout(autoT); shareResultCard(A, B, m); };
   v.querySelector('#again').onclick = () => { clearTimeout(autoT); S.players = []; S.turn = 0; S.room = null; screenMode(); };
@@ -3067,6 +3190,7 @@ function publishProgress() {
 async function publishSquad() {
   const p = me();
   await ensureBench(p);
+  if (S.admin && S.admin.rig) await pushRig();
   const payload = squadPayload(p);
 
   // Show the waiting screen — no internal poll inside screenWait here,
@@ -3127,7 +3251,7 @@ async function publishSquad() {
     show(v);
     const tick = () => {
       const left = Math.ceil((kickAt - Date.now()) / 1000);
-      if (left <= 0) return startMatch(A, B, seed);
+      if (left <= 0) { if (S.admin) S.admin.rig = null; return startMatch(A, B, seed, rigFromState(st)); }
       v.querySelector('#count').textContent = left;
       setTimeout(tick, 200);
     };
@@ -3298,7 +3422,8 @@ function playerRatings(A, B, m) {
     out[side] = t.xi.map(s => {
       const grp = GROUP[s.role], nm = s.player.name;
       const goals = m.events.filter(e => e.side === side && e.type === 'goal' && e.player === nm).length;
-      const cards = m.events.filter(e => e.side === side && e.type === 'card' && e.player === nm).length;
+      const cards = m.events.filter(e => e.side === side && e.type === 'card' && e.player === nm).length
+        + 3.5 * m.events.filter(e => e.side === side && e.type === 'red' && e.player === nm).length;
       let r = 6.3 + ((s.player.rating || 75) - 80) * 0.03 + (gf > ga ? 0.45 : gf < ga ? -0.35 : 0.05) + (rand() * 0.8 - 0.4);
       r += goals * 1.1 - cards * 0.4;
       if (grp === 'GK' || grp === 'DEF') r += ga === 0 ? (grp === 'GK' ? 0.9 : 0.6) : -0.18 * ga;
@@ -3864,6 +3989,193 @@ function screenQuiz(lastTeam) {
   v.querySelector('#qnext').onclick = () => screenQuiz(q.team);
   v.querySelector('#qback').onclick = screenMode;
   show(v);
+}
+
+/* ------------------------------------------------------------------ *
+ * ADMIN — tap the Sp1nXI logo five times, enter the PIN (checked by the
+ * server against the ADMIN_PIN secret in Cloudflare — it's not in this
+ * file). Force the next spin, fix the next match, force events.
+ * ------------------------------------------------------------------ */
+(function adminTaps() {
+  const logo = document.querySelector('header.top .brand') || document.querySelector('.brand');
+  if (!logo) return;
+  let taps = [];
+  logo.addEventListener('click', e => {
+    const now = Date.now();
+    taps = taps.filter(t => now - t < 2500); taps.push(now);
+    if (taps.length >= 5) { taps = []; e.preventDefault(); openAdmin(); }
+  }, true);
+})();
+
+async function openAdmin() {
+  if (!S.admin) {
+    let saved = null;
+    try { saved = localStorage.getItem('sp1nxi-adm'); } catch (e) {}
+    if (saved) {
+      const r = await api({ action: 'admin', pin: saved });
+      if (r && r.ok) S.admin = { pin: saved };
+    }
+  }
+  if (S.admin) return adminPanel();
+  const ov = el(`<div style="position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#15120F;color:#F3ECE0;border-radius:16px;padding:18px;width:100%;max-width:340px;text-align:center">
+      <h3 style="margin:0 0 10px;color:#fff">🔒 Admin</h3>
+      <input id="apin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
+        style="width:100%;padding:12px;font-size:1.3rem;text-align:center;border-radius:10px;border:1px solid #40372E;background:#221D18;color:#fff">
+      <button class="btn primary" id="ago" style="margin-top:10px">Unlock</button>
+      <button class="btn ghost" id="ax" style="color:#F3ECE0">Cancel</button></div></div>`);
+  document.body.appendChild(ov);
+  const inp = ov.querySelector('#apin'); inp.focus();
+  const go = async () => {
+    const r = await api({ action: 'admin', pin: inp.value.trim() });
+    if (r && r.ok) {
+      S.admin = { pin: inp.value.trim() };
+      try { localStorage.setItem('sp1nxi-adm', S.admin.pin); } catch (e) {}
+      ov.remove(); adminPanel();
+    } else { toast(r && r.error === 'no-pin-set' ? 'No ADMIN_PIN is set in Cloudflare yet.' : 'Wrong PIN.'); inp.value = ''; }
+  };
+  ov.querySelector('#ago').onclick = go;
+  inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  ov.querySelector('#ax').onclick = () => ov.remove();
+}
+
+// Which side is "me" for a rig: my seat online, otherwise the home XI.
+const mySideForRig = () => S.mode === 'online' && S.room ? (S.room.seat === 1 ? 'away' : 'home') : 'home';
+
+function adminPanel() {
+  const a = S.admin, rig = a.rig || {};
+  const clubs = S.rivalry ? clubsFor(S.turn || 0) : (S.leagueClubs || []);
+  const myXI = (S.players && me() && me().xi || []).filter(s => s.player);
+  const ov = el(`<div style="position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center">
+    <div style="background:#15120F;color:#F3ECE0;width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px">
+      <style>.adm h4{margin:14px 0 6px;color:#E4762B;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase}
+        .adm select,.adm input[type=number]{padding:9px;border-radius:9px;border:1px solid #40372E;background:#221D18;color:#fff;font-size:1rem}
+        .adm label{display:flex;align-items:center;gap:8px;padding:5px 0}
+        .adm .chip{display:inline-block;padding:5px 9px;border-radius:999px;border:1px solid #40372E;margin:3px;font-size:.8rem;cursor:pointer}
+        .adm .chip.on{background:#E4762B;border-color:#E4762B;color:#fff}</style>
+      <div class="adm">
+        <h3 style="margin:0;color:#fff">🛠️ Admin</h3>
+        <p style="margin:4px 0 0"><small style="color:#A99D8D">Applies to your next spin / next match only.</small></p>
+
+        <h4>Force the spin</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="fclub" style="flex:2;min-width:0"><option value="">Next club: random</option>
+            ${clubs.map(cl => `<option ${a.forceClub === cl.name ? 'selected' : ''}>${esc(cl.name)}</option>`).join('')}</select>
+          <select id="fform" style="flex:1;min-width:0"><option value="">Formation: random</option>
+            ${FORMATION_NAMES.map(f => `<option ${a.forceFormation === f ? 'selected' : ''}>${f}</option>`).join('')}</select>
+        </div>
+        ${clubs.length ? '' : '<p><small style="color:#A99D8D">Pick a league first to choose a club.</small></p>'}
+
+        <h4>Rig the next match</h4>
+        <label><input type="checkbox" id="ron" ${a.rig ? 'checked' : ''}> Fix the result</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="flex:1">You</span><input type="number" id="rme" min="0" max="9" value="${rig.me ?? 2}" style="width:4em;text-align:center">
+          <b>–</b><input type="number" id="rthem" min="0" max="9" value="${rig.them ?? 1}" style="width:4em;text-align:center"><span style="flex:1;text-align:right">Them</span>
+        </div>
+        <label>If it's level, shootout goes to
+          <select id="rpens"><option value="me" ${rig.pens !== 'them' ? 'selected' : ''}>You</option><option value="them" ${rig.pens === 'them' ? 'selected' : ''}>Them</option></select></label>
+        <p style="margin:6px 0 2px"><small style="color:#A99D8D">Your scorers (tap in order — optional):</small></p>
+        <div id="rsc">${myXI.length ? myXI.filter(s => GROUP[s.role] !== 'GK').map(s =>
+          `<span class="chip ${(rig.scorers || []).includes(s.player.name) ? 'on' : ''}" data-n="${esc(s.player.name)}">${esc(s.player.name)}</span>`).join('')
+          : '<small style="color:#A99D8D">Build your XI first to pick scorers — otherwise they’re random.</small>'}</div>
+
+        <h4>Force events</h4>
+        <label><input type="checkbox" id="evar" ${rig.var ? 'checked' : ''}> 📺 VAR drama (a goal ruled out)</label>
+        <label><input type="checkbox" id="ered" ${rig.red ? 'checked' : ''}> 🟥 Red card for
+          <select id="eredside"><option value="them" ${rig.red !== 'me' ? 'selected' : ''}>them</option><option value="me" ${rig.red === 'me' ? 'selected' : ''}>you</option></select></label>
+        <label><input type="checkbox" id="esnow" ${rig.snow ? 'checked' : ''}> ❄️ Snow</label>
+
+        <button class="btn primary" id="asave" style="margin-top:12px">Save</button>
+        <button class="btn ghost" id="aclear" style="color:#F3ECE0">Clear everything</button>
+        <button class="btn ghost" id="aout" style="color:#A99D8D">Lock admin on this phone</button>
+      </div></div></div>`);
+  const scorers = (rig.scorers || []).slice();
+  ov.querySelectorAll('#rsc .chip').forEach(ch => ch.onclick = () => {
+    const n = ch.dataset.n, i = scorers.indexOf(n);
+    if (i >= 0) scorers.splice(i, 1); else scorers.push(n);
+    ch.classList.toggle('on', scorers.includes(n));
+  });
+  ov.querySelector('#asave').onclick = async () => {
+    a.forceClub = ov.querySelector('#fclub').value || null;
+    a.forceFormation = ov.querySelector('#fform').value || null;
+    const fixed = ov.querySelector('#ron').checked;
+    const ev = { var: ov.querySelector('#evar').checked, red: ov.querySelector('#ered').checked ? ov.querySelector('#eredside').value : null, snow: ov.querySelector('#esnow').checked };
+    a.rig = (fixed || ev.var || ev.red || ev.snow) ? {
+      fixed, me: Math.max(0, Math.min(9, +ov.querySelector('#rme').value || 0)), them: Math.max(0, Math.min(9, +ov.querySelector('#rthem').value || 0)),
+      pens: ov.querySelector('#rpens').value, scorers: scorers.slice(), ...ev } : null;
+    await pushRig();
+    ov.remove(); toast('Saved.');
+  };
+  ov.querySelector('#aclear').onclick = async () => { a.forceClub = a.forceFormation = null; a.rig = null; await pushRig(); ov.remove(); toast('Cleared.'); };
+  ov.querySelector('#aout').onclick = () => { try { localStorage.removeItem('sp1nxi-adm'); } catch (e) {} S.admin = null; ov.remove(); toast('Admin locked.'); };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+// Online: the rig goes to the room (both phones need it to play the same
+// match). It's stored by seat, so "you" means you on either phone.
+function rigBySeat(r) {
+  if (!r) return null;
+  const mine = mySideForRig(), theirs = mine === 'home' ? 'away' : 'home';
+  const out = { var: r.var, snow: r.snow, red: r.red ? (r.red === 'me' ? mine : theirs) : null };
+  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, pens: r.pens === 'me' ? mine : theirs, scorers: { [mine]: r.scorers || [] } });
+  return out;
+}
+async function pushRig() {
+  if (S.mode === 'online' && S.room && S.admin) await api({ action: 'rig', code: S.room.code, pin: S.admin.pin, rig: rigBySeat(S.admin.rig) });
+}
+const rigFromState = st => { try { return st && st.x ? JSON.parse(decodeURIComponent(escape(atob(st.x)))) : null; } catch (e) { return null; } };
+
+// Rewrite a freshly simulated match to the rigged result. It still plays
+// out naturally on the board, with scorers, minutes and a real shootout.
+function applyRig(m, A, B, rig) {
+  if (!rig) return m;
+  const rnd = m.seed ? seededRng(m.seed + '|rig') : Math.random;
+  const scorer = makeScorer(rnd);
+  let events = m.events.slice();
+  const usedMins = new Set(events.map(e => e.min));
+  const minIn = (lo, hi) => { let x, n = 0; do { x = lo + Math.floor(rnd() * (hi - lo + 1)); } while (usedMins.has(x) && ++n < 80); usedMins.add(x); return x; };
+  const teamOf = side => side === 'home' ? A : B;
+  if (rig.fixed) {
+    events = events.filter(e => e.type !== 'goal');
+    usedMins.clear(); events.forEach(e => usedMins.add(e.min));
+    ['home', 'away'].forEach(side => {
+      const names = (rig.scorers && rig.scorers[side]) || [];
+      for (let i = 0; i < (rig[side] || 0); i++) {
+        const name = names.length ? names[i % names.length] : scorer(teamOf(side)).player.name;
+        const ev = { side, min: minIn(4, 89), type: 'goal', player: name };
+        Object.assign(ev, describeGoal(rnd));
+        events.push(ev);
+      }
+    });
+  }
+  if (rig.var && !events.some(e => e.type === 'noGoal')) {
+    const side = rnd() < 0.5 ? 'home' : 'away';
+    events.push({ side, min: minIn(15, 85), type: 'noGoal', player: scorer(teamOf(side)).player.name, reason: ['offside', 'handball', 'foul'][Math.floor(rnd() * 3)] });
+  }
+  if (rig.red) {
+    const t = teamOf(rig.red), outfield = t.xi.filter(s => GROUP[s.role] !== 'GK');
+    events.push({ side: rig.red, min: minIn(20, 80), type: 'red', player: outfield[Math.floor(rnd() * outfield.length)].player.name });
+  }
+  if (rig.snow) m.weather = 'snow';
+  events.sort((x, y) => x.min - y.min);
+  m.events = events;
+  if (rig.fixed) {
+    m.gA = rig.home || 0; m.gB = rig.away || 0; m.ft = { a: m.gA, b: m.gB };
+    m.et = m.gA === m.gB; m.pens = null;
+    if (m.et) {                                   // level: a real shootout, won by the chosen side
+      for (let k = 0; k < 200; k++) {
+        const so = shootout(A, B, seededRng(`${m.seed || 'local'}|rigpens|${k}`));
+        if ((so.a > so.b ? 'home' : 'away') === rig.pens) { m.pens = { a: so.a, b: so.b, kicks: so.kicks }; break; }
+      }
+    }
+    m.winSide = m.gA > m.gB ? 'home' : m.gA < m.gB ? 'away' : m.pens ? (m.pens.a > m.pens.b ? 'home' : 'away') : null;
+    m.rig = true;
+    const sot = m.stats.find(s => s.label === 'Shots on target');
+    if (sot) { sot.a = Math.max(+sot.a || 0, m.gA); sot.b = Math.max(+sot.b || 0, m.gB); }
+  }
+  delete m.ratings; delete m.pundit;
+  return m;
 }
 
 /* QR encoder — Kazuhiko Arase's QRCode for JavaScript (MIT licence,
