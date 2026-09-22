@@ -1981,5 +1981,1229 @@
    "position": "Attacker",
    "rating": 82
   }
+ ],
+ "Real Madrid 2013–14": [
+  {
+   "id": "LEG-Real-Madrid-2013-14-1-Iker-Casillas",
+   "name": "Iker Casillas",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-25-Diego-L-pez",
+   "name": "Diego López",
+   "number": 25,
+   "position": "Goalkeeper",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-15-Dani-Carvajal",
+   "name": "Dani Carvajal",
+   "number": 15,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-2-Rapha-l-Varane",
+   "name": "Raphaël Varane",
+   "number": 2,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-3-Pepe",
+   "name": "Pepe",
+   "number": 3,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-4-Sergio-Ramos",
+   "name": "Sergio Ramos",
+   "number": 4,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-12-Marcelo",
+   "name": "Marcelo",
+   "number": 12,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-5-F-bio-Coentr-o",
+   "name": "Fábio Coentrão",
+   "number": 5,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-17-lvaro-Arbeloa",
+   "name": "Álvaro Arbeloa",
+   "number": 17,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-18-Nacho",
+   "name": "Nacho",
+   "number": 18,
+   "position": "Defender",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-6-Sami-Khedira",
+   "name": "Sami Khedira",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-14-Xabi-Alonso",
+   "name": "Xabi Alonso",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-19-Luka-Modri",
+   "name": "Luka Modrić",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-22-ngel-Di-Mar-a",
+   "name": "Ángel Di María",
+   "number": 22,
+   "position": "Midfielder",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-23-Isco",
+   "name": "Isco",
+   "number": 23,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-24-Asier-Illarramendi",
+   "name": "Asier Illarramendi",
+   "number": 24,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-7-Cristiano-Ronaldo",
+   "name": "Cristiano Ronaldo",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 97
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-11-Gareth-Bale",
+   "name": "Gareth Bale",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-9-Karim-Benzema",
+   "name": "Karim Benzema",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-21-lvaro-Morata",
+   "name": "Álvaro Morata",
+   "number": 21,
+   "position": "Attacker",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Real-Madrid-2013-14-20-Jes",
+   "name": "Jesé",
+   "number": 20,
+   "position": "Attacker",
+   "rating": 77
+  }
+ ],
+ "Barcelona 2014–15": [
+  {
+   "id": "LEG-Barcelona-2014-15-1-Marc-Andr-ter-Stegen",
+   "name": "Marc-André ter Stegen",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-13-Claudio-Bravo",
+   "name": "Claudio Bravo",
+   "number": 13,
+   "position": "Goalkeeper",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-22-Dani-Alves",
+   "name": "Dani Alves",
+   "number": 22,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-3-Gerard-Piqu",
+   "name": "Gerard Piqué",
+   "number": 3,
+   "position": "Defender",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-14-Javier-Mascherano",
+   "name": "Javier Mascherano",
+   "number": 14,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-24-J-r-my-Mathieu",
+   "name": "Jérémy Mathieu",
+   "number": 24,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-18-Jordi-Alba",
+   "name": "Jordi Alba",
+   "number": 18,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-21-Adriano",
+   "name": "Adriano",
+   "number": 21,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-15-Marc-Bartra",
+   "name": "Marc Bartra",
+   "number": 15,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-5-Sergio-Busquets",
+   "name": "Sergio Busquets",
+   "number": 5,
+   "position": "Midfielder",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-4-Ivan-Rakiti",
+   "name": "Ivan Rakitić",
+   "number": 4,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-6-Xavi",
+   "name": "Xavi",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-8-Andr-s-Iniesta",
+   "name": "Andrés Iniesta",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-12-Rafinha",
+   "name": "Rafinha",
+   "number": 12,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-20-Sergi-Roberto",
+   "name": "Sergi Roberto",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-10-Lionel-Messi",
+   "name": "Lionel Messi",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 98
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-9-Luis-Su-rez",
+   "name": "Luis Suárez",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 93
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-11-Neymar",
+   "name": "Neymar",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Barcelona-2014-15-7-Pedro",
+   "name": "Pedro",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 82
+  }
+ ],
+ "Brazil 1970": [
+  {
+   "id": "LEG-Brazil-1970-1-F-lix",
+   "name": "Félix",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Brazil-1970-4-Carlos-Alberto",
+   "name": "Carlos Alberto",
+   "number": 4,
+   "position": "Defender",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Brazil-1970-2-Brito",
+   "name": "Brito",
+   "number": 2,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Brazil-1970-3-Wilson-Piazza",
+   "name": "Wilson Piazza",
+   "number": 3,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Brazil-1970-16-Everaldo",
+   "name": "Everaldo",
+   "number": 16,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Brazil-1970-5-Clodoaldo",
+   "name": "Clodoaldo",
+   "number": 5,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Brazil-1970-8-G-rson",
+   "name": "Gérson",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Brazil-1970-7-Jairzinho",
+   "name": "Jairzinho",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 92
+  },
+  {
+   "id": "LEG-Brazil-1970-9-Tost-o",
+   "name": "Tostão",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Brazil-1970-10-Pel",
+   "name": "Pelé",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 99
+  },
+  {
+   "id": "LEG-Brazil-1970-11-Rivellino",
+   "name": "Rivellino",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 92
+  }
+ ],
+ "Argentina 1986": [
+  {
+   "id": "LEG-Argentina-1986-18-Nery-Pumpido",
+   "name": "Nery Pumpido",
+   "number": 18,
+   "position": "Goalkeeper",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Argentina-1986-5-Jos-Luis-Brown",
+   "name": "José Luis Brown",
+   "number": 5,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Argentina-1986-19-Oscar-Ruggeri",
+   "name": "Oscar Ruggeri",
+   "number": 19,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Argentina-1986-9-Jos-Luis-Cuciuffo",
+   "name": "José Luis Cuciuffo",
+   "number": 9,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Argentina-1986-16-Julio-Olarticoechea",
+   "name": "Julio Olarticoechea",
+   "number": 16,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Argentina-1986-2-Sergio-Batista",
+   "name": "Sergio Batista",
+   "number": 2,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Argentina-1986-14-Ricardo-Giusti",
+   "name": "Ricardo Giusti",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Argentina-1986-12-H-ctor-Enrique",
+   "name": "Héctor Enrique",
+   "number": 12,
+   "position": "Midfielder",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Argentina-1986-7-Jorge-Burruchaga",
+   "name": "Jorge Burruchaga",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Argentina-1986-10-Diego-Maradona",
+   "name": "Diego Maradona",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 99
+  },
+  {
+   "id": "LEG-Argentina-1986-11-Jorge-Valdano",
+   "name": "Jorge Valdano",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 86
+  }
+ ],
+ "Argentina 2022": [
+  {
+   "id": "LEG-Argentina-2022-23-Emiliano-Mart-nez",
+   "name": "Emiliano Martínez",
+   "number": 23,
+   "position": "Goalkeeper",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Argentina-2022-1-Franco-Armani",
+   "name": "Franco Armani",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Argentina-2022-26-Nahuel-Molina",
+   "name": "Nahuel Molina",
+   "number": 26,
+   "position": "Defender",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Argentina-2022-4-Gonzalo-Montiel",
+   "name": "Gonzalo Montiel",
+   "number": 4,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Argentina-2022-13-Cristian-Romero",
+   "name": "Cristian Romero",
+   "number": 13,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Argentina-2022-19-Nicol-s-Otamendi",
+   "name": "Nicolás Otamendi",
+   "number": 19,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Argentina-2022-25-Lisandro-Mart-nez",
+   "name": "Lisandro Martínez",
+   "number": 25,
+   "position": "Defender",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Argentina-2022-3-Nicol-s-Tagliafico",
+   "name": "Nicolás Tagliafico",
+   "number": 3,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Argentina-2022-8-Marcos-Acu-a",
+   "name": "Marcos Acuña",
+   "number": 8,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Argentina-2022-6-Germ-n-Pezzella",
+   "name": "Germán Pezzella",
+   "number": 6,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Argentina-2022-7-Rodrigo-De-Paul",
+   "name": "Rodrigo De Paul",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Argentina-2022-24-Enzo-Fern-ndez",
+   "name": "Enzo Fernández",
+   "number": 24,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Argentina-2022-20-Alexis-Mac-Allister",
+   "name": "Alexis Mac Allister",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Argentina-2022-5-Leandro-Paredes",
+   "name": "Leandro Paredes",
+   "number": 5,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Argentina-2022-18-Guido-Rodr-guez",
+   "name": "Guido Rodríguez",
+   "number": 18,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Argentina-2022-10-Lionel-Messi",
+   "name": "Lionel Messi",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 95
+  },
+  {
+   "id": "LEG-Argentina-2022-11-ngel-Di-Mar-a",
+   "name": "Ángel Di María",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Argentina-2022-9-Juli-n-lvarez",
+   "name": "Julián Álvarez",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Argentina-2022-22-Lautaro-Mart-nez",
+   "name": "Lautaro Martínez",
+   "number": 22,
+   "position": "Attacker",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Argentina-2022-21-Paulo-Dybala",
+   "name": "Paulo Dybala",
+   "number": 21,
+   "position": "Attacker",
+   "rating": 84
+  }
+ ],
+ "Man United 2007–08": [
+  {
+   "id": "LEG-Man-United-2007-08-1-Edwin-van-der-Sar",
+   "name": "Edwin van der Sar",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Man-United-2007-08-29-Tomasz-Kuszczak",
+   "name": "Tomasz Kuszczak",
+   "number": 29,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Man-United-2007-08-6-Wes-Brown",
+   "name": "Wes Brown",
+   "number": 6,
+   "position": "Defender",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Man-United-2007-08-5-Rio-Ferdinand",
+   "name": "Rio Ferdinand",
+   "number": 5,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Man-United-2007-08-15-Nemanja-Vidi",
+   "name": "Nemanja Vidić",
+   "number": 15,
+   "position": "Defender",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Man-United-2007-08-3-Patrice-Evra",
+   "name": "Patrice Evra",
+   "number": 3,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Man-United-2007-08-2-Gary-Neville",
+   "name": "Gary Neville",
+   "number": 2,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Man-United-2007-08-22-John-O-Shea",
+   "name": "John O'Shea",
+   "number": 22,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Man-United-2007-08-16-Michael-Carrick",
+   "name": "Michael Carrick",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Man-United-2007-08-18-Paul-Scholes",
+   "name": "Paul Scholes",
+   "number": 18,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Man-United-2007-08-4-Owen-Hargreaves",
+   "name": "Owen Hargreaves",
+   "number": 4,
+   "position": "Midfielder",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Man-United-2007-08-8-Anderson",
+   "name": "Anderson",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Man-United-2007-08-11-Ryan-Giggs",
+   "name": "Ryan Giggs",
+   "number": 11,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Man-United-2007-08-17-Nani",
+   "name": "Nani",
+   "number": 17,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Man-United-2007-08-13-Park-Ji-sung",
+   "name": "Park Ji-sung",
+   "number": 13,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Man-United-2007-08-7-Cristiano-Ronaldo",
+   "name": "Cristiano Ronaldo",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 96
+  },
+  {
+   "id": "LEG-Man-United-2007-08-10-Wayne-Rooney",
+   "name": "Wayne Rooney",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Man-United-2007-08-32-Carlos-Tevez",
+   "name": "Carlos Tevez",
+   "number": 32,
+   "position": "Attacker",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Man-United-2007-08-9-Louis-Saha",
+   "name": "Louis Saha",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 79
+  }
+ ],
+ "Liverpool 2004–05": [
+  {
+   "id": "LEG-Liverpool-2004-05-1-Jerzy-Dudek",
+   "name": "Jerzy Dudek",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-23-Jamie-Carragher",
+   "name": "Jamie Carragher",
+   "number": 23,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-4-Sami-Hyypi",
+   "name": "Sami Hyypiä",
+   "number": 4,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-3-Steve-Finnan",
+   "name": "Steve Finnan",
+   "number": 3,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-21-Djimi-Traor",
+   "name": "Djimi Traoré",
+   "number": 21,
+   "position": "Defender",
+   "rating": 74
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-8-Steven-Gerrard",
+   "name": "Steven Gerrard",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 90
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-14-Xabi-Alonso",
+   "name": "Xabi Alonso",
+   "number": 14,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-16-Dietmar-Hamann",
+   "name": "Dietmar Hamann",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-6-John-Arne-Riise",
+   "name": "John Arne Riise",
+   "number": 6,
+   "position": "Midfielder",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-10-Luis-Garc-a",
+   "name": "Luis García",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-7-Harry-Kewell",
+   "name": "Harry Kewell",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-5-Milan-Baro",
+   "name": "Milan Baroš",
+   "number": 5,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-9-Djibril-Ciss",
+   "name": "Djibril Cissé",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Liverpool-2004-05-19-Fernando-Morientes",
+   "name": "Fernando Morientes",
+   "number": 19,
+   "position": "Attacker",
+   "rating": 81
+  }
+ ],
+ "Arsenal 2005–06": [
+  {
+   "id": "LEG-Arsenal-2005-06-1-Jens-Lehmann",
+   "name": "Jens Lehmann",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-24-Manuel-Almunia",
+   "name": "Manuel Almunia",
+   "number": 24,
+   "position": "Goalkeeper",
+   "rating": 75
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-27-Emmanuel-Ebou",
+   "name": "Emmanuel Eboué",
+   "number": 27,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-28-Kolo-Tour",
+   "name": "Kolo Touré",
+   "number": 28,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-23-Sol-Campbell",
+   "name": "Sol Campbell",
+   "number": 23,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-20-Philippe-Senderos",
+   "name": "Philippe Senderos",
+   "number": 20,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-22-Ga-l-Clichy",
+   "name": "Gaël Clichy",
+   "number": 22,
+   "position": "Defender",
+   "rating": 77
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-12-Lauren",
+   "name": "Lauren",
+   "number": 12,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-15-Cesc-F-bregas",
+   "name": "Cesc Fàbregas",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-19-Gilberto-Silva",
+   "name": "Gilberto Silva",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-16-Mathieu-Flamini",
+   "name": "Mathieu Flamini",
+   "number": 16,
+   "position": "Midfielder",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-13-Alexander-Hleb",
+   "name": "Alexander Hleb",
+   "number": 13,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-7-Robert-Pires",
+   "name": "Robert Pires",
+   "number": 7,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-8-Freddie-Ljungberg",
+   "name": "Freddie Ljungberg",
+   "number": 8,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-14-Thierry-Henry",
+   "name": "Thierry Henry",
+   "number": 14,
+   "position": "Attacker",
+   "rating": 95
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-11-Robin-van-Persie",
+   "name": "Robin van Persie",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-25-Emmanuel-Adebayor",
+   "name": "Emmanuel Adebayor",
+   "number": 25,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Arsenal-2005-06-9-Jos-Antonio-Reyes",
+   "name": "José Antonio Reyes",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 80
+  }
+ ],
+ "Tottenham 2018–19": [
+  {
+   "id": "LEG-Tottenham-2018-19-1-Hugo-Lloris",
+   "name": "Hugo Lloris",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-22-Paulo-Gazzaniga",
+   "name": "Paulo Gazzaniga",
+   "number": 22,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-2-Kieran-Trippier",
+   "name": "Kieran Trippier",
+   "number": 2,
+   "position": "Defender",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-24-Serge-Aurier",
+   "name": "Serge Aurier",
+   "number": 24,
+   "position": "Defender",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-4-Toby-Alderweireld",
+   "name": "Toby Alderweireld",
+   "number": 4,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-5-Jan-Vertonghen",
+   "name": "Jan Vertonghen",
+   "number": 5,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-6-Davinson-S-nchez",
+   "name": "Davinson Sánchez",
+   "number": 6,
+   "position": "Defender",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-25-Juan-Foyth",
+   "name": "Juan Foyth",
+   "number": 25,
+   "position": "Defender",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-3-Danny-Rose",
+   "name": "Danny Rose",
+   "number": 3,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-33-Ben-Davies",
+   "name": "Ben Davies",
+   "number": 33,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-15-Eric-Dier",
+   "name": "Eric Dier",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 81
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-17-Moussa-Sissoko",
+   "name": "Moussa Sissoko",
+   "number": 17,
+   "position": "Midfielder",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-12-Victor-Wanyama",
+   "name": "Victor Wanyama",
+   "number": 12,
+   "position": "Midfielder",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-23-Christian-Eriksen",
+   "name": "Christian Eriksen",
+   "number": 23,
+   "position": "Midfielder",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-20-Dele-Alli",
+   "name": "Dele Alli",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-11-Erik-Lamela",
+   "name": "Erik Lamela",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-7-Son-Heung-min",
+   "name": "Son Heung-min",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-27-Lucas-Moura",
+   "name": "Lucas Moura",
+   "number": 27,
+   "position": "Attacker",
+   "rating": 82
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-10-Harry-Kane",
+   "name": "Harry Kane",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Tottenham-2018-19-18-Fernando-Llorente",
+   "name": "Fernando Llorente",
+   "number": 18,
+   "position": "Attacker",
+   "rating": 79
+  }
+ ],
+ "Tottenham 2016–17": [
+  {
+   "id": "LEG-Tottenham-2016-17-1-Hugo-Lloris",
+   "name": "Hugo Lloris",
+   "number": 1,
+   "position": "Goalkeeper",
+   "rating": 88
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-13-Michel-Vorm",
+   "name": "Michel Vorm",
+   "number": 13,
+   "position": "Goalkeeper",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-2-Kyle-Walker",
+   "name": "Kyle Walker",
+   "number": 2,
+   "position": "Defender",
+   "rating": 85
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-16-Kieran-Trippier",
+   "name": "Kieran Trippier",
+   "number": 16,
+   "position": "Defender",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-4-Toby-Alderweireld",
+   "name": "Toby Alderweireld",
+   "number": 4,
+   "position": "Defender",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-5-Jan-Vertonghen",
+   "name": "Jan Vertonghen",
+   "number": 5,
+   "position": "Defender",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-3-Danny-Rose",
+   "name": "Danny Rose",
+   "number": 3,
+   "position": "Defender",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-33-Ben-Davies",
+   "name": "Ben Davies",
+   "number": 33,
+   "position": "Defender",
+   "rating": 79
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-15-Eric-Dier",
+   "name": "Eric Dier",
+   "number": 15,
+   "position": "Midfielder",
+   "rating": 83
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-12-Victor-Wanyama",
+   "name": "Victor Wanyama",
+   "number": 12,
+   "position": "Midfielder",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-19-Mousa-Demb-l",
+   "name": "Mousa Dembélé",
+   "number": 19,
+   "position": "Midfielder",
+   "rating": 86
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-29-Harry-Winks",
+   "name": "Harry Winks",
+   "number": 29,
+   "position": "Midfielder",
+   "rating": 76
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-17-Moussa-Sissoko",
+   "name": "Moussa Sissoko",
+   "number": 17,
+   "position": "Midfielder",
+   "rating": 78
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-23-Christian-Eriksen",
+   "name": "Christian Eriksen",
+   "number": 23,
+   "position": "Midfielder",
+   "rating": 89
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-20-Dele-Alli",
+   "name": "Dele Alli",
+   "number": 20,
+   "position": "Midfielder",
+   "rating": 87
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-7-Son-Heung-min",
+   "name": "Son Heung-min",
+   "number": 7,
+   "position": "Attacker",
+   "rating": 84
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-11-Erik-Lamela",
+   "name": "Erik Lamela",
+   "number": 11,
+   "position": "Attacker",
+   "rating": 80
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-10-Harry-Kane",
+   "name": "Harry Kane",
+   "number": 10,
+   "position": "Attacker",
+   "rating": 91
+  },
+  {
+   "id": "LEG-Tottenham-2016-17-9-Vincent-Janssen",
+   "name": "Vincent Janssen",
+   "number": 9,
+   "position": "Attacker",
+   "rating": 74
+  }
  ]
 }
