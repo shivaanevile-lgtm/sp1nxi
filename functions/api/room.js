@@ -28,6 +28,8 @@ function d1Store(db) {
     await db.prepare(`CREATE TABLE IF NOT EXISTS rooms (
       code TEXT PRIMARY KEY, league TEXT, players INTEGER, s0 TEXT, s1 TEXT, kickoff INTEGER, created INTEGER, p0 TEXT, p1 TEXT)`).run();
     // tables made by the previous version lack the draft-progress columns
+    await db.prepare(`CREATE TABLE IF NOT EXISTS preds (code TEXT, name TEXT, h INTEGER, a INTEGER, PRIMARY KEY (code, name))`).run();
+    await db.prepare(`CREATE TABLE IF NOT EXISTS subs (code TEXT, seat INTEGER, win INTEGER, data TEXT, PRIMARY KEY (code, seat, win))`).run();
     for (const col of ['p0', 'p1']) { try { await db.prepare(`ALTER TABLE rooms ADD COLUMN ${col} TEXT`).run(); } catch (e) { /* already there */ } }
     tableReady = true;
   };
@@ -36,7 +38,11 @@ function d1Store(db) {
       await ensure();
       const r = await db.prepare('SELECT * FROM rooms WHERE code = ?').bind(code).first();
       if (!r) return null;
-      return { league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], progress: [parse(r.p0), parse(r.p1)], kickoff: r.kickoff || null, created: r.created };
+      const pr = await db.prepare('SELECT name, h, a FROM preds WHERE code = ?').bind(code).all();
+      const sb = await db.prepare('SELECT seat, win, data FROM subs WHERE code = ?').bind(code).all();
+      const subs = {};
+      ((sb && sb.results) || []).forEach(x => { subs[`${x.seat}|${x.win}`] = parse(x.data) || []; });
+      return { subs, preds: (pr && pr.results) || [], league: r.league, players: r.players, squads: [parse(r.s0), parse(r.s1)], progress: [parse(r.p0), parse(r.p1)], kickoff: r.kickoff || null, created: r.created };
     },
     async create(code, league) {
       await ensure();
@@ -47,6 +53,8 @@ function d1Store(db) {
     setLeague: (code, league) => db.prepare('UPDATE rooms SET league = ? WHERE code = ?').bind(league, code).run(),
     setSquad: (code, seat, squad) => db.prepare(`UPDATE rooms SET s${seat} = ? WHERE code = ?`).bind(JSON.stringify(squad), code).run(),
     setProgress: (code, seat, squad) => db.prepare(`UPDATE rooms SET p${seat} = ? WHERE code = ?`).bind(JSON.stringify(squad), code).run(),
+    predict: (code, name, h, a) => db.prepare('INSERT OR REPLACE INTO preds (code, name, h, a) VALUES (?, ?, ?, ?)').bind(code, name, h, a).run(),
+    setSubs: (code, seat, win, data) => db.prepare('INSERT OR REPLACE INTO subs (code, seat, win, data) VALUES (?, ?, ?, ?)').bind(code, seat, win, JSON.stringify(data)).run(),
     // only the first caller's time sticks, so both phones get the same one
     setKickoff: (code, t) => db.prepare('UPDATE rooms SET kickoff = ? WHERE code = ? AND kickoff IS NULL').bind(t, code).run()
   };
@@ -60,16 +68,22 @@ function kvStore(kv) {
     async read(code) {
       const meta = await get('room:' + code);
       if (!meta) return null;
-      const [s0, s1, p0, p1] = await Promise.all(['s0', 's1', 'p0', 'p1'].map(k => get(`room:${code}:${k}`)));
+      const SUBK = ['0|45', '1|45', '0|90', '1|90', '0|105', '1|105'];
+      const [s0, s1, p0, p1, pr, ...sb] = await Promise.all(['s0', 's1', 'p0', 'p1', 'preds', ...SUBK.map(k => 'subs:' + k)].map(k => get(`room:${code}:${k}`)));
+      const subs = {};
+      SUBK.forEach((k, i) => { if (sb[i]) subs[k] = sb[i]; });
       // older rooms kept squads inside the main record
       const old = meta.squads || [null, null];
-      return { league: meta.league, players: meta.players, squads: [s0 || old[0], s1 || old[1]], progress: [p0, p1], kickoff: meta.kickoff || null, created: meta.created };
+      return { subs, preds: Object.entries(pr || {}).map(([name, v]) => ({ name, h: v.h, a: v.a })),
+        league: meta.league, players: meta.players, squads: [s0 || old[0], s1 || old[1]], progress: [p0, p1], kickoff: meta.kickoff || null, created: meta.created };
     },
     create: (code, league) => put('room:' + code, { league, players: 1, created: Date.now() }),
     async join(code) { const m = await get('room:' + code); if (m && m.players < 2) { m.players = 2; await put('room:' + code, m); } },
     async setLeague(code, league) { const m = await get('room:' + code); if (m) { m.league = league; await put('room:' + code, m); } },
     setSquad: (code, seat, squad) => put(`room:${code}:s${seat}`, squad),
     setProgress: (code, seat, squad) => put(`room:${code}:p${seat}`, squad),
+    setSubs: (code, seat, win, data) => put(`room:${code}:subs:${seat}|${win}`, data),
+    async predict(code, name, h, a) { const all = (await get(`room:${code}:preds`)) || {}; all[name] = { h, a }; await put(`room:${code}:preds`, all); },
     async setKickoff(code, t) { const m = await get('room:' + code); if (m && !m.kickoff) { m.kickoff = t; await put('room:' + code, m); } }
   };
 }
@@ -82,6 +96,13 @@ export async function onRequestPost(ctx) {
 async function handle({ request, env }) {
   const store = env.DB ? d1Store(env.DB) : env.ROOMS ? kvStore(env.ROOMS) : null;
   STORE_KIND = env.DB ? 'd1' : env.ROOMS ? 'kv' : 'none';
+  // Nobody sees anyone else's predicted score until kick-off — whatever the action.
+  const rawRead = store.read.bind(store);
+  store.read = async code => {
+    const st = await rawRead(code);
+    if (st && st.preds && !(st.kickoff && Date.now() >= st.kickoff)) st.preds = st.preds.map(p => ({ name: p.name }));
+    return st;
+  };
   if (!store) return json({ ok: false, error: 'no-storage' }, 500);
 
   let body;
@@ -100,6 +121,22 @@ async function handle({ request, env }) {
   if (!state) return json({ ok: false, error: 'not-found' }, 404);
 
   if (action === 'state') return json({ ok: true, state });
+  // A player's substitutions at one break (45, 90 or 105).
+  if (action === 'subs') {
+    const seat = body.seat === 1 ? 1 : 0, win = [45, 90, 105].includes(body.win) ? body.win : 45;
+    const data = (Array.isArray(body.subs) ? body.subs : []).slice(0, 5)
+      .map(x => ({ slot: Math.max(0, Math.min(10, parseInt(x.slot, 10) || 0)), on: String(x.on || '').slice(0, 60) }));
+    await store.setSubs(code, seat, win, data);
+    return json({ ok: true });
+  }
+  if (action === 'predict') {
+    if (state.kickoff && Date.now() >= state.kickoff) return json({ ok: false, error: 'closed' });
+    const name = String(body.name || '').trim().slice(0, 16);
+    const h = Math.max(0, Math.min(15, parseInt(body.h, 10) || 0)), a = Math.max(0, Math.min(15, parseInt(body.a, 10) || 0));
+    if (!name) return json({ ok: false, error: 'no-name' }, 400);
+    await store.predict(code, name, h, a);
+    return json({ ok: true });
+  }
   // A third person in (e.g. scanning the room QR late) becomes a spectator.
   if (action === 'join') {
     if (state.players >= 2) return json({ ok: true, full: true, state });
