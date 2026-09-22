@@ -2913,7 +2913,21 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     <p id="pcomm" style="text-align:center;min-height:2.8em"></p>
 
     <div id="pgoal-wrap" style="display:none;margin:14px 0">
-      <p id="pgoal-status" style="text-align:center;font-weight:700;margin:0 0 8px"></p>
+      <style>
+        @keyframes pgoalPop { 0%{opacity:0;transform:translate(-50%,-50%) scale(.6)} 18%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
+          28%{transform:translate(-50%,-50%) scale(1)} 78%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)} }
+        @keyframes pgoalBreathe { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.035)} }
+        @keyframes pgoalPulse { 0%{box-shadow:0 0 0 0 rgba(228,118,43,.45)} 100%{box-shadow:0 0 0 14px rgba(228,118,43,0)} }
+        @keyframes pgoalImpact { 0%{opacity:.85;transform:translate(-50%,-50%) scale(.3)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)} }
+        #pgoal-keeper svg{animation:pgoalBreathe 2.4s ease-in-out infinite}
+        #pgoal-keeper.diving svg{animation:none}
+        .pmark{animation:pgoalPulse 1.1s ease-out infinite}
+        #pgoal-flash{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
+          font-family:'Bricolage Grotesque';font-weight:800;font-size:1.9rem;letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.35);z-index:8}
+        #pgoal-flash.show{animation:pgoalPop 1.15s ease forwards}
+        #pgoal-field{transition:box-shadow .3s}
+      </style>
+      <p id="pgoal-status" style="text-align:center;font-weight:700;margin:0 0 8px;min-height:1.4em;transition:opacity .2s"></p>
       <div id="pgoal-field" style="position:relative;width:100%;max-width:340px;margin:0 auto;aspect-ratio:4/3;
         border-radius:var(--r);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15);
         background:linear-gradient(#dff0e3,#dff0e3 62%,#5fa86b 62%,#5fa86b)">
@@ -2921,7 +2935,7 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
           background:repeating-linear-gradient(0deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px),
           repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px);cursor:crosshair;touch-action:none"></div>
         <div id="pgoal-keeper" style="position:absolute;width:13%;aspect-ratio:1/1.5;left:50%;top:68%;transform:translate(-50%,-50%);
-          transition:left .45s cubic-bezier(.2,.7,.3,1),top .45s cubic-bezier(.2,.7,.3,1),transform .45s;
+          transition:left .55s cubic-bezier(.2,.7,.3,1),top .55s cubic-bezier(.2,.7,.3,1),transform .55s cubic-bezier(.2,.7,.3,1);
           filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))">
           <svg viewBox="0 0 60 90" style="width:100%;height:100%;overflow:visible">
             <path d="M30 55 L18 88" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
@@ -2933,7 +2947,8 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
           </svg>
         </div>
         <div id="pgoal-ball" style="position:absolute;width:9%;aspect-ratio:1/1;left:50%;bottom:-6%;transform:translate(-50%,0);
-          font-size:1.3rem;transition:left 1s cubic-bezier(.3,.55,.25,1),top 1s cubic-bezier(.3,.55,.25,1),bottom 1s cubic-bezier(.3,.55,.25,1)">⚽</div>
+          font-size:1.3rem;transition:left 1.2s cubic-bezier(.3,.55,.25,1),top 1.2s cubic-bezier(.3,.55,.25,1),bottom 1.2s cubic-bezier(.3,.55,.25,1)">⚽</div>
+        <div id="pgoal-flash"></div>
       </div>
       <button class="btn primary" id="pgoal-confirm" disabled style="max-width:340px;margin:10px auto 0">Confirm</button>
     </div>
@@ -2957,7 +2972,6 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
   // this is also what "skip" and online/spectate games fall back to
   const plan = (m.pens && m.pens.kicks) || shootout(H, Aw, m.seed ? seededRng(m.seed + '|pens') : Math.random).kicks;
   let fast = false;
-  v.querySelector('#pskip').onclick = () => { fast = true; };
   const wait = ms => fast ? Promise.resolve() : sleep(ms);
   const sum = s => T[s].kicks.filter(Boolean).length;
   const decided = () => {
@@ -2981,17 +2995,21 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     gBox = v.querySelector('#pgoal-box'), gKeeper = v.querySelector('#pgoal-keeper'),
     gBall = v.querySelector('#pgoal-ball'), gConfirm = v.querySelector('#pgoal-confirm'),
     gPass = v.querySelector('#pgoal-pass'), gPassSub = v.querySelector('#pgoal-pass-sub'),
-    gPassGo = v.querySelector('#pgoal-pass-go');
+    gPassGo = v.querySelector('#pgoal-pass-go'), gFlash = v.querySelector('#pgoal-flash'),
+    gField = v.querySelector('#pgoal-field');
 
-  function moveKeeper(x, y) {
+  function moveKeeper(x, y, diving) {
     const deg = Math.max(-38, Math.min(38, (x - 50) / 50 * 38));
+    gKeeper.classList.toggle('diving', !!diving);
     gKeeper.style.left = x + '%'; gKeeper.style.top = y + '%';
     gKeeper.style.transform = `translate(-50%,-50%) rotate(${deg}deg)`;
   }
   function resetPitch() {
-    moveKeeper(50, 68);
+    moveKeeper(50, 68, false);
     gBall.style.left = '50%'; gBall.style.bottom = '-6%'; gBall.style.top = '';
     gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
+    gField.querySelectorAll('.pimpact').forEach(mk => mk.remove());
+    gFlash.className = ''; gFlash.textContent = '';
   }
   function markAt(x, y, color) {
     gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
@@ -2999,6 +3017,18 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
       transform:translate(-50%,-50%);border:3px solid ${color};background:${color}33;pointer-events:none"></div>`);
     d.style.left = x + '%'; d.style.top = y + '%';
     gBox.appendChild(d);
+  }
+  function impactAt(x, y, color) {
+    const d = el(`<div class="pimpact" style="position:absolute;width:30px;height:30px;border-radius:50%;left:${x}%;top:${y}%;
+      border:3px solid ${color};pointer-events:none;animation:pgoalImpact .55s ease-out forwards"></div>`);
+    gField.appendChild(d);
+  }
+  function flashResult(text, color) {
+    gFlash.textContent = text;
+    gFlash.style.color = color;
+    gFlash.className = '';
+    void gFlash.offsetWidth;           // restart the animation each time
+    gFlash.className = 'show';
   }
   function pointFromEvent(e) {
     const r = gBox.getBoundingClientRect();
@@ -3042,15 +3072,17 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     };
   }
   async function interactiveKick(taker, gk, shooterHuman, keeperHuman) {
-    gWrap.style.display = 'block';
+    resetPitch();
     let shot;
     if (shooterHuman) {
       shot = await humanTap(`${taker.player.name}: tap where you want to shoot`);
-    } else {
-      resetPitch();
       gStatus.textContent = `${taker.player.name} is placing the ball…`;
       gConfirm.disabled = true;
       await sleep(500);
+    } else {
+      gStatus.textContent = `${taker.player.name} is placing the ball…`;
+      gConfirm.disabled = true;
+      await sleep(750);
       shot = aiTap(14, 10);
     }
     resetPitch();   // clears the shot marker — the keeper always guesses blind
@@ -3058,24 +3090,39 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     let save;
     if (keeperHuman) {
       save = await humanTap(`${gk.player.name}: tap where you want to dive`);
+      gStatus.textContent = `${gk.player.name} is set…`;
+      gConfirm.disabled = true;
+      await sleep(450);
     } else {
       gStatus.textContent = `${gk.player.name} is watching the run-up…`;
       gConfirm.disabled = true;
-      await sleep(500);
+      await sleep(750);
       save = aiTap(16, 12);
     }
-    moveKeeper(save.x, save.y);
+    gStatus.textContent = 'Here it comes…';
+    await sleep(350);
+    moveKeeper(save.x, save.y, true);
     gBall.style.left = shot.x + '%'; gBall.style.top = shot.y + '%'; gBall.style.bottom = '';
     const dx = shot.x - save.x, dy = shot.y - save.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     // a sharper keeper covers a little more ground — the dive doesn't have to land exactly on the shot
     const tol = Math.max(16, Math.min(32, 24 + (rating(gk) - 75) * 0.15));
-    await sleep(550);
-    gWrap.style.display = 'none';
-    return { scored: dist > tol };
+    const scored = dist > tol;
+    await sleep(950);                  // let the flight/dive animation actually land before judging it
+    impactAt(shot.x, shot.y, scored ? '#22C55E' : '#E5484D');
+    flashResult(scored ? 'GOAL!' : 'SAVED!', scored ? '#22C55E' : '#E5484D');
+    gStatus.textContent = scored ? `⚽ ${taker.player.name} scores!` : `🧤 Saved by ${gk.player.name}!`;
+    await sleep(1150);
+    return { scored };
   }
 
   (async () => {
+    // Interactive sessions keep the goal on screen for the whole shootout —
+    // it only shows/hides once, not kick by kick.
+    const interactiveSession = humanSide('home') || humanSide('away');
+    if (interactiveSession) gWrap.style.display = 'block';
+    v.querySelector('#pskip').onclick = () => { fast = true; gWrap.style.display = 'none'; };
+
     while (!decided()) {
       const side = T.home.kicks.length <= T.away.kicks.length ? 'home' : 'away';
       const other = side === 'home' ? 'away' : 'home';
@@ -3084,11 +3131,12 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
       const taker = kick.taker;
       comm.innerHTML = `<b>${esc(taker.player.name)}</b> steps up…`;
       if (!fast) SFX.whistle(1);
-      await wait(1100);
+      await wait(1300);
 
       let scored, saved;
       const shooterHuman = humanSide(side), keeperHuman = humanSide(other);
-      if (!fast && (shooterHuman || keeperHuman)) {
+      const interactive = !fast && (shooterHuman || keeperHuman);
+      if (interactive) {
         const res = await interactiveKick(taker, T[other].gk, shooterHuman, keeperHuman);
         scored = res.scored; saved = !res.scored;
       } else {
@@ -3106,8 +3154,10 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
       comm.innerHTML = scored ? `⚽ <b>${esc(taker.player.name)}</b> scores!`
         : saved ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
       if (!fast) { if (scored) SFX.roar(0.55); else SFX.groan(); }
-      await wait(1200);
+      // the interactive widget already held on the result — only pause again for the auto-commentary path
+      await wait(interactive ? 500 : 1400);
     }
+    gWrap.style.display = 'none';
     const a = sum('home'), b = sum('away');
     const win = a > b ? H : Aw;
     if (!fast) SFX.roar(1);
