@@ -2921,6 +2921,10 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         @keyframes pgoalImpact { 0%{opacity:.85;transform:translate(-50%,-50%) scale(.3)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)} }
         #pgoal-keeper svg{animation:pgoalBreathe 2.4s ease-in-out infinite}
         #pgoal-keeper.diving svg{animation:none}
+        #pgoal-shooter{transition:left .65s cubic-bezier(.3,.55,.15,1),bottom .65s cubic-bezier(.3,.55,.15,1)}
+        #pgoal-shooter .legs-kick{display:none}
+        #pgoal-shooter.kicking .legs-run{display:none}
+        #pgoal-shooter.kicking .legs-kick{display:block}
         .pmark{animation:pgoalPulse 1.1s ease-out infinite}
         #pgoal-flash{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
           font-family:'Bricolage Grotesque';font-weight:800;font-size:1.9rem;letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.35);z-index:8}
@@ -2934,6 +2938,23 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         <div id="pgoal-box" style="position:absolute;left:8%;right:8%;top:10%;height:52%;border:6px solid #fff;border-bottom:none;
           background:repeating-linear-gradient(0deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px),
           repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px);cursor:crosshair;touch-action:none"></div>
+        <div id="pgoal-shooter" style="position:absolute;width:12%;aspect-ratio:1/1.5;left:38%;bottom:-24%;transform:translate(-50%,0);
+          filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));z-index:4">
+          <svg viewBox="0 0 60 90" style="width:100%;height:100%;overflow:visible">
+            <g class="legs-run">
+              <path d="M30 55 L14 78 L9 89" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+              <path d="M30 55 L44 68 L51 58" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            </g>
+            <g class="legs-kick">
+              <path d="M30 55 L20 82 L13 89" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+              <path d="M30 55 L50 46 L61 36" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            </g>
+            <path d="M30 30 L15 44" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            <path d="M30 30 L45 44" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
+            <rect x="18" y="26" width="24" height="32" rx="7" style="fill:#3766c8;stroke:var(--ink);stroke-width:4"/>
+            <circle cx="30" cy="14" r="11" style="fill:#e8b98a;stroke:var(--ink);stroke-width:4"/>
+          </svg>
+        </div>
         <div id="pgoal-keeper" style="position:absolute;width:13%;aspect-ratio:1/1.5;left:50%;top:68%;transform:translate(-50%,-50%);
           transition:left .55s cubic-bezier(.2,.7,.3,1),top .55s cubic-bezier(.2,.7,.3,1),transform .55s cubic-bezier(.2,.7,.3,1);
           filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))">
@@ -2996,7 +3017,7 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     gBall = v.querySelector('#pgoal-ball'), gConfirm = v.querySelector('#pgoal-confirm'),
     gPass = v.querySelector('#pgoal-pass'), gPassSub = v.querySelector('#pgoal-pass-sub'),
     gPassGo = v.querySelector('#pgoal-pass-go'), gFlash = v.querySelector('#pgoal-flash'),
-    gField = v.querySelector('#pgoal-field');
+    gField = v.querySelector('#pgoal-field'), gShooter = v.querySelector('#pgoal-shooter');
 
   function moveKeeper(x, y, diving) {
     const deg = Math.max(-38, Math.min(38, (x - 50) / 50 * 38));
@@ -3004,8 +3025,16 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     gKeeper.style.left = x + '%'; gKeeper.style.top = y + '%';
     gKeeper.style.transform = `translate(-50%,-50%) rotate(${deg}deg)`;
   }
+  function resetShooter() {
+    gShooter.style.transition = 'none';
+    gShooter.classList.remove('kicking');
+    gShooter.style.left = '38%'; gShooter.style.bottom = '-24%';
+    void gShooter.offsetWidth;         // reflow, so the next move animates instead of jumping
+    gShooter.style.transition = '';
+  }
   function resetPitch() {
     moveKeeper(50, 68, false);
+    resetShooter();
     gBall.style.left = '50%'; gBall.style.bottom = '-6%'; gBall.style.top = '';
     gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
     gField.querySelectorAll('.pimpact').forEach(mk => mk.remove());
@@ -3100,7 +3129,11 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
       save = aiTap(16, 12);
     }
     gStatus.textContent = 'Here it comes…';
-    await sleep(350);
+    resetShooter();
+    await sleep(200);
+    gShooter.style.left = '47%'; gShooter.style.bottom = '-3%';   // run-up
+    await sleep(600);
+    gShooter.classList.add('kicking');
     moveKeeper(save.x, save.y, true);
     gBall.style.left = shot.x + '%'; gBall.style.top = shot.y + '%'; gBall.style.bottom = '';
     const dx = shot.x - save.x, dy = shot.y - save.y;
