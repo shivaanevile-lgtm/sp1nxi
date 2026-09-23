@@ -2923,6 +2923,9 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         #pgoal-keeper.diving svg{animation:none}
         #pgoal-shooter{transition:transform .5s cubic-bezier(.3,.55,.15,1)}
         #pgoal-shooter svg{shape-rendering:crispEdges}
+        #pgoal-shooter .legs-kick{display:none}
+        #pgoal-shooter.kicking .legs-stand{display:none}
+        #pgoal-shooter.kicking .legs-kick{display:block}
         .pmark{animation:pgoalPulse 1.1s ease-out infinite}
         #pgoal-flash{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
           font-family:'Bricolage Grotesque';font-weight:800;font-size:1.15rem;letter-spacing:-.01em;text-shadow:0 2px 6px rgba(0,0,0,.5);z-index:9;
@@ -2972,21 +2975,29 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         </div>
 
         <!-- shooter, seen from behind — your point of view, stood over the ball -->
-        <div id="pgoal-shooter" style="position:absolute;width:20%;aspect-ratio:16/22;left:50%;bottom:0%;
+        <div id="pgoal-shooter" style="position:absolute;width:15%;aspect-ratio:14/22;left:50%;bottom:0%;
           transform:translate(-50%,0) translateY(3%) scale(.9);transform-origin:bottom center;
           filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));z-index:5">
-          <svg viewBox="0 0 16 22" style="width:100%;height:100%;overflow:visible">
-            <rect x="6" y="0" width="4" height="1" fill="#e8c468"/>
-            <rect x="6" y="1" width="4" height="3" fill="#e8b98a"/>
-            <rect x="5" y="4" width="6" height="7" fill="#fdfdfd"/>
-            <rect x="7" y="5" width="2" height="5" fill="#0f1720"/>
+          <svg viewBox="0 0 14 22" style="width:100%;height:100%;overflow:visible">
+            <rect x="5" y="0" width="4" height="1" fill="#e8c468"/>
+            <rect x="5" y="1" width="4" height="3" fill="#e8b98a"/>
+            <rect x="5" y="4" width="4" height="7" fill="#fdfdfd"/>
+            <rect x="6" y="5" width="2" height="5" fill="#0f1720"/>
             <rect x="4" y="5" width="1" height="4" fill="#e8b98a"/>
-            <rect x="11" y="5" width="1" height="4" fill="#e8b98a"/>
-            <rect x="6" y="11" width="4" height="3" fill="#d62828"/>
-            <rect x="6" y="14" width="2" height="5" fill="#d62828"/>
-            <rect x="8" y="14" width="2" height="5" fill="#d62828"/>
-            <rect x="6" y="19" width="2" height="1" fill="#111"/>
-            <rect x="8" y="19" width="2" height="1" fill="#111"/>
+            <rect x="9" y="5" width="1" height="4" fill="#e8b98a"/>
+            <rect x="5" y="11" width="4" height="3" fill="#d62828"/>
+            <g class="legs-stand">
+              <rect x="5" y="14" width="2" height="5" fill="#d62828"/>
+              <rect x="7" y="14" width="2" height="5" fill="#d62828"/>
+              <rect x="5" y="19" width="2" height="1" fill="#111"/>
+              <rect x="7" y="19" width="2" height="1" fill="#111"/>
+            </g>
+            <g class="legs-kick">
+              <rect x="4" y="14" width="2" height="6" fill="#d62828"/>
+              <rect x="8" y="11" width="3" height="3" fill="#d62828"/>
+              <rect x="4" y="20" width="2" height="1" fill="#111"/>
+              <rect x="10" y="12" width="2" height="1" fill="#111"/>
+            </g>
           </svg>
         </div>
 
@@ -3069,6 +3080,7 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
   }
   function resetShooter() {
     gShooter.style.transition = 'none';
+    gShooter.classList.remove('kicking');
     gShooter.style.transform = 'translate(-50%,0) translateY(3%) scale(.9)';
     void gShooter.offsetWidth;         // reflow, so the next move animates instead of jumping
     gShooter.style.transition = '';
@@ -3076,8 +3088,11 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
   function resetPitch() {
     moveKeeper(50, 78, false);
     resetShooter();
+    gBall.style.transition = 'none';
     gBall.style.left = '50%'; gBall.style.top = '88%';
     gBall.style.transform = 'translate(-50%,-50%) scale(1)';
+    void gBall.offsetWidth;             // snap back instantly — no drifting back from the goal
+    gBall.style.transition = '';
     gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
     gBox.querySelectorAll('.pimpact').forEach(mk => mk.remove());
     gFlash.className = ''; gFlash.textContent = '';
@@ -3176,6 +3191,7 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     gShooter.style.transform = 'translate(-50%,0) translateY(0) scale(1)';    // steps up to the ball
     await sleep(600);
     gShooter.style.transform = 'translate(-50%,0) translateY(-1%) scale(1.04) rotate(-3deg)';  // strike
+    gShooter.classList.add('kicking');
     moveKeeper(save.x, save.y, true);
     gBall.style.left = toFieldX(shot.x) + '%'; gBall.style.top = toFieldY(shot.y) + '%';
     gBall.style.transform = 'translate(-50%,-50%) scale(.32)';   // shrinks into the distance
