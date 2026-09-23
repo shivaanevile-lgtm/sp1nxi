@@ -2917,59 +2917,93 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         @keyframes pgoalPop { 0%{opacity:0;transform:translate(-50%,-50%) scale(.6)} 18%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
           28%{transform:translate(-50%,-50%) scale(1)} 78%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)} }
         @keyframes pgoalBreathe { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.035)} }
-        @keyframes pgoalPulse { 0%{box-shadow:0 0 0 0 rgba(228,118,43,.45)} 100%{box-shadow:0 0 0 14px rgba(228,118,43,0)} }
-        @keyframes pgoalImpact { 0%{opacity:.85;transform:translate(-50%,-50%) scale(.3)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)} }
-        #pgoal-keeper svg{animation:pgoalBreathe 2.4s ease-in-out infinite}
+        @keyframes pgoalPulse { 0%{box-shadow:0 0 0 0 rgba(228,118,43,.5)} 100%{box-shadow:0 0 0 12px rgba(228,118,43,0)} }
+        @keyframes pgoalImpact { 0%{opacity:.9;transform:translate(-50%,-50%) scale(.3)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.4)} }
+        #pgoal-keeper svg{animation:pgoalBreathe 2.4s ease-in-out infinite;shape-rendering:crispEdges}
         #pgoal-keeper.diving svg{animation:none}
-        #pgoal-shooter{transition:left .65s cubic-bezier(.3,.55,.15,1),bottom .65s cubic-bezier(.3,.55,.15,1)}
-        #pgoal-shooter .legs-kick{display:none}
-        #pgoal-shooter.kicking .legs-run{display:none}
-        #pgoal-shooter.kicking .legs-kick{display:block}
+        #pgoal-shooter{transition:transform .5s cubic-bezier(.3,.55,.15,1)}
+        #pgoal-shooter svg{shape-rendering:crispEdges}
         .pmark{animation:pgoalPulse 1.1s ease-out infinite}
-        #pgoal-flash{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
-          font-family:'Bricolage Grotesque';font-weight:800;font-size:1.9rem;letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.35);z-index:8}
+        #pgoal-flash{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
+          font-family:'Bricolage Grotesque';font-weight:800;font-size:1.15rem;letter-spacing:-.01em;text-shadow:0 2px 6px rgba(0,0,0,.5);z-index:9;
+          -webkit-text-stroke:1px rgba(0,0,0,.4)}
         #pgoal-flash.show{animation:pgoalPop 1.15s ease forwards}
-        #pgoal-field{transition:box-shadow .3s}
+        #pgoal-crowd{position:absolute;left:0;right:0;top:0;height:18%;
+          background:repeating-linear-gradient(90deg,#e63946 0 5%,#f4a261 5% 10%,#2a9d8f 10% 15%,#e9ecef 15% 20%,#457b9d 20% 25%);
+          image-rendering:pixelated}
+        #pgoal-crowd::after{content:'';position:absolute;inset:0;
+          background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 3px,transparent 3px 7px)}
+        #pgoal-pitch{position:absolute;left:0;right:0;top:18%;bottom:0;background:#3f8f46;
+          background-image:repeating-linear-gradient(0deg,#458f4c 0 9%,#3f8f46 9% 18%)}
+        #pgoal-ball svg{shape-rendering:crispEdges}
       </style>
       <p id="pgoal-status" style="text-align:center;font-weight:700;margin:0 0 8px;min-height:1.4em;transition:opacity .2s"></p>
       <div id="pgoal-field" style="position:relative;width:100%;max-width:340px;margin:0 auto;aspect-ratio:4/3;
-        border-radius:var(--r);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15);
-        background:linear-gradient(#dff0e3,#dff0e3 62%,#5fa86b 62%,#5fa86b)">
-        <div id="pgoal-box" style="position:absolute;left:8%;right:8%;top:10%;height:52%;border:6px solid #fff;border-bottom:none;
-          background:repeating-linear-gradient(0deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px),
-          repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 14px);cursor:crosshair;touch-action:none"></div>
-        <div id="pgoal-shooter" style="position:absolute;width:12%;aspect-ratio:1/1.5;left:38%;bottom:-24%;transform:translate(-50%,0);
-          filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));z-index:4">
-          <svg viewBox="0 0 60 90" style="width:100%;height:100%;overflow:visible">
-            <g class="legs-run">
-              <path d="M30 55 L14 78 L9 89" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-              <path d="M30 55 L44 68 L51 58" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            </g>
-            <g class="legs-kick">
-              <path d="M30 55 L20 82 L13 89" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-              <path d="M30 55 L50 46 L61 36" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            </g>
-            <path d="M30 30 L15 44" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            <path d="M30 30 L45 44" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            <rect x="18" y="26" width="24" height="32" rx="7" style="fill:#3766c8;stroke:var(--ink);stroke-width:4"/>
-            <circle cx="30" cy="14" r="11" style="fill:#e8b98a;stroke:var(--ink);stroke-width:4"/>
+        border-radius:var(--r);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15);background:#8ecae6">
+        <div id="pgoal-crowd"></div>
+        <div id="pgoal-pitch"></div>
+
+        <!-- the distant goal — this is also the tap target, sized generously for fingers -->
+        <div id="pgoal-box" style="position:absolute;left:17%;width:66%;top:20%;height:26%;
+          border:5px solid #fff;border-bottom:none;box-sizing:border-box;
+          background:#cdeccf;
+          background-image:repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 1px, transparent 1px 10px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, transparent 1px 10px);
+          cursor:crosshair;touch-action:none;image-rendering:pixelated">
+          <div id="pgoal-keeper" style="position:absolute;width:26%;aspect-ratio:1/1.35;left:50%;top:78%;transform:translate(-50%,-50%);
+            transition:left .55s cubic-bezier(.2,.7,.3,1),top .55s cubic-bezier(.2,.7,.3,1),transform .55s cubic-bezier(.2,.7,.3,1);
+            filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))">
+            <svg viewBox="0 0 16 20" style="width:100%;height:100%;overflow:visible">
+              <rect x="6" y="0" width="4" height="1" fill="#3a2a1e"/>
+              <rect x="6" y="1" width="4" height="3" fill="#e8b98a"/>
+              <rect x="4" y="4" width="8" height="7" fill="#2b2b2b"/>
+              <rect x="1" y="5" width="3" height="2" fill="#2b2b2b"/>
+              <rect x="12" y="5" width="3" height="2" fill="#2b2b2b"/>
+              <rect x="0" y="5" width="1" height="2" fill="#fff"/>
+              <rect x="15" y="5" width="1" height="2" fill="#fff"/>
+              <rect x="5" y="11" width="6" height="3" fill="#1c1c1c"/>
+              <rect x="5" y="14" width="2" height="5" fill="#2b2b2b"/>
+              <rect x="9" y="14" width="2" height="5" fill="#2b2b2b"/>
+              <rect x="5" y="19" width="2" height="1" fill="#111"/>
+              <rect x="9" y="19" width="2" height="1" fill="#111"/>
+            </svg>
+          </div>
+          <div id="pgoal-flash"></div>
+        </div>
+
+        <!-- shooter, seen from behind — your point of view, stood over the ball -->
+        <div id="pgoal-shooter" style="position:absolute;width:34%;aspect-ratio:16/22;left:50%;bottom:-6%;
+          transform:translate(-50%,0) translateY(3%) scale(.9);transform-origin:bottom center;
+          filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));z-index:5">
+          <svg viewBox="0 0 16 22" style="width:100%;height:100%;overflow:visible">
+            <rect x="6" y="0" width="4" height="1" fill="#e8c468"/>
+            <rect x="6" y="1" width="4" height="3" fill="#e8b98a"/>
+            <rect x="4" y="4" width="8" height="7" fill="#fdfdfd"/>
+            <rect x="7" y="5" width="2" height="5" fill="#0f1720"/>
+            <rect x="3" y="5" width="1" height="4" fill="#e8b98a"/>
+            <rect x="12" y="5" width="1" height="4" fill="#e8b98a"/>
+            <rect x="5" y="11" width="6" height="3" fill="#d62828"/>
+            <rect x="5" y="14" width="2" height="5" fill="#d62828"/>
+            <rect x="9" y="14" width="2" height="5" fill="#d62828"/>
+            <rect x="5" y="19" width="2" height="1" fill="#111"/>
+            <rect x="9" y="19" width="2" height="1" fill="#111"/>
           </svg>
         </div>
-        <div id="pgoal-keeper" style="position:absolute;width:13%;aspect-ratio:1/1.5;left:50%;top:68%;transform:translate(-50%,-50%);
-          transition:left .55s cubic-bezier(.2,.7,.3,1),top .55s cubic-bezier(.2,.7,.3,1),transform .55s cubic-bezier(.2,.7,.3,1);
-          filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))">
-          <svg viewBox="0 0 60 90" style="width:100%;height:100%;overflow:visible">
-            <path d="M30 55 L18 88" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            <path d="M30 55 L42 88" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            <path d="M30 30 L8 14" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            <path d="M30 30 L52 14" style="stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round"/>
-            <rect x="18" y="26" width="24" height="32" rx="7" style="fill:var(--orange);stroke:var(--ink);stroke-width:4"/>
-            <circle cx="30" cy="14" r="11" style="fill:#e8b98a;stroke:var(--ink);stroke-width:4"/>
+
+        <div id="pgoal-ball" style="position:absolute;width:9%;aspect-ratio:1/1;left:50%;top:88%;
+          transform:translate(-50%,-50%) scale(1);
+          transition:left 1.2s cubic-bezier(.3,.55,.25,1),top 1.2s cubic-bezier(.3,.55,.25,1),transform 1.2s cubic-bezier(.3,.55,.25,1)">
+          <svg viewBox="0 0 8 8" style="width:100%;height:100%;overflow:visible">
+            <rect x="2" y="0" width="4" height="1" fill="#fdfdfd"/>
+            <rect x="1" y="1" width="6" height="1" fill="#fdfdfd"/>
+            <rect x="0" y="2" width="8" height="4" fill="#fdfdfd"/>
+            <rect x="1" y="6" width="6" height="1" fill="#fdfdfd"/>
+            <rect x="2" y="7" width="4" height="1" fill="#fdfdfd"/>
+            <rect x="3" y="2" width="2" height="2" fill="#161616"/>
+            <rect x="1" y="4" width="1" height="1" fill="#161616"/>
+            <rect x="6" y="4" width="1" height="1" fill="#161616"/>
           </svg>
         </div>
-        <div id="pgoal-ball" style="position:absolute;width:9%;aspect-ratio:1/1;left:50%;bottom:-6%;transform:translate(-50%,0);
-          font-size:1.3rem;transition:left 1.2s cubic-bezier(.3,.55,.25,1),top 1.2s cubic-bezier(.3,.55,.25,1),bottom 1.2s cubic-bezier(.3,.55,.25,1)">⚽</div>
-        <div id="pgoal-flash"></div>
       </div>
       <button class="btn primary" id="pgoal-confirm" disabled style="max-width:340px;margin:10px auto 0">Confirm</button>
     </div>
@@ -3019,6 +3053,14 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     gPassGo = v.querySelector('#pgoal-pass-go'), gFlash = v.querySelector('#pgoal-flash'),
     gField = v.querySelector('#pgoal-field'), gShooter = v.querySelector('#pgoal-shooter');
 
+  // the goal box is a smaller, distant rectangle now (over-the-shoulder view),
+  // so the ball — which travels across the whole scene, not just inside the
+  // goal — needs its landing spot converted from "goal-relative" (0-100,
+  // same space taps and the keeper use) into "scene-relative" percentages.
+  const GOAL_RECT = { left: 17, top: 20, width: 66, height: 26 };
+  const toFieldX = gx => GOAL_RECT.left + gx / 100 * GOAL_RECT.width;
+  const toFieldY = gy => GOAL_RECT.top + gy / 100 * GOAL_RECT.height;
+
   function moveKeeper(x, y, diving) {
     const deg = Math.max(-38, Math.min(38, (x - 50) / 50 * 38));
     gKeeper.classList.toggle('diving', !!diving);
@@ -3027,30 +3069,30 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
   }
   function resetShooter() {
     gShooter.style.transition = 'none';
-    gShooter.classList.remove('kicking');
-    gShooter.style.left = '38%'; gShooter.style.bottom = '-24%';
+    gShooter.style.transform = 'translate(-50%,0) translateY(3%) scale(.9)';
     void gShooter.offsetWidth;         // reflow, so the next move animates instead of jumping
     gShooter.style.transition = '';
   }
   function resetPitch() {
-    moveKeeper(50, 68, false);
+    moveKeeper(50, 78, false);
     resetShooter();
-    gBall.style.left = '50%'; gBall.style.bottom = '-6%'; gBall.style.top = '';
+    gBall.style.left = '50%'; gBall.style.top = '88%';
+    gBall.style.transform = 'translate(-50%,-50%) scale(1)';
     gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
-    gField.querySelectorAll('.pimpact').forEach(mk => mk.remove());
+    gBox.querySelectorAll('.pimpact').forEach(mk => mk.remove());
     gFlash.className = ''; gFlash.textContent = '';
   }
   function markAt(x, y, color) {
     gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
-    const d = el(`<div class="pmark" style="position:absolute;width:24px;height:24px;border-radius:50%;
+    const d = el(`<div class="pmark" style="position:absolute;width:22px;height:22px;border-radius:50%;
       transform:translate(-50%,-50%);border:3px solid ${color};background:${color}33;pointer-events:none"></div>`);
     d.style.left = x + '%'; d.style.top = y + '%';
     gBox.appendChild(d);
   }
   function impactAt(x, y, color) {
-    const d = el(`<div class="pimpact" style="position:absolute;width:30px;height:30px;border-radius:50%;left:${x}%;top:${y}%;
+    const d = el(`<div class="pimpact" style="position:absolute;width:22px;height:22px;border-radius:50%;left:${x}%;top:${y}%;
       border:3px solid ${color};pointer-events:none;animation:pgoalImpact .55s ease-out forwards"></div>`);
-    gField.appendChild(d);
+    gBox.appendChild(d);
   }
   function flashResult(text, color) {
     gFlash.textContent = text;
@@ -3131,11 +3173,12 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     gStatus.textContent = 'Here it comes…';
     resetShooter();
     await sleep(200);
-    gShooter.style.left = '47%'; gShooter.style.bottom = '-3%';   // run-up
+    gShooter.style.transform = 'translate(-50%,0) translateY(0) scale(1)';    // steps up to the ball
     await sleep(600);
-    gShooter.classList.add('kicking');
+    gShooter.style.transform = 'translate(-50%,0) translateY(-1%) scale(1.04) rotate(-3deg)';  // strike
     moveKeeper(save.x, save.y, true);
-    gBall.style.left = shot.x + '%'; gBall.style.top = shot.y + '%'; gBall.style.bottom = '';
+    gBall.style.left = toFieldX(shot.x) + '%'; gBall.style.top = toFieldY(shot.y) + '%';
+    gBall.style.transform = 'translate(-50%,-50%) scale(.32)';   // shrinks into the distance
     const dx = shot.x - save.x, dy = shot.y - save.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     // a sharper keeper covers a little more ground — the dive doesn't have to land exactly on the shot
