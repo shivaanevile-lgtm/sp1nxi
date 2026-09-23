@@ -2972,21 +2972,21 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         </div>
 
         <!-- shooter, seen from behind — your point of view, stood over the ball -->
-        <div id="pgoal-shooter" style="position:absolute;width:34%;aspect-ratio:16/22;left:50%;bottom:-6%;
+        <div id="pgoal-shooter" style="position:absolute;width:20%;aspect-ratio:16/22;left:50%;bottom:0%;
           transform:translate(-50%,0) translateY(3%) scale(.9);transform-origin:bottom center;
           filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));z-index:5">
           <svg viewBox="0 0 16 22" style="width:100%;height:100%;overflow:visible">
             <rect x="6" y="0" width="4" height="1" fill="#e8c468"/>
             <rect x="6" y="1" width="4" height="3" fill="#e8b98a"/>
-            <rect x="4" y="4" width="8" height="7" fill="#fdfdfd"/>
+            <rect x="5" y="4" width="6" height="7" fill="#fdfdfd"/>
             <rect x="7" y="5" width="2" height="5" fill="#0f1720"/>
-            <rect x="3" y="5" width="1" height="4" fill="#e8b98a"/>
-            <rect x="12" y="5" width="1" height="4" fill="#e8b98a"/>
-            <rect x="5" y="11" width="6" height="3" fill="#d62828"/>
-            <rect x="5" y="14" width="2" height="5" fill="#d62828"/>
-            <rect x="9" y="14" width="2" height="5" fill="#d62828"/>
-            <rect x="5" y="19" width="2" height="1" fill="#111"/>
-            <rect x="9" y="19" width="2" height="1" fill="#111"/>
+            <rect x="4" y="5" width="1" height="4" fill="#e8b98a"/>
+            <rect x="11" y="5" width="1" height="4" fill="#e8b98a"/>
+            <rect x="6" y="11" width="4" height="3" fill="#d62828"/>
+            <rect x="6" y="14" width="2" height="5" fill="#d62828"/>
+            <rect x="8" y="14" width="2" height="5" fill="#d62828"/>
+            <rect x="6" y="19" width="2" height="1" fill="#111"/>
+            <rect x="8" y="19" width="2" height="1" fill="#111"/>
           </svg>
         </div>
 
