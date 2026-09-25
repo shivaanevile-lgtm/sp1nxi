@@ -469,7 +469,14 @@ const rivalry = () => RIVALRIES.find(r => r.id === S.rivalry) || null;
 // Which clubs this player can spin: their side of the rivalry, or the whole league.
 const clubsFor = i => { const r = rivalry(); return r ? (S.leagueClubs || []).filter(c => r.sides[i].clubs.includes(c.name)) : S.leagueClubs; };
 // A league "token" travels to the room: 'PL', 'WC' … or 'RIV:clasico'.
-const leagueToken = () => S.rivalry ? 'RIV:' + S.rivalry : S.leagueKey;
+const leagueToken = () => (S.penaltyOnly ? 'PEN:' : '') + (S.rivalry ? 'RIV:' + S.rivalry : S.leagueKey);
+// Online rooms only share a league token, so a penalty-only room is marked
+// by prefixing it — this reads that back on whichever device joins/watches,
+// so their screen matches what the host actually set up.
+function readLeagueToken(tok) {
+  S.penaltyOnly = !!(tok && String(tok).startsWith('PEN:'));
+  return S.penaltyOnly ? tok.slice(4) : tok;
+}
 async function useLeague(tok) {
   if (tok && String(tok).startsWith('RIV:')) { S.rivalry = tok.slice(4); S.leagueKey = 'LEG'; }
   else { S.rivalry = null; S.leagueKey = tok; }
@@ -1069,7 +1076,7 @@ async function joinRoom(code) {
     if (r.full) { toast('That room just filled up — watching instead.'); return screenSpectate(code); }
     S.mode = 'online'; S.room = { code, seat: 1, joinId: r.joinId }; S.myName = name;
     S.players = [];
-    await useLeague(r.state.league);
+    await useLeague(readLeagueToken(r.state.league));
     screenLobbyWait();
   });
 }
@@ -1231,7 +1238,7 @@ function screenSpectate(code) {
     v.querySelector('#spstat').innerHTML = `<small>${st.squads[0] && st.squads[1] ? 'Both squads in — kick-off!' : 'The draft is live.'}</small>`;
     if (st.squads[0] && st.squads[1]) {
       started = true; stopPoll();
-      await useLeague(st.league);
+      await useLeague(readLeagueToken(st.league));
       const A = hydrateSquad(st.squads[0], 'Host'), B = hydrateSquad(st.squads[1], 'Challenger');
       S.players = [A, B];
       const offset = (r.now || Date.now()) - Date.now();
