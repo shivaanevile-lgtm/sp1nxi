@@ -1,0 +1,16 @@
+{
+  "name": "sp1nxi",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-06-05",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "sp1nxi-rooms", "database_id": "7f6555a3-0082-4798-a8d5-2beea3cdf82d" }
+  ],
+  "kv_namespaces": [
+    { "binding": "ROOMS", "id": "09fbb60d218c4edb8e59482c97f0ef45" },
+    { "binding": "SQUADS", "id": "a1e36a8011e644d9b5b44c9cbf55369f" }
+  ]
+}
