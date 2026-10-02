@@ -469,14 +469,7 @@ const rivalry = () => RIVALRIES.find(r => r.id === S.rivalry) || null;
 // Which clubs this player can spin: their side of the rivalry, or the whole league.
 const clubsFor = i => { const r = rivalry(); return r ? (S.leagueClubs || []).filter(c => r.sides[i].clubs.includes(c.name)) : S.leagueClubs; };
 // A league "token" travels to the room: 'PL', 'WC' … or 'RIV:clasico'.
-const leagueToken = () => (S.penaltyOnly ? 'PEN:' : '') + (S.rivalry ? 'RIV:' + S.rivalry : S.leagueKey);
-// Online rooms only share a league token, so a penalty-only room is marked
-// by prefixing it — this reads that back on whichever device joins/watches,
-// so their screen matches what the host actually set up.
-function readLeagueToken(tok) {
-  S.penaltyOnly = !!(tok && String(tok).startsWith('PEN:'));
-  return S.penaltyOnly ? tok.slice(4) : tok;
-}
+const leagueToken = () => S.rivalry ? 'RIV:' + S.rivalry : S.leagueKey;
 async function useLeague(tok) {
   if (tok && String(tok).startsWith('RIV:')) { S.rivalry = tok.slice(4); S.leagueKey = 'LEG'; }
   else { S.rivalry = null; S.leagueKey = tok; }
@@ -812,7 +805,7 @@ function representedNation(p) {
  * ------------------------------------------------------------------ */
 const app = document.getElementById('app');
 const crumb = document.getElementById('crumb');
-const S = { mode:null, leagueKey:null, players:[], turn:0, room:null, poll:null, lastMatch:null, penaltyOnly:false };
+const S = { mode:null, leagueKey:null, players:[], turn:0, room:null, poll:null, lastMatch:null };
 
 const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
@@ -825,6 +818,84 @@ function readable(hex) {
   const L = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
   return L > 0.62 ? '#241F19' : '#FFFFFF';
 }
+
+/* --- player detail card — tap/click any player, FotMob-style ------- */
+const FLAG_EMOJI = {
+  Argentina:'🇦🇷', France:'🇫🇷', Brazil:'🇧🇷', England:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', Spain:'🇪🇸', Portugal:'🇵🇹',
+  Germany:'🇩🇪', Netherlands:'🇳🇱', Belgium:'🇧🇪', Croatia:'🇭🇷', Uruguay:'🇺🇾', Morocco:'🇲🇦',
+  Colombia:'🇨🇴', Japan:'🇯🇵', USA:'🇺🇸', Mexico:'🇲🇽', Switzerland:'🇨🇭', Senegal:'🇸🇳',
+  Canada:'🇨🇦', 'South Korea':'🇰🇷'
+};
+function pcardRatingColor(r) {
+  if (typeof r !== 'number') return '#6B7280';
+  return r >= 85 ? '#22C55E' : r >= 75 ? '#84CC16' : r >= 65 ? '#F59E0B' : '#EF4444';
+}
+function ensurePlayerCardStyle() {
+  if (document.getElementById('pcard-style')) return;
+  const s = document.createElement('style');
+  s.id = 'pcard-style';
+  s.textContent = `
+    .pcard-ov{position:fixed;inset:0;background:rgba(8,8,12,.72);display:flex;align-items:center;justify-content:center;
+      z-index:999;padding:16px;backdrop-filter:blur(2px)}
+    .pcard{width:100%;max-width:340px;background:#1A1712;border-radius:18px;overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative;animation:pcardIn .18s ease-out}
+    @keyframes pcardIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+    .pcard-close{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:none;
+      background:rgba(0,0,0,.35);color:#fff;font-size:1rem;cursor:pointer;z-index:2;line-height:1}
+    .pcard-top{padding:28px 20px 44px;display:flex;justify-content:center;position:relative}
+    .pcard-avatar{width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.14);
+      display:flex;align-items:center;justify-content:center;font:800 1.6rem 'Bricolage Grotesque',sans-serif;
+      color:#fff;border:3px solid rgba(255,255,255,.5)}
+    .pcard-rating{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);width:44px;height:44px;
+      border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 1.05rem system-ui,sans-serif;
+      color:#111;border:3px solid #1A1712}
+    .pcard-body{padding:30px 20px 18px;text-align:center}
+    .pcard-body h3{margin:0 0 4px;font-family:'Bricolage Grotesque',sans-serif;font-size:1.25rem}
+    .pcard-sub{opacity:.7;font-size:.85rem;margin-bottom:16px}
+    .pcard-rows{display:flex;flex-direction:column;gap:0;border-top:1px solid rgba(255,255,255,.08);margin-top:6px}
+    .pcard-row{display:flex;justify-content:space-between;padding:10px 4px;font-size:.88rem;
+      border-bottom:1px solid rgba(255,255,255,.08)}
+    .pcard-row span{opacity:.6}
+    .pcard-row b{font-weight:700}
+  `;
+  document.head.appendChild(s);
+}
+function showPlayerCard(player, club) {
+  if (!player) return;
+  ensurePlayerCardStyle();
+  document.querySelectorAll('.pcard-ov').forEach(n => n.remove());
+  const c = club || player.club || null;
+  const isWC = S.leagueKey === 'WC';
+  const nation = isWC ? (c && c.name) : null;
+  const teamName = (c && c.name) || '—';
+  const initials = String(player.name).trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const flag = nation && FLAG_EMOJI[nation] ? FLAG_EMOJI[nation] + ' ' : '';
+  const bg1 = c ? c.home : '#333', bg2 = c ? (c.away === '#FFFFFF' ? '#241F19' : c.away) : '#111';
+  const ov = el(`<div class="pcard-ov">
+    <div class="pcard">
+      <button class="pcard-close">✕</button>
+      <div class="pcard-top" style="background:linear-gradient(160deg,${bg1},${bg2})">
+        <div class="pcard-avatar" style="color:${readable(bg1)}">${esc(initials)}</div>
+        <div class="pcard-rating" style="background:${pcardRatingColor(player.rating)}">${player.rating ?? '—'}</div>
+      </div>
+      <div class="pcard-body">
+        <h3>${esc(player.name)}</h3>
+        <div class="pcard-sub">${esc(player.position || '')}${player.number != null ? ' · #' + esc(String(player.number)) : ''}</div>
+        <div class="pcard-rows">
+          ${nation ? `<div class="pcard-row"><span>Nation</span><b>${flag}${esc(nation)}</b></div>` : ''}
+          ${isWC && player.clubName ? `<div class="pcard-row"><span>Club</span><b>${esc(player.clubName)}</b></div>` : ''}
+          ${!isWC ? `<div class="pcard-row"><span>${S.leagueKey === 'LEG' ? 'Side' : 'Club'}</span><b>${esc(teamName)}</b></div>` : ''}
+          <div class="pcard-row"><span>Rating</span><b>${player.rating ?? '—'}</b></div>
+        </div>
+      </div>
+    </div>
+  </div>`);
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('.pcard-close').onclick = close;
+}
+
 function theme(club) {
   const r = document.documentElement.style;
   if (!club) { r.setProperty('--club-a', '#E4762B'); r.setProperty('--club-b', '#241F19'); r.setProperty('--club-ink', '#fff'); return; }
@@ -864,108 +935,18 @@ function screenMode() {
       <button class="btn ghost" id="hof" style="flex:1;width:auto">🏆 Hall of fame</button>
       <button class="btn ghost" id="h2h" style="flex:1;width:auto">🤝 Head-to-head</button>
     </div>
-    <button class="btn ghost" id="pens">🥅 Penalty Shootout<span class="sub">Skip straight to spot-kicks — vs AI, pass and play, or a room code</span></button>
     <button class="btn ghost" id="howto">How to play</button>
   </section>`);
   v.querySelector('#hof').onclick = screenHallOfFame;
   v.querySelector('#quiz').onclick = () => screenQuiz();
   v.querySelector('#nameteam').onclick = () => screenNameTeam();
   v.querySelector('#h2h').onclick = screenH2H;
-  v.querySelector('#pens').onclick = screenPenaltyMode;
   v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
-    S.penaltyOnly = false;
     S.mode = b.dataset.m;
     if (b.dataset.m === 'join') return screenJoin();
     screenLeague();
   });
   v.querySelector('#howto').onclick = screenTutorial;
-  show(v);
-}
-
-/* --- penalty shootout mode: same code system and squad-build flow as a
- * full match, just no 90 minutes first — build (or auto-fill) an XI on
- * each side, then go straight to the spot-kicks. */
-function screenPenaltyMode() {
-  theme(null); setCrumb('Penalty Shootout');
-  const v = el(`<section>
-    <h1>🥅 Penalty Shootout</h1>
-    <p>Spin a quick XI each — or skip that too — then it's straight to the spot: tap to aim, tap to guess the save.</p>
-    <button class="btn primary" data-m="ai">Play the AI<span class="sub">You build an XI, the AI builds its own</span></button>
-    <button class="btn" data-m="pass">Pass and play<span class="sub">Two of you, one phone</span></button>
-    <button class="btn ghost" data-m="host">Start an online room<span class="sub">Share a four-letter code</span></button>
-    <button class="btn ghost" data-m="join">Join with a code</button>
-    <button class="btn ghost" id="simulate">⚡ Simulate a shootout<span class="sub">Two random XIs, straight to the final score</span></button>
-    <button class="btn ghost" id="back">Back</button>
-  </section>`);
-  v.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
-    S.penaltyOnly = true;
-    S.mode = b.dataset.m;
-    if (b.dataset.m === 'join') return screenJoin();
-    screenLeague();
-  });
-  v.querySelector('#simulate').onclick = () => simulatePenaltyShootout();
-  v.querySelector('#back').onclick = screenMode;
-  show(v);
-}
-
-// Two instantly-built random XIs, straight to a shootout result — no
-// spinning, no taps, just the outcome.
-async function simulatePenaltyShootout() {
-  theme(null); setCrumb('Penalty Shootout');
-  show(el('<section><h2>Simulating…</h2><p>Building two random XIs…</p></section>'));
-  const keys = Object.keys(LEAGUES);
-  const leagueKey = keys[Math.floor(Math.random() * keys.length)];
-  await useLeague(leagueKey);
-  const A = mkPlayer('Side A'), B = mkPlayer('Side B');
-  await buildAI(A, async () => {});
-  await buildAI(B, async () => {});
-  const so = shootout(A, B, Math.random);
-  const win = so.a > so.b ? A : B;
-  const v = el(`<section>
-    <h2>${esc(win.label)} win it!</h2>
-    <p style="text-align:center"><small>${esc(A.label)} ${so.a}–${so.b} ${esc(B.label)} on penalties.</small></p>
-    <div class="card" style="text-align:center">
-      <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">${so.a} – ${so.b}</div>
-    </div>
-    <button class="btn primary" id="again">Simulate another</button>
-    <button class="btn ghost" id="home">Home</button>
-  </section>`);
-  v.querySelector('#again').onclick = () => simulatePenaltyShootout();
-  v.querySelector('#home').onclick = screenMode;
-  show(v);
-}
-
-// The shootout-only match: builds finish as normal, then this runs
-// instead of a 90-minute simulation. Online/spectate stay on the same
-// seeded, non-interactive plan a full match's penalties would use (no
-// real-time tap syncing between two devices yet) — vs AI and pass and
-// play are fully interactive.
-function startPenaltyOnly(A, B, seed) {
-  setCrumb('Penalty Shootout');
-  const m = { seed, gA: 0, gB: 0, ft: { a: 0, b: 0 }, et: true, pens: null, penaltyOnly: true };
-  const humanSide = side => S.mode === 'online' ? side === (S.room && S.room.seat === 1 ? 'away' : 'home')
-    : S.mode === 'spectate' ? false
-    : S.mode === 'ai' ? side === 'home' : true;
-  screenPenalties(A, B, m, (a, b) => screenPenaltyOnlyResult(A, B, a, b, m), humanSide);
-}
-
-function screenPenaltyOnlyResult(A, B, a, b, m) {
-  setCrumb('Penalty Shootout');
-  m.gA = a; m.gB = b; m.winSide = a > b ? 'home' : 'away';
-  const win = a > b ? A : B;
-  const h2h = recordH2H(A, B, m);
-  const v = el(`<section>
-    <h2>${esc(win.label)} win it!</h2>
-    <p style="text-align:center"><small>${esc(A.label)} ${a}–${b} ${esc(B.label)} on penalties.</small></p>
-    <div class="card" style="text-align:center">
-      <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">${a} – ${b}</div>
-    </div>
-    ${h2h ? `<div class="card"><h3>Head-to-head vs ${esc(h2h.name)}</h3><p style="margin:0">${h2hLine(h2h)}</p></div>` : ''}
-    <button class="btn primary" id="again">Another shootout</button>
-    <button class="btn ghost" id="home">Home</button>
-  </section>`);
-  v.querySelector('#again').onclick = () => { S.penaltyOnly = true; screenLeague(); };
-  v.querySelector('#home').onclick = () => { S.penaltyOnly = false; screenMode(); };
   show(v);
 }
 
@@ -1076,7 +1057,7 @@ async function joinRoom(code) {
     if (r.full) { toast('That room just filled up — watching instead.'); return screenSpectate(code); }
     S.mode = 'online'; S.room = { code, seat: 1, joinId: r.joinId }; S.myName = name;
     S.players = [];
-    await useLeague(readLeagueToken(r.state.league));
+    await useLeague(r.state.league);
     screenLobbyWait();
   });
 }
@@ -1238,7 +1219,7 @@ function screenSpectate(code) {
     v.querySelector('#spstat').innerHTML = `<small>${st.squads[0] && st.squads[1] ? 'Both squads in — kick-off!' : 'The draft is live.'}</small>`;
     if (st.squads[0] && st.squads[1]) {
       started = true; stopPoll();
-      await useLeague(readLeagueToken(st.league));
+      await useLeague(st.league);
       const A = hydrateSquad(st.squads[0], 'Host'), B = hydrateSquad(st.squads[1], 'Challenger');
       S.players = [A, B];
       const offset = (r.now || Date.now()) - Date.now();
@@ -1469,6 +1450,7 @@ function screenBuild() {
         ${s.player ? `<span class="nm">${esc(s.player.name.split(' ').slice(-1)[0])}</span>
           <span class="rt">${s.player.rating}</span>` : ''}
       </div>`);
+      if (s.player) { n.style.cursor = 'pointer'; n.onclick = () => showPlayerCard(s.player, s.player.club); }
       pitch.appendChild(n);
     });
     v.querySelector('#count').textContent = `${filled()} of 11 picked`;
@@ -1629,16 +1611,12 @@ async function buildAI(ai, onSlot) {
     const s = slots[i], grp = GROUP[s.role];
     const club = pool[i % pool.length];
     club.squad = club.squad || await getSquad(S.leagueKey, club);
-    const cands = club.squad.filter(pl => ELIGIBLE[grp].includes(pl.position) && !usedPlayers.has(pl.id) && !ai.xi.some(s => norm(s.player.name) === norm(pl.name)))
+    // Just the highest-rated player left in that country/club's squad —
+    // no position matching, no weighted randomness toward 2nd/3rd best.
+    const cands = club.squad.filter(pl => !usedPlayers.has(pl.id) && !ai.xi.some(s => norm(s.player.name) === norm(pl.name)))
       .map(pl => ({ ...pl, rating: getRating(pl, grp), club }))
       .sort((a, b) => b.rating - a.rating);
-    // Weighted toward the best available rather than a flat random pick
-    // among the top 3 — a human naturally gravitates to the highest
-    // rating in the list, so a uniform pick here made the AI
-    // systematically weaker than what a person would draft.
-    const r = Math.random();
-    const idx = r < 0.65 ? 0 : r < 0.9 ? 1 : 2;
-    const pick = cands[Math.min(idx, cands.length - 1)];
+    const pick = cands[0];
     usedPlayers.add(pick.id);
     const slot = { ...s, player: pick, rerolls: 0 };
     ai.xi.push(slot);
@@ -1682,6 +1660,7 @@ function screenAIBuild(done) {
       <span class="nm">${esc(slot.player.name.split(' ').slice(-1)[0])}</span>
       <span class="rt">${slot.player.rating}</span>
     </div>`);
+    n.style.cursor = 'pointer'; n.onclick = () => showPlayerCard(slot.player, c);
     pitch.appendChild(n);
     hint.textContent = `${index + 1} of ${total} picked — ${esc(c.name)}`;
     await sleep(260);
@@ -1694,7 +1673,6 @@ function screenAIBuild(done) {
  * the actual player who caused them, both XIs shown as a real formation
  * shape rather than a flat list. */
 function startMatch(A, B, seed, roomRig) {
-  if (S.penaltyOnly) return startPenaltyOnly(A, B, seed);
   const m = simulate(A, B, seed);
   if (roomRig) applyRig(m, A, B, roomRig);
   else if (S.mode !== 'online' && S.mode !== 'spectate' && S.admin && S.admin.rig) { applyRig(m, A, B, rigBySeat(S.admin.rig)); S.admin.rig = null; }
@@ -1914,11 +1892,13 @@ async function screenMatchSim(A, B, m, opts = {}) {
     team.xi.forEach((s, i) => {
       const gk = isGK(s);
       const fill = gk ? (team.badge.away && team.badge.away !== team.badge.home ? team.badge.away : '#F472B6') : team.badge.home;
-      const dot = el(`<div class="dot" style="background:${fill};color:${readable(fill)}">${esc(String(shirt(s, i)))}</div>`);
+      const dot = el(`<div class="dot" style="background:${fill};color:${readable(fill)};cursor:pointer">${esc(String(shirt(s, i)))}</div>`);
+      dot.onclick = () => showPlayerCard(s.player, s.player.club || team.badge);
       pitch.appendChild(dot);
       const lane = side === 'home' ? s.x : 100 - s.x;
       const adv = Math.max(0, Math.min(1, (90 - s.y) / (90 - 17)));
       const row = v.querySelector(`.ms-row[data-side="${side}"][data-name="${CSS.escape(s.player.name)}"]`);
+      if (row) { row.style.cursor = 'pointer'; row.onclick = () => showPlayerCard(s.player, s.player.club || team.badge); }
       players.push({ side, idx: i, slot: s, gk, dot, lane, adv, ph: Math.random() * 6.28, ph2: Math.random() * 6.28,
         drain: gk ? 6 + Math.random() * 6 : 18 + Math.random() * 20, row, subAt: 0 });
     });
@@ -2019,7 +1999,7 @@ async function screenMatchSim(A, B, m, opts = {}) {
     playerRatings(A, B, m);
     orig.forEach(o => { o.t.xi = o.xi; o.t.bench = o.bench; o.t.strength = o.strength; o.t.subsMade = 0; });
     const done = () => { if (opts.onDone) opts.onDone(m); else screenResult(A, B, m); };
-    if (m.pens) screenPenalties(A, B, m, done, humanSide); else done();
+    if (m.pens) screenPenalties(A, B, m, done); else done();
   };
   v.querySelector('#skip').onclick = () => { skipped = true; stop(); finishMatch(); };
   if (shared && !opts.onDone) v.querySelector('#skip').remove();   // the shared head-to-head can't be skipped
@@ -2231,46 +2211,8 @@ async function screenMatchSim(A, B, m, opts = {}) {
     : S.mode === 'ai' ? side === 'home' : true;
   const BREAK_NAME = { 45: 'Half-time', 90: 'End of 90 minutes', 105: 'Half-time in extra time' };
   async function subsWindow(fromMin) {
-    if (skipped) return;
+    if (!subsOn || skipped) return;
     const min = fromMin === 45 ? 46 : fromMin === 90 ? 91 : 106;
-
-    // Admin changes now register mid-match too: whatever's been saved in the
-    // admin panel since kickoff gets folded into the game at the next break,
-    // instead of waiting for an entirely new match. The final score itself
-    // still can't be rewritten retroactively (you already watched those
-    // goals go in), but forced VAR drama, red cards and snow can still land.
-    if (S.mode !== 'online' && S.mode !== 'spectate' && S.admin) {
-      const live = rigBySeat(S.admin.rig);
-      if (live && (live.var || live.red || live.snow)) {
-        const rnd = m.seed ? seededRng(`${m.seed}|adminlive|${fromMin}`) : Math.random;
-        const scorer = makeScorer(rnd);
-        const usedMins = new Set(m.events.map(e => e.min));
-        const minIn = (lo, hi) => { let x, n = 0; do { x = lo + Math.floor(rnd() * (hi - lo + 1)); } while (usedMins.has(x) && ++n < 60); usedMins.add(x); return x; };
-        const teamOf = side => side === 'home' ? A : B;
-        if (live.var) {
-          const side = rnd() < 0.5 ? 'home' : 'away';
-          m.events.push({ side, min: minIn(min, min + 34), type: 'noGoal', player: scorer(teamOf(side)).player.name, reason: ['offside', 'handball', 'foul'][Math.floor(rnd() * 3)] });
-        }
-        if (live.red) {
-          const t = teamOf(live.red), outfield = t.xi.filter(s => GROUP[s.role] !== 'GK');
-          m.events.push({ side: live.red, min: minIn(min, min + 34), type: 'red', player: outfield[Math.floor(rnd() * outfield.length)].player.name });
-        }
-        if (live.snow) {
-          m.weather = 'snow';
-          const pitchEl = v.querySelector('#matchpitch');
-          if (pitchEl && !pitchEl.querySelector('.wx')) {
-            pitchEl.insertAdjacentHTML('beforeend', `<div class="wx wx-snow"></div><span class="wx-tag">${WEATHER.snow.icon} ${WEATHER.snow.label}</span>`);
-          }
-        }
-        m.events.sort((a, b) => (a.et ? 1 : 0) - (b.et ? 1 : 0) || a.min - b.min);
-        events = m.events.slice();
-        S.admin.rig.var = S.admin.rig.red = S.admin.rig.snow = false;
-        if (!S.admin.rig.fixed) S.admin.rig = null;
-        toast('⚙️ Admin change applied to the rest of this match.');
-      }
-    }
-
-    if (!subsOn) return;
     const changes = { home: [], away: [] };
     if (shared) {
       const mine = S.mode === 'online' ? (S.room.seat === 1 ? 'away' : 'home') : null;
@@ -2899,7 +2841,7 @@ function shootout(H, Aw, rng) {
   return { kicks, a: sum('home'), b: sum('away') };
 }
 
-function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
+function screenPenalties(H, Aw, m, onDone) {
   setCrumb('Penalties');
   const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 75);
   const order = { FWD: 0, ATT_MID: 1, MID: 2, DEF: 3 };
@@ -2910,7 +2852,7 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
 
   const v = el(`<section>
     <h2>Penalties</h2>
-    <p><small>${m.penaltyOnly ? 'Straight to the spot — no messing about.' : `${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after ${m.et ? 'extra time' : '90 minutes'}.`}</small></p>
+    <p><small>${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after ${m.et ? 'extra time' : '90 minutes'}.</small></p>
     <div class="card" style="text-align:center">
       <div id="pscore" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">0 – 0</div>
       ${['home', 'away'].map(s => `<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
@@ -2918,122 +2860,6 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
         <div id="pk-${s}" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>`).join('')}
     </div>
     <p id="pcomm" style="text-align:center;min-height:2.8em"></p>
-
-    <div id="pgoal-wrap" style="display:none;margin:14px 0">
-      <style>
-        @keyframes pgoalPop { 0%{opacity:0;transform:translate(-50%,-50%) scale(.6)} 18%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
-          28%{transform:translate(-50%,-50%) scale(1)} 78%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)} }
-        @keyframes pgoalBreathe { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.035)} }
-        @keyframes pgoalPulse { 0%{box-shadow:0 0 0 0 rgba(228,118,43,.5)} 100%{box-shadow:0 0 0 12px rgba(228,118,43,0)} }
-        @keyframes pgoalImpact { 0%{opacity:.9;transform:translate(-50%,-50%) scale(.3)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.4)} }
-        #pgoal-keeper svg{animation:pgoalBreathe 2.4s ease-in-out infinite;shape-rendering:crispEdges}
-        #pgoal-keeper.diving svg{animation:none}
-        #pgoal-shooter{transition:transform .5s cubic-bezier(.3,.55,.15,1)}
-        #pgoal-shooter svg{shape-rendering:crispEdges}
-        #pgoal-shooter .legs-kick{display:none}
-        #pgoal-shooter.kicking .legs-stand{display:none}
-        #pgoal-shooter.kicking .legs-kick{display:block}
-        .pmark{animation:pgoalPulse 1.1s ease-out infinite}
-        #pgoal-flash{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
-          font-family:'Bricolage Grotesque';font-weight:800;font-size:1.15rem;letter-spacing:-.01em;text-shadow:0 2px 6px rgba(0,0,0,.5);z-index:9;
-          -webkit-text-stroke:1px rgba(0,0,0,.4)}
-        #pgoal-flash.show{animation:pgoalPop 1.15s ease forwards}
-        #pgoal-crowd{position:absolute;left:0;right:0;top:0;height:18%;
-          background:repeating-linear-gradient(90deg,#e63946 0 5%,#f4a261 5% 10%,#2a9d8f 10% 15%,#e9ecef 15% 20%,#457b9d 20% 25%);
-          image-rendering:pixelated}
-        #pgoal-crowd::after{content:'';position:absolute;inset:0;
-          background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 3px,transparent 3px 7px)}
-        #pgoal-pitch{position:absolute;left:0;right:0;top:18%;bottom:0;background:#3f8f46;
-          background-image:repeating-linear-gradient(0deg,#458f4c 0 9%,#3f8f46 9% 18%)}
-        #pgoal-ball svg{shape-rendering:crispEdges}
-      </style>
-      <p id="pgoal-status" style="text-align:center;font-weight:700;margin:0 0 8px;min-height:1.4em;transition:opacity .2s"></p>
-      <div id="pgoal-field" style="position:relative;width:100%;max-width:340px;margin:0 auto;aspect-ratio:4/3;
-        border-radius:var(--r);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15);background:#8ecae6">
-        <div id="pgoal-crowd"></div>
-        <div id="pgoal-pitch"></div>
-
-        <!-- the distant goal — this is also the tap target, sized generously for fingers -->
-        <div id="pgoal-box" style="position:absolute;left:17%;width:66%;top:20%;height:26%;
-          border:5px solid #fff;border-bottom:none;box-sizing:border-box;
-          background:#cdeccf;
-          background-image:repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 1px, transparent 1px 10px),
-            repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, transparent 1px 10px);
-          cursor:crosshair;touch-action:none;image-rendering:pixelated">
-          <div id="pgoal-keeper" style="position:absolute;width:26%;aspect-ratio:1/1.35;left:50%;top:78%;transform:translate(-50%,-50%);
-            transition:left .55s cubic-bezier(.2,.7,.3,1),top .55s cubic-bezier(.2,.7,.3,1),transform .55s cubic-bezier(.2,.7,.3,1);
-            filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))">
-            <svg viewBox="0 0 16 20" style="width:100%;height:100%;overflow:visible">
-              <rect x="6" y="0" width="4" height="1" fill="#3a2a1e"/>
-              <rect x="6" y="1" width="4" height="3" fill="#e8b98a"/>
-              <rect x="4" y="4" width="8" height="7" fill="#2b2b2b"/>
-              <rect x="1" y="5" width="3" height="2" fill="#2b2b2b"/>
-              <rect x="12" y="5" width="3" height="2" fill="#2b2b2b"/>
-              <rect x="0" y="5" width="1" height="2" fill="#fff"/>
-              <rect x="15" y="5" width="1" height="2" fill="#fff"/>
-              <rect x="5" y="11" width="6" height="3" fill="#1c1c1c"/>
-              <rect x="5" y="14" width="2" height="5" fill="#2b2b2b"/>
-              <rect x="9" y="14" width="2" height="5" fill="#2b2b2b"/>
-              <rect x="5" y="19" width="2" height="1" fill="#111"/>
-              <rect x="9" y="19" width="2" height="1" fill="#111"/>
-            </svg>
-          </div>
-          <div id="pgoal-flash"></div>
-        </div>
-
-        <!-- shooter, seen from behind — your point of view, stood over the ball -->
-        <div id="pgoal-shooter" style="position:absolute;width:15%;aspect-ratio:14/22;left:50%;bottom:0%;
-          transform:translate(-50%,0) translateY(3%) scale(.9);transform-origin:bottom center;
-          filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));z-index:5">
-          <svg viewBox="0 0 14 22" style="width:100%;height:100%;overflow:visible">
-            <rect x="5" y="0" width="4" height="1" fill="#e8c468"/>
-            <rect x="5" y="1" width="4" height="3" fill="#e8b98a"/>
-            <rect x="5" y="4" width="4" height="7" fill="#fdfdfd"/>
-            <rect x="6" y="5" width="2" height="5" fill="#0f1720"/>
-            <rect x="4" y="5" width="1" height="4" fill="#e8b98a"/>
-            <rect x="9" y="5" width="1" height="4" fill="#e8b98a"/>
-            <rect x="5" y="11" width="4" height="3" fill="#d62828"/>
-            <g class="legs-stand">
-              <rect x="5" y="14" width="2" height="5" fill="#d62828"/>
-              <rect x="7" y="14" width="2" height="5" fill="#d62828"/>
-              <rect x="5" y="19" width="2" height="1" fill="#111"/>
-              <rect x="7" y="19" width="2" height="1" fill="#111"/>
-            </g>
-            <g class="legs-kick">
-              <rect x="4" y="14" width="2" height="6" fill="#d62828"/>
-              <rect x="8" y="11" width="3" height="3" fill="#d62828"/>
-              <rect x="4" y="20" width="2" height="1" fill="#111"/>
-              <rect x="10" y="12" width="2" height="1" fill="#111"/>
-            </g>
-          </svg>
-        </div>
-
-        <div id="pgoal-ball" style="position:absolute;width:9%;aspect-ratio:1/1;left:50%;top:88%;
-          transform:translate(-50%,-50%) scale(1);
-          transition:left 1.2s cubic-bezier(.3,.55,.25,1),top 1.2s cubic-bezier(.3,.55,.25,1),transform 1.2s cubic-bezier(.3,.55,.25,1)">
-          <svg viewBox="0 0 8 8" style="width:100%;height:100%;overflow:visible">
-            <rect x="2" y="0" width="4" height="1" fill="#fdfdfd"/>
-            <rect x="1" y="1" width="6" height="1" fill="#fdfdfd"/>
-            <rect x="0" y="2" width="8" height="4" fill="#fdfdfd"/>
-            <rect x="1" y="6" width="6" height="1" fill="#fdfdfd"/>
-            <rect x="2" y="7" width="4" height="1" fill="#fdfdfd"/>
-            <rect x="3" y="2" width="2" height="2" fill="#161616"/>
-            <rect x="1" y="4" width="1" height="1" fill="#161616"/>
-            <rect x="6" y="4" width="1" height="1" fill="#161616"/>
-          </svg>
-        </div>
-      </div>
-      <button class="btn primary" id="pgoal-confirm" disabled style="max-width:340px;margin:10px auto 0">Confirm</button>
-    </div>
-    <div id="pgoal-pass" style="display:none;position:fixed;inset:0;background:rgba(36,31,25,.75);
-      align-items:center;justify-content:center;z-index:60;padding:20px">
-      <div class="card" style="text-align:center;max-width:300px">
-        <h3>Pass the phone</h3>
-        <p id="pgoal-pass-sub" style="margin:6px 0 16px"></p>
-        <button class="btn primary" id="pgoal-pass-go">Continue</button>
-      </div>
-    </div>
-
     <div id="pend"></div>
     <button class="btn ghost" id="pskip">Skip to the result</button>
   </section>`);
@@ -3041,10 +2867,10 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
   const circle = () => el('<span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--line,#ccc);display:inline-block"></span>');
   ['home', 'away'].forEach(s => { for (let i = 0; i < 5; i++) v.querySelector('#pk-' + s).appendChild(circle()); });
   const comm = v.querySelector('#pcomm'), pscore = v.querySelector('#pscore');
-  // decide every kick up front (seeded in shared games), then animate it —
-  // this is also what "skip" and online/spectate games fall back to
+  // decide every kick up front (seeded in shared games), then animate it
   const plan = (m.pens && m.pens.kicks) || shootout(H, Aw, m.seed ? seededRng(m.seed + '|pens') : Math.random).kicks;
   let fast = false;
+  v.querySelector('#pskip').onclick = () => { fast = true; };
   const wait = ms => fast ? Promise.resolve() : sleep(ms);
   const sum = s => T[s].kicks.filter(Boolean).length;
   const decided = () => {
@@ -3053,175 +2879,7 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
     return na === nb && a !== b;
   };
 
-  /* -- interactive taking: local pass-and-play and vs-AI kicks are played
-     out by tapping the goal, instead of purely simulated. Online/spectate
-     games stay on the seeded plan above so both phones see the same result. */
-  // Online/spectate always stay on the seeded plan below (no real-time tap
-  // syncing between two devices yet). Everywhere else, defer to the same
-  // "is this actually your team" check the live match screen used — so a
-  // knockout-run tie where you're drawn away still gets the interactive goal.
-  const humanSide = side => (S.mode === 'online' || S.mode === 'spectate') ? false
-    : humanSideOuter ? humanSideOuter(side)
-    : S.mode === 'pass' ? true : S.mode === 'ai' ? side === 'home' : false;
-
-  const gWrap = v.querySelector('#pgoal-wrap'), gStatus = v.querySelector('#pgoal-status'),
-    gBox = v.querySelector('#pgoal-box'), gKeeper = v.querySelector('#pgoal-keeper'),
-    gBall = v.querySelector('#pgoal-ball'), gConfirm = v.querySelector('#pgoal-confirm'),
-    gPass = v.querySelector('#pgoal-pass'), gPassSub = v.querySelector('#pgoal-pass-sub'),
-    gPassGo = v.querySelector('#pgoal-pass-go'), gFlash = v.querySelector('#pgoal-flash'),
-    gField = v.querySelector('#pgoal-field'), gShooter = v.querySelector('#pgoal-shooter');
-
-  // the goal box is a smaller, distant rectangle now (over-the-shoulder view),
-  // so the ball — which travels across the whole scene, not just inside the
-  // goal — needs its landing spot converted from "goal-relative" (0-100,
-  // same space taps and the keeper use) into "scene-relative" percentages.
-  const GOAL_RECT = { left: 17, top: 20, width: 66, height: 26 };
-  const toFieldX = gx => GOAL_RECT.left + gx / 100 * GOAL_RECT.width;
-  const toFieldY = gy => GOAL_RECT.top + gy / 100 * GOAL_RECT.height;
-
-  function moveKeeper(x, y, diving) {
-    const deg = Math.max(-38, Math.min(38, (x - 50) / 50 * 38));
-    gKeeper.classList.toggle('diving', !!diving);
-    gKeeper.style.left = x + '%'; gKeeper.style.top = y + '%';
-    gKeeper.style.transform = `translate(-50%,-50%) rotate(${deg}deg)`;
-  }
-  function resetShooter() {
-    gShooter.style.transition = 'none';
-    gShooter.classList.remove('kicking');
-    gShooter.style.transform = 'translate(-50%,0) translateY(3%) scale(.9)';
-    void gShooter.offsetWidth;         // reflow, so the next move animates instead of jumping
-    gShooter.style.transition = '';
-  }
-  function resetPitch() {
-    moveKeeper(50, 78, false);
-    resetShooter();
-    gBall.style.transition = 'none';
-    gBall.style.left = '50%'; gBall.style.top = '88%';
-    gBall.style.transform = 'translate(-50%,-50%) scale(1)';
-    void gBall.offsetWidth;             // snap back instantly — no drifting back from the goal
-    gBall.style.transition = '';
-    gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
-    gBox.querySelectorAll('.pimpact').forEach(mk => mk.remove());
-    gFlash.className = ''; gFlash.textContent = '';
-  }
-  function markAt(x, y, color) {
-    gBox.querySelectorAll('.pmark').forEach(mk => mk.remove());
-    const d = el(`<div class="pmark" style="position:absolute;width:22px;height:22px;border-radius:50%;
-      transform:translate(-50%,-50%);border:3px solid ${color};background:${color}33;pointer-events:none"></div>`);
-    d.style.left = x + '%'; d.style.top = y + '%';
-    gBox.appendChild(d);
-  }
-  function impactAt(x, y, color) {
-    const d = el(`<div class="pimpact" style="position:absolute;width:22px;height:22px;border-radius:50%;left:${x}%;top:${y}%;
-      border:3px solid ${color};pointer-events:none;animation:pgoalImpact .55s ease-out forwards"></div>`);
-    gBox.appendChild(d);
-  }
-  function flashResult(text, color) {
-    gFlash.textContent = text;
-    gFlash.style.color = color;
-    gFlash.className = '';
-    void gFlash.offsetWidth;           // restart the animation each time
-    gFlash.className = 'show';
-  }
-  function pointFromEvent(e) {
-    const r = gBox.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
-    return { x: Math.max(4, Math.min(96, cx / r.width * 100)), y: Math.max(4, Math.min(96, cy / r.height * 100)) };
-  }
-  function passOver(msg) {
-    return new Promise(res => {
-      gPassSub.textContent = msg;
-      gPass.style.display = 'flex';
-      gPassGo.onclick = () => { gPass.style.display = 'none'; res(); };
-    });
-  }
-  function humanTap(promptText) {
-    return new Promise(res => {
-      resetPitch();
-      gStatus.textContent = promptText;
-      gConfirm.disabled = true;
-      let pt = null;
-      const onDown = e => {
-        e.preventDefault();
-        pt = pointFromEvent(e);
-        markAt(pt.x, pt.y, 'var(--orange)');
-        gConfirm.disabled = false;
-      };
-      gBox.addEventListener('pointerdown', onDown);
-      gConfirm.onclick = () => {
-        if (!pt) return;
-        gBox.removeEventListener('pointerdown', onDown);
-        res(pt);
-      };
-    });
-  }
-  function aiTap(spreadX, spreadY) {
-    const zones = [[22, 30], [50, 25], [78, 30], [22, 60], [50, 55], [78, 60]];
-    const base = zones[Math.floor(Math.random() * zones.length)];
-    return {
-      x: Math.max(4, Math.min(96, base[0] + (Math.random() * spreadX - spreadX / 2))),
-      y: Math.max(4, Math.min(96, base[1] + (Math.random() * spreadY - spreadY / 2)))
-    };
-  }
-  async function interactiveKick(taker, gk, shooterHuman, keeperHuman) {
-    resetPitch();
-    let shot;
-    if (shooterHuman) {
-      shot = await humanTap(`${taker.player.name}: tap where you want to shoot`);
-      gStatus.textContent = `${taker.player.name} is placing the ball…`;
-      gConfirm.disabled = true;
-      await sleep(500);
-    } else {
-      gStatus.textContent = `${taker.player.name} is placing the ball…`;
-      gConfirm.disabled = true;
-      await sleep(750);
-      shot = aiTap(14, 10);
-    }
-    resetPitch();   // clears the shot marker — the keeper always guesses blind
-    if (shooterHuman && keeperHuman) await passOver(`Hand the phone over — ${gk.player.name} is in goal.`);
-    let save;
-    if (keeperHuman) {
-      save = await humanTap(`${gk.player.name}: tap where you want to dive`);
-      gStatus.textContent = `${gk.player.name} is set…`;
-      gConfirm.disabled = true;
-      await sleep(450);
-    } else {
-      gStatus.textContent = `${gk.player.name} is watching the run-up…`;
-      gConfirm.disabled = true;
-      await sleep(750);
-      save = aiTap(16, 12);
-    }
-    gStatus.textContent = 'Here it comes…';
-    resetShooter();
-    await sleep(200);
-    gShooter.style.transform = 'translate(-50%,0) translateY(0) scale(1)';    // steps up to the ball
-    await sleep(600);
-    gShooter.style.transform = 'translate(-50%,0) translateY(-1%) scale(1.04) rotate(-3deg)';  // strike
-    gShooter.classList.add('kicking');
-    moveKeeper(save.x, save.y, true);
-    gBall.style.left = toFieldX(shot.x) + '%'; gBall.style.top = toFieldY(shot.y) + '%';
-    gBall.style.transform = 'translate(-50%,-50%) scale(.32)';   // shrinks into the distance
-    const dx = shot.x - save.x, dy = shot.y - save.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    // a sharper keeper covers a little more ground — the dive doesn't have to land exactly on the shot
-    const tol = Math.max(16, Math.min(32, 24 + (rating(gk) - 75) * 0.15));
-    const scored = dist > tol;
-    await sleep(950);                  // let the flight/dive animation actually land before judging it
-    impactAt(shot.x, shot.y, scored ? '#22C55E' : '#E5484D');
-    flashResult(scored ? 'GOAL!' : 'SAVED!', scored ? '#22C55E' : '#E5484D');
-    gStatus.textContent = scored ? `⚽ ${taker.player.name} scores!` : `🧤 Saved by ${gk.player.name}!`;
-    await sleep(1150);
-    return { scored };
-  }
-
   (async () => {
-    // Interactive sessions keep the goal on screen for the whole shootout —
-    // it only shows/hides once, not kick by kick.
-    const interactiveSession = humanSide('home') || humanSide('away');
-    if (interactiveSession) gWrap.style.display = 'block';
-    v.querySelector('#pskip').onclick = () => { fast = true; gWrap.style.display = 'none'; };
-
     while (!decided()) {
       const side = T.home.kicks.length <= T.away.kicks.length ? 'home' : 'away';
       const other = side === 'home' ? 'away' : 'home';
@@ -3230,18 +2888,8 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
       const taker = kick.taker;
       comm.innerHTML = `<b>${esc(taker.player.name)}</b> steps up…`;
       if (!fast) SFX.whistle(1);
-      await wait(1300);
-
-      let scored, saved;
-      const shooterHuman = humanSide(side), keeperHuman = humanSide(other);
-      const interactive = !fast && (shooterHuman || keeperHuman);
-      if (interactive) {
-        const res = await interactiveKick(taker, T[other].gk, shooterHuman, keeperHuman);
-        scored = res.scored; saved = !res.scored;
-      } else {
-        scored = kick.scored; saved = kick.saved;
-      }
-
+      await wait(1100);
+      const scored = kick.scored;
       if (!fast) SFX.thump();
       T[side].kicks.push(scored);
       const row = v.querySelector('#pk-' + side);
@@ -3251,12 +2899,10 @@ function screenPenalties(H, Aw, m, onDone, humanSideOuter) {
       c.style.borderColor = scored ? '#22C55E' : '#E5484D';
       pscore.textContent = `${sum('home')} – ${sum('away')}`;
       comm.innerHTML = scored ? `⚽ <b>${esc(taker.player.name)}</b> scores!`
-        : saved ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
+        : kick.saved ? `🧤 Saved by <b>${esc(T[other].gk.player.name)}</b>!` : `❌ <b>${esc(taker.player.name)}</b> misses!`;
       if (!fast) { if (scored) SFX.roar(0.55); else SFX.groan(); }
-      // the interactive widget already held on the result — only pause again for the auto-commentary path
-      await wait(interactive ? 500 : 1400);
+      await wait(1200);
     }
-    gWrap.style.display = 'none';
     const a = sum('home'), b = sum('away');
     const win = a > b ? H : Aw;
     if (!fast) SFX.roar(1);
@@ -3556,6 +3202,7 @@ function screenLineups(A, B) {
         <span class="nm">${esc(s.player.name.split(' ').slice(-1)[0])}</span>
         <span class="rt">${s.player.rating}</span>
       </div>`);
+      n.style.cursor = 'pointer'; n.onclick = () => showPlayerCard(s.player, c);
       pitch.appendChild(n);
     });
     v.querySelector('#tabA').className = 'btn sm ' + (active === A ? 'primary' : 'ghost');
@@ -3589,7 +3236,7 @@ function stopPoll() { if (S.poll) clearInterval(S.poll); S.poll = null; }
 // A squad as sent to the server (players may still be empty mid-draft).
 function squadPayload(p) {
   return {
-    label: p.label, formation: p.formation, deviceId: deviceId(),
+    label: p.label, formation: p.formation,
     badge: p.badge ? { home: p.badge.home, away: p.badge.away, name: p.badge.name } : null,
     strength: p.strength,
     bench: (p.bench || []).map(b => ({ name:b.name, number:b.number, rating:b.rating, position:b.position,
@@ -3603,7 +3250,7 @@ function squadPayload(p) {
 // and any spectators) goes through this, so they all simulate the same match.
 function hydrateSquad(sq, fallbackLabel) {
   return {
-    label: sq.label || fallbackLabel, formation: sq.formation, strength: sq.strength, deviceId: sq.deviceId || null,
+    label: sq.label || fallbackLabel, formation: sq.formation, strength: sq.strength,
     badge: sq.badge || { home:'#888', away:'#fff', name:'' },
     bench: sq.bench || [],
     xi: sq.xi.map(s => ({ ...s, player: { ...s.player, club: s.player.club || { name:'', home:'#888', away:'#fff' } } }))
@@ -3971,29 +3618,15 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 
-// A random ID generated once per device/browser and kept in localStorage —
-// this is what head-to-head is now keyed on, instead of the nickname
-// someone happened to type in that game.
-function deviceId() {
-  let id = store.get('sp1nxi-device', null);
-  if (!id) {
-    id = (crypto.randomUUID ? crypto.randomUUID() : 'd-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
-    store.set('sp1nxi-device', id);
-  }
-  return id;
-}
-
-// Head-to-head: your online record against each opponent DEVICE (falls
-// back to their nickname for older matches recorded before this existed).
+// Head-to-head: your online record against each friend, by nickname.
 function recordH2H(A, B, m) {
   if (S.mode !== 'online' || !S.room || m.h2hDone) return null;
   m.h2hDone = true;
   const mine = S.room.seat === 0 ? 'home' : 'away';
-  const oppTeam = mine === 'home' ? B : A;
-  const opp = oppTeam.label, gf = mine === 'home' ? m.gA : m.gB, ga = mine === 'home' ? m.gB : m.gA;
+  const opp = (mine === 'home' ? B : A).label, gf = mine === 'home' ? m.gA : m.gB, ga = mine === 'home' ? m.gB : m.gA;
   const won = m.winSide ? m.winSide === mine : gf > ga, lost = m.winSide ? m.winSide !== mine : gf < ga;
   const all = store.get('sp1nxi-h2h', {});
-  const key = oppTeam.deviceId ? ('dev:' + oppTeam.deviceId) : ('name:' + opp.trim().toLowerCase());
+  const key = opp.trim().toLowerCase();
   const r = all[key] || { name: opp, w: 0, d: 0, l: 0, gf: 0, ga: 0, best: null };
   r.name = opp; r.gf += gf; r.ga += ga;
   if (won) r.w++; else if (lost) r.l++; else r.d++;
@@ -4501,7 +4134,7 @@ function adminPanel() {
         .adm .chip.on{background:#E4762B;border-color:#E4762B;color:#fff}</style>
       <div class="adm">
         <h3 style="margin:0;color:#fff">🛠️ Admin</h3>
-        <p style="margin:4px 0 0"><small style="color:#A99D8D">The spin and scoreline apply to your next match. VAR/red card/snow now also land in a match already in progress, from the next break onward.</small></p>
+        <p style="margin:4px 0 0"><small style="color:#A99D8D">Applies to your next spin / next match only.</small></p>
 
         <h4>Force the spin</h4>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -4518,7 +4151,8 @@ function adminPanel() {
           <span style="flex:1">You</span><input type="number" id="rme" min="0" max="9" value="${rig.me ?? 2}" style="width:4em;text-align:center">
           <b>–</b><input type="number" id="rthem" min="0" max="9" value="${rig.them ?? 1}" style="width:4em;text-align:center"><span style="flex:1;text-align:right">Them</span>
         </div>
-        <p style="margin:2px 0 8px"><small style="color:#A99D8D">If that scoreline is level, the shootout plays out for real — either side can win it.</small></p>
+        <label>If it's level, shootout goes to
+          <select id="rpens"><option value="me" ${rig.pens !== 'them' ? 'selected' : ''}>You</option><option value="them" ${rig.pens === 'them' ? 'selected' : ''}>Them</option></select></label>
         <p style="margin:6px 0 2px"><small style="color:#A99D8D">Your scorers (tap in order — optional):</small></p>
         <div id="rsc">${myXI.length ? myXI.filter(s => GROUP[s.role] !== 'GK').map(s =>
           `<span class="chip ${(rig.scorers || []).includes(s.player.name) ? 'on' : ''}" data-n="${esc(s.player.name)}">${esc(s.player.name)}</span>`).join('')
@@ -4547,7 +4181,7 @@ function adminPanel() {
     const ev = { var: ov.querySelector('#evar').checked, red: ov.querySelector('#ered').checked ? ov.querySelector('#eredside').value : null, snow: ov.querySelector('#esnow').checked };
     a.rig = (fixed || ev.var || ev.red || ev.snow) ? {
       fixed, me: Math.max(0, Math.min(9, +ov.querySelector('#rme').value || 0)), them: Math.max(0, Math.min(9, +ov.querySelector('#rthem').value || 0)),
-      scorers: scorers.slice(), ...ev } : null;
+      pens: ov.querySelector('#rpens').value, scorers: scorers.slice(), ...ev } : null;
     await pushRig();
     ov.remove(); toast('Saved.');
   };
@@ -4563,7 +4197,7 @@ function rigBySeat(r) {
   if (!r) return null;
   const mine = mySideForRig(), theirs = mine === 'home' ? 'away' : 'home';
   const out = { var: r.var, snow: r.snow, red: r.red ? (r.red === 'me' ? mine : theirs) : null };
-  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, scorers: { [mine]: r.scorers || [] } });
+  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, pens: r.pens === 'me' ? mine : theirs, scorers: { [mine]: r.scorers || [] } });
   return out;
 }
 async function pushRig() {
@@ -4608,9 +4242,11 @@ function applyRig(m, A, B, rig) {
   if (rig.fixed) {
     m.gA = rig.home || 0; m.gB = rig.away || 0; m.ft = { a: m.gA, b: m.gB };
     m.et = m.gA === m.gB; m.pens = null;
-    if (m.et) {                                   // level: a real, unbiased shootout — either side can win it
-      const so = shootout(A, B, m.seed ? seededRng(`${m.seed}|rigpens`) : Math.random);
-      m.pens = { a: so.a, b: so.b, kicks: so.kicks };
+    if (m.et) {                                   // level: a real shootout, won by the chosen side
+      for (let k = 0; k < 200; k++) {
+        const so = shootout(A, B, seededRng(`${m.seed || 'local'}|rigpens|${k}`));
+        if ((so.a > so.b ? 'home' : 'away') === rig.pens) { m.pens = { a: so.a, b: so.b, kicks: so.kicks }; break; }
+      }
     }
     m.winSide = m.gA > m.gB ? 'home' : m.gA < m.gB ? 'away' : m.pens ? (m.pens.a > m.pens.b ? 'home' : 'away') : null;
     m.rig = true;
