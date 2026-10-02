@@ -4151,8 +4151,6 @@ function adminPanel() {
           <span style="flex:1">You</span><input type="number" id="rme" min="0" max="9" value="${rig.me ?? 2}" style="width:4em;text-align:center">
           <b>–</b><input type="number" id="rthem" min="0" max="9" value="${rig.them ?? 1}" style="width:4em;text-align:center"><span style="flex:1;text-align:right">Them</span>
         </div>
-        <label>If it's level, shootout goes to
-          <select id="rpens"><option value="me" ${rig.pens !== 'them' ? 'selected' : ''}>You</option><option value="them" ${rig.pens === 'them' ? 'selected' : ''}>Them</option></select></label>
         <p style="margin:6px 0 2px"><small style="color:#A99D8D">Your scorers (tap in order — optional):</small></p>
         <div id="rsc">${myXI.length ? myXI.filter(s => GROUP[s.role] !== 'GK').map(s =>
           `<span class="chip ${(rig.scorers || []).includes(s.player.name) ? 'on' : ''}" data-n="${esc(s.player.name)}">${esc(s.player.name)}</span>`).join('')
@@ -4181,7 +4179,7 @@ function adminPanel() {
     const ev = { var: ov.querySelector('#evar').checked, red: ov.querySelector('#ered').checked ? ov.querySelector('#eredside').value : null, snow: ov.querySelector('#esnow').checked };
     a.rig = (fixed || ev.var || ev.red || ev.snow) ? {
       fixed, me: Math.max(0, Math.min(9, +ov.querySelector('#rme').value || 0)), them: Math.max(0, Math.min(9, +ov.querySelector('#rthem').value || 0)),
-      pens: ov.querySelector('#rpens').value, scorers: scorers.slice(), ...ev } : null;
+      scorers: scorers.slice(), ...ev } : null;
     await pushRig();
     ov.remove(); toast('Saved.');
   };
@@ -4197,7 +4195,7 @@ function rigBySeat(r) {
   if (!r) return null;
   const mine = mySideForRig(), theirs = mine === 'home' ? 'away' : 'home';
   const out = { var: r.var, snow: r.snow, red: r.red ? (r.red === 'me' ? mine : theirs) : null };
-  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, pens: r.pens === 'me' ? mine : theirs, scorers: { [mine]: r.scorers || [] } });
+  if (r.fixed) Object.assign(out, { fixed: true, [mine]: r.me, [theirs]: r.them, scorers: { [mine]: r.scorers || [] } });
   return out;
 }
 async function pushRig() {
@@ -4242,11 +4240,9 @@ function applyRig(m, A, B, rig) {
   if (rig.fixed) {
     m.gA = rig.home || 0; m.gB = rig.away || 0; m.ft = { a: m.gA, b: m.gB };
     m.et = m.gA === m.gB; m.pens = null;
-    if (m.et) {                                   // level: a real shootout, won by the chosen side
-      for (let k = 0; k < 200; k++) {
-        const so = shootout(A, B, seededRng(`${m.seed || 'local'}|rigpens|${k}`));
-        if ((so.a > so.b ? 'home' : 'away') === rig.pens) { m.pens = { a: so.a, b: so.b, kicks: so.kicks }; break; }
-      }
+    if (m.et) {                                   // level: a normal, unrigged shootout
+      const so = shootout(A, B, m.seed ? seededRng(m.seed + '|pens') : Math.random);
+      m.pens = { a: so.a, b: so.b, kicks: so.kicks };
     }
     m.winSide = m.gA > m.gB ? 'home' : m.gA < m.gB ? 'away' : m.pens ? (m.pens.a > m.pens.b ? 'home' : 'away') : null;
     m.rig = true;
