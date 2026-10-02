@@ -1999,7 +1999,8 @@ async function screenMatchSim(A, B, m, opts = {}) {
     playerRatings(A, B, m);
     orig.forEach(o => { o.t.xi = o.xi; o.t.bench = o.bench; o.t.strength = o.strength; o.t.subsMade = 0; });
     const done = () => { if (opts.onDone) opts.onDone(m); else screenResult(A, B, m); };
-    if (m.pens) screenPenalties(A, B, m, done); else done();
+    // vs the AI or pass-and-play you take the kicks yourself; online/spectate stay automatic so everyone sees the same shootout
+    if (m.pens) (S.mode === 'ai' || S.mode === 'pass' ? screenPenaltiesPlay : screenPenalties)(A, B, m, done); else done();
   };
   v.querySelector('#skip').onclick = () => { skipped = true; stop(); finishMatch(); };
   if (shared && !opts.onDone) v.querySelector('#skip').remove();   // the shared head-to-head can't be skipped
@@ -2911,6 +2912,201 @@ function screenPenalties(H, Aw, m, onDone) {
     const go = el('<button class="btn primary">Continue</button>');
     go.onclick = () => onDone(a, b);
     v.querySelector('#pend').appendChild(go);
+  })();
+}
+
+/* --- interactive shootout: you aim, you dive --------------------------
+ * Goal-end point of view. The taker taps where to aim, the keeper taps where
+ * to dive; the shot is saved if the dive lands near enough to the ball. Used
+ * when you're playing the AI or pass-and-play. Online rooms, spectators and
+ * everything that must stay in step keep the automatic shootout above.
+ * Coordinates are percentages of the scene (4:3). */
+let pkStyleDone = false;
+function ensurePkStyle() {
+  if (pkStyleDone) return; pkStyleDone = true;
+  const s = document.createElement('style');
+  s.textContent = `
+  .pk-scene{position:relative;width:100%;max-width:440px;aspect-ratio:4/3;margin:10px auto;border-radius:14px;overflow:hidden;background:linear-gradient(#8fd0ee 0 14%,#2f9e4f 14% 100%);touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:crosshair}
+  .pk-line{position:absolute;border:3px solid rgba(255,255,255,.55);pointer-events:none}
+  .pk-goal{position:absolute;left:11%;top:12%;width:78%;height:38%;box-sizing:border-box;border:5px solid #fff;border-bottom:none;border-radius:3px 3px 0 0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(255,255,255,.28) 0 1px,transparent 1px 9px),repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 9px),rgba(0,0,0,.3)}
+  .pk-gk,.pk-ball{position:absolute;transform:translate(-50%,-50%);pointer-events:none;line-height:1}
+  .pk-gk{font-size:32px;transition:left .35s ease-out,top .35s ease-out,transform .35s ease-out}
+  .pk-ball{font-size:32px;transition:left .5s cubic-bezier(.2,.7,.3,1),top .5s cubic-bezier(.2,.7,.3,1),font-size .5s}
+  .pk-ret{position:absolute;display:none;transform:translate(-50%,-50%);pointer-events:none;border-radius:50%;box-sizing:border-box}
+  .pk-ret.shoot{width:28px;height:28px;border:3px solid #FF8A3D;background:rgba(255,138,61,.25)}
+  .pk-ret.keep{width:24%;aspect-ratio:1;border:3px dashed #4FC3F7;background:rgba(79,195,247,.2)}
+  .pk-tag{position:absolute;top:5px;left:8px;right:8px;display:flex;justify-content:space-between;font-size:.72rem;font-weight:700;color:#0b2a3a;pointer-events:none}`;
+  document.head.appendChild(s);
+}
+
+function screenPenaltiesPlay(H, Aw, m, onDone) {
+  setCrumb('Penalties');
+  ensurePkStyle();
+  const GOAL = { x0: 11, x1: 89, y0: 12, y1: 50 }, SPOT = { x: 50, y: 84 }, KEEPER_HOME = { x: 50, y: 41 }, REACH = 12;
+  const rating = s => (typeof s.player.rating === 'number' ? s.player.rating : 75);
+  const order = { FWD: 0, ATT_MID: 1, MID: 2, DEF: 3 };
+  const takers = t => t.xi.filter(s => GROUP[s.role] !== 'GK')
+    .sort((a, b) => (order[GROUP[a.role]] - order[GROUP[b.role]]) || (rating(b) - rating(a)));
+  const keeper = t => t.xi.find(s => GROUP[s.role] === 'GK') || t.xi[0];
+  const T = { home: { team: H, takers: takers(H), gk: keeper(H), kicks: [] }, away: { team: Aw, takers: takers(Aw), gk: keeper(Aw), kicks: [] } };
+  const isHuman = side => S.mode === 'pass' ? true : side === 'home';   // vs the AI, you are the home side
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+
+  const v = el(`<section>
+    <h2>Penalties</h2>
+    <p><small>${esc(H.label)} ${m.gA}–${m.gB} ${esc(Aw.label)} after ${m.et ? 'extra time' : '90 minutes'}.</small></p>
+    <div class="card" style="text-align:center">
+      <div id="pscore" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:2.4rem">0 – 0</div>
+      ${['home', 'away'].map(s => `<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <b style="flex:0 0 38%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(T[s].team.label)}</b>
+        <div id="pk-${s}" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>`).join('')}
+    </div>
+    <div class="pk-scene" id="pk-scene">
+      <div class="pk-line" style="left:3%;right:3%;top:58%;bottom:-40%"></div>
+      <div class="pk-line" style="left:25%;right:25%;top:50%;height:12%;border-top:none"></div>
+      <div class="pk-goal"></div>
+      <div class="pk-tag"><span id="pk-t1"></span><span id="pk-t2"></span></div>
+      <span class="pk-gk" id="pk-gk">🧤</span>
+      <span class="pk-ball" id="pk-ball">⚽</span>
+      <div class="pk-ret" id="pk-ret"></div>
+    </div>
+    <p id="pk-msg" style="text-align:center;min-height:2.8em"></p>
+    <button class="btn primary" id="pk-go" style="display:none">Shoot</button>
+    <p id="pcomm" style="text-align:center;min-height:2.4em"></p>
+    <div id="pend"></div>
+    <button class="btn ghost" id="pskip">Auto-play the rest</button>
+  </section>`);
+  show(v);
+  const circle = () => el('<span style="width:20px;height:20px;border-radius:50%;border:2px solid var(--line,#ccc);display:inline-block"></span>');
+  ['home', 'away'].forEach(s => { for (let i = 0; i < 5; i++) v.querySelector('#pk-' + s).appendChild(circle()); });
+  const scene = v.querySelector('#pk-scene'), ball = v.querySelector('#pk-ball'), gkEl = v.querySelector('#pk-gk'), ret = v.querySelector('#pk-ret');
+  const msg = v.querySelector('#pk-msg'), go = v.querySelector('#pk-go'), comm = v.querySelector('#pcomm'), pscore = v.querySelector('#pscore');
+  const place = (n, p) => { n.style.left = p.x + '%'; n.style.top = p.y + '%'; };
+  const snap = (n, p, extra) => { n.style.transition = 'none'; place(n, p); if (extra) extra(); void n.offsetWidth; n.style.transition = ''; };
+  const toScene = (e, kind) => {
+    const r = scene.getBoundingClientRect();
+    const p = { x: (e.clientX - r.left) / r.width * 100, y: (e.clientY - r.top) / r.height * 100 };
+    return kind === 'keep'
+      ? { x: clamp(p.x, GOAL.x0, GOAL.x1), y: clamp(p.y, GOAL.y0, GOAL.y1) }
+      : { x: clamp(p.x, GOAL.x0 - 4, GOAL.x1 + 4), y: clamp(p.y, GOAL.y0 - 5, GOAL.y1) };
+  };
+
+  let auto = false, pending = null;
+  v.querySelector('#pskip').onclick = () => { auto = true; if (pending) { const r = pending; pending = null; r(null); } };
+  const wait = ms => auto ? Promise.resolve() : sleep(ms);
+  const ask = (kind, text, btn) => new Promise(res => {
+    if (auto) return res(null);
+    pending = res; let pt = null;
+    msg.innerHTML = text; go.textContent = btn; go.disabled = true; go.style.display = '';
+    ret.className = 'pk-ret ' + kind; ret.style.display = 'none';
+    scene.onclick = e => { pt = toScene(e, kind); place(ret, pt); ret.style.display = 'block'; go.disabled = false; };
+    go.onclick = () => { if (!pt) return; scene.onclick = null; go.style.display = 'none'; ret.style.display = 'none'; pending = null; res(pt); };
+  });
+  const handover = (text, btn) => new Promise(res => {
+    if (auto) return res();
+    pending = () => res(); msg.innerHTML = text; go.textContent = btn; go.disabled = false; go.style.display = '';
+    go.onclick = () => { go.style.display = 'none'; pending = null; res(); };
+  });
+
+  const sum = s => T[s].kicks.filter(Boolean).length;
+  const decided = () => {
+    const a = sum('home'), b = sum('away'), na = T.home.kicks.length, nb = T.away.kicks.length;
+    if (na <= 5 && nb <= 5 && (na < 5 || nb < 5)) return a + (5 - na) < b || b + (5 - nb) < a;
+    return na === nb && a !== b;
+  };
+
+  // The computer's choices
+  const aiAim = () => {
+    const u = Math.random() < 0.7 ? (Math.random() < 0.5 ? 0.1 + Math.random() * 0.16 : 0.74 + Math.random() * 0.16) : 0.3 + Math.random() * 0.4;
+    const w = Math.random() < 0.6 ? 0.12 + Math.random() * 0.28 : 0.5 + Math.random() * 0.35;
+    return { x: GOAL.x0 + u * (GOAL.x1 - GOAL.x0), y: GOAL.y0 + w * (GOAL.y1 - GOAL.y0) };
+  };
+  const aiDive = () => {
+    const zones = [[0.2, 0.3], [0.2, 0.75], [0.5, 0.55], [0.8, 0.3], [0.8, 0.75], [0.5, 0.3]];
+    const z = zones[Math.floor(Math.random() * zones.length)];
+    return { x: GOAL.x0 + (z[0] + (Math.random() - 0.5) * 0.12) * (GOAL.x1 - GOAL.x0), y: GOAL.y0 + (z[1] + (Math.random() - 0.5) * 0.1) * (GOAL.y1 - GOAL.y0) };
+  };
+
+  (async () => {
+    while (!decided()) {
+      if (T.home.kicks.length + T.away.kicks.length >= 30) auto = true;   // a runaway sudden death plays itself out
+      const side = T.home.kicks.length <= T.away.kicks.length ? 'home' : 'away';
+      const other = side === 'home' ? 'away' : 'home';
+      const n = T[side].kicks.length;
+      const taker = T[side].takers[n % T[side].takers.length], gk = T[other].gk;
+      const q = clamp((rating(taker) - 60) / 40, 0, 1);
+      v.querySelector('#pk-t1').textContent = `${T[side].team.label} shoot`;
+      v.querySelector('#pk-t2').textContent = `🧤 ${T[other].team.label}`;
+      snap(ball, SPOT, () => { ball.style.fontSize = '32px'; });
+      snap(gkEl, KEEPER_HOME, () => { gkEl.style.transform = 'translate(-50%,-50%)'; });
+      ret.style.display = 'none';
+      comm.innerHTML = `<b>${esc(taker.player.name)}</b> (${esc(T[side].team.label)}) steps up — <b>${esc(gk.player.name)}</b> in goal`;
+      if (!auto) SFX.whistle(1);
+
+      let aim = null, dive = null;
+      const aimTxt = `<b>${esc(taker.player.name)}</b>: tap where you want to shoot, then press Shoot.`;
+      const diveTxt = `<b>${esc(gk.player.name)}</b>: tap where you think it's going — the circle is how far your gloves reach.`;
+      if (isHuman(side) && isHuman(other)) {
+        aim = await ask('shoot', `${esc(T[side].team.label)} — ${aimTxt}`, 'Shoot');
+        if (aim) { await handover(`Pass the phone to <b>${esc(T[other].team.label)}</b> (keeper). No peeking!`, 'I’m the keeper'); dive = await ask('keep', `${esc(T[other].team.label)} — ${diveTxt}`, 'Dive'); }
+      } else if (isHuman(side)) {
+        aim = await ask('shoot', aimTxt, 'Shoot'); if (aim) dive = aiDive();
+      } else {
+        dive = await ask('keep', diveTxt, 'Dive'); if (dive) aim = aiAim();
+      }
+      msg.innerHTML = '';
+
+      let scored, saved = false, shot = null, how = '';
+      if (aim && dive) {
+        // the taker's quality decides how true the shot is
+        const sd = 3.2 - 2.4 * q;
+        shot = { x: aim.x + gauss() * sd, y: Math.min(aim.y + gauss() * sd * 0.8, GOAL.y1 - 1) };
+        const out = Math.max(GOAL.x0 - shot.x, shot.x - GOAL.x1, GOAL.y0 - shot.y, 0);
+        if (out > 0) { scored = false; how = out <= 2.5 ? 'post' : (GOAL.y0 - shot.y >= Math.max(GOAL.x0 - shot.x, shot.x - GOAL.x1) ? 'over' : 'wide'); }
+        else {
+          const reach = clamp(REACH + (rating(gk) - 75) * 0.04, 10.5, 13.5);
+          saved = Math.hypot(shot.x - dive.x, (shot.y - dive.y) * 0.75) <= reach;
+          scored = !saved;
+        }
+        if (!auto) {
+          place(gkEl, dive); gkEl.style.transform = `translate(-50%,-50%) rotate(${dive.x < 45 ? -50 : dive.x > 55 ? 50 : 0}deg)`;
+          ball.style.fontSize = '20px'; place(ball, { x: clamp(shot.x, 2, 98), y: clamp(shot.y, 6, 90) });
+          SFX.thump();
+          await sleep(700);
+        }
+      } else {                                         // auto-played kick
+        const p = clamp(0.76 + (rating(taker) - rating(gk)) * 0.005, 0.6, 0.9);
+        scored = Math.random() < p; saved = !scored && Math.random() < 0.6; how = scored || saved ? '' : 'wide';
+      }
+
+      T[side].kicks.push(scored);
+      const row = v.querySelector('#pk-' + side);
+      if (n >= 5) row.appendChild(circle());
+      const c = row.children[n];
+      c.style.background = scored ? '#22C55E' : '#E5484D'; c.style.borderColor = scored ? '#22C55E' : '#E5484D';
+      pscore.textContent = `${sum('home')} – ${sum('away')}`;
+      comm.innerHTML = scored ? `⚽ <b>${esc(taker.player.name)}</b> scores!`
+        : saved ? `🧤 Saved by <b>${esc(gk.player.name)}</b>!`
+        : how === 'post' ? `💥 <b>${esc(taker.player.name)}</b> hits the post!`
+        : how === 'over' ? `❌ <b>${esc(taker.player.name)}</b> blazes it over!` : `❌ <b>${esc(taker.player.name)}</b> misses — wide!`;
+      if (!auto) { if (scored) SFX.roar(0.55); else SFX.groan(); }
+      m._pkKicks = (m._pkKicks || []).concat({ side, taker, scored, saved });
+      await wait(1500);
+    }
+    const a = sum('home'), b = sum('away');
+    const win = a > b ? H : Aw;
+    if (!auto) SFX.roar(1);
+    msg.innerHTML = '';
+    comm.innerHTML = `<b>${esc(win.label)}</b> win ${Math.max(a, b)}–${Math.min(a, b)} on penalties.`;
+    v.querySelector('#pskip').remove();
+    // the match record now reflects the shootout that was actually played
+    m.pens = { a, b, kicks: m._pkKicks || [] }; delete m._pkKicks;
+    m.winSide = a > b ? 'home' : 'away';
+    const next = el('<button class="btn primary">Continue</button>');
+    next.onclick = () => onDone(a, b);
+    v.querySelector('#pend').appendChild(next);
   })();
 }
 
