@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ *
  * 1. LEAGUES & CLUBS
  * Club colours are the real kit colours; they drive the whole theme
- * once a club is spun. `tier` only seeds the demo squads.
+ * once a club is aspun. `tier` only seeds the demo squads.
  * ------------------------------------------------------------------ */
 const LEAGUES = {
   PL: { id: 39, name: 'Premier League', country: 'England', tint: '#3D195B', clubs: [
